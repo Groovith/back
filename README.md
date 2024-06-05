@@ -1,5 +1,4 @@
 ## Getting Started
----
 
 ### application.properties 설정
 
