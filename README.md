@@ -2,7 +2,7 @@
 
 ### application.properties 설정
 
-```
+```properties
 # JWT 토큰 비밀키
 spring.jwt.secret=vmfhaltmskdlstkfkdgodyroqkfwkdbalroqkfwkdbalaaaaaaaaaaaaaaaabbbbb
 
