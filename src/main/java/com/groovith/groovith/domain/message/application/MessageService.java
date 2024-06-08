@@ -31,7 +31,9 @@ public class MessageService {
     public Long save(MessageDto messageDto){
 
         UserChatRoom userChatRoom = userChatRoomRepository
-                .findByUserIdAndChatRoomId(messageDto.getUserId(), messageDto.getChatRoomId());
+                .findByUserIdAndChatRoomId(messageDto.getUserId(), messageDto.getChatRoomId())
+                .orElseThrow(()->new IllegalArgumentException(
+                        "채팅방에 유저가 존재하지 않음 userId"+messageDto.getUserId()+" chatroomId:"+messageDto.getChatRoomId()));
         return messageRepository.save(messageDto.toEntity(userChatRoom)).getId();
     }
 
