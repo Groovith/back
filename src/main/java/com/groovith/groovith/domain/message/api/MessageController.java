@@ -4,6 +4,7 @@ package com.groovith.groovith.domain.message.api;
 import com.groovith.groovith.domain.chatRoom.application.ChatRoomService;
 import com.groovith.groovith.domain.chatRoom.dto.ChatRoomDetailDto;
 import com.groovith.groovith.domain.message.application.MessageService;
+import com.groovith.groovith.domain.message.domain.Message;
 import com.groovith.groovith.domain.message.domain.MessageType;
 import com.groovith.groovith.domain.message.dto.MessageDto;
 import com.groovith.groovith.domain.user.application.UserService;
@@ -39,11 +40,19 @@ public class MessageController {
     @MessageMapping("/api/chat/{chatRoomId}")
     public void send(@Payload MessageDto messageDto)
     {
+        log.info(String.format("roomid: %s, chatRoomId: %s, userId: %s", messageDto, messageDto.getChatRoomId(), messageDto.getUserId()));
+        // 입장시
         if(messageDto.getType() == MessageType.JOIN){
-            ChatRoomDetailDto detail = chatRoomService.findChatRoomDetail(messageDto.getChatRoomId());
-
+           ChatRoomDetailDto detail = chatRoomService.findChatRoomDetail(messageDto.getChatRoomId());
+           // 입장시 추가 로직 필요 + 예외처리 필요
+            chatRoomService.enterChatRoom(messageDto.getUserId(), messageDto.getChatRoomId());
         }
-        if(messageDto.getType() == MessageType.CHAT) {
+//        // 퇴장시
+//        else if (messageDto.getType() == MessageType.LEAVE) {
+//            chatRoomService.leaveChatRoom(messageDto.getUserId(), messageDto.getChatRoomId());
+//        }
+        //채팅시
+        else if (messageDto.getType()== MessageType.CHAT) {
             messageService.save(messageDto);
             template.convertAndSend("/sub/api/chat/" + messageDto.getChatRoomId(), messageDto);
         }
