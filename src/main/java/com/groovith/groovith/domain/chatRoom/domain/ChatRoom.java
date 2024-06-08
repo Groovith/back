@@ -17,7 +17,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-public class ChatRoom extends{
+public class ChatRoom {
 
     @Id
     @GeneratedValue
