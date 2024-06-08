@@ -1,5 +1,7 @@
 package com.groovith.groovith.domain.chatRoom.domain;
 
+import com.groovith.groovith.domain.message.domain.Message;
+import com.groovith.groovith.domain.user.domain.UserEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -20,7 +22,7 @@ public class UserChatRoom{
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id")
-    private User user;
+    private UserEntity user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="chatRoom_id")
@@ -31,7 +33,7 @@ public class UserChatRoom{
 
     // 빌더패턴 + 양방향
     @Builder
-    public UserChatRoom(User user, ChatRoom chatRoom){
+    public UserChatRoom(UserEntity user, ChatRoom chatRoom){
         this.user = user;
         this.chatRoom = chatRoom;
     }
@@ -39,7 +41,7 @@ public class UserChatRoom{
     /** 연관관계 편의 매서드 - UserChatRoom 에서 User, ChatRoom 양쪽 관리 **/
 
 
-    public static UserChatRoom setUserChatRoom(User user, ChatRoom chatRoom){
+    public static UserChatRoom setUserChatRoom(UserEntity user, ChatRoom chatRoom){
         UserChatRoom userChatRoom = UserChatRoom.builder()
                 .user(user)
                 .chatRoom(chatRoom)
@@ -49,7 +51,7 @@ public class UserChatRoom{
         return userChatRoom;
     }
 
-    public static void deleteUserChatRoom(UserChatRoom userChatRoom, User user, ChatRoom chatRoom){
+    public static void deleteUserChatRoom(UserChatRoom userChatRoom, UserEntity user, ChatRoom chatRoom){
         user.getUserChatRoom().remove(userChatRoom);
         chatRoom.getUserChatRooms().remove(userChatRoom);
     }
