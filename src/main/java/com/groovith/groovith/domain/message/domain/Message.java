@@ -1,5 +1,6 @@
 package com.groovith.groovith.domain.message.domain;
 
+import com.groovith.groovith.domain.chatRoom.domain.UserChatRoom;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -9,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-public class Message extends BaseTimeEntity{
+public class Message{
 
     @Id @GeneratedValue
     private Long id;
