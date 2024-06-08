@@ -32,6 +32,7 @@ public class ChatRoomService {
      * 채팅방 생성
      * */
     public Long create(CreateChatRoomRequestDto request){
+        // 생성 실패해도 id 늘어남
         ChatRoom chatRoom = chatRoomRepository.save(request.toEntity());
 
         // 채팅방 생성유저
@@ -91,16 +92,26 @@ public class ChatRoomService {
                 .orElseThrow(()->new IllegalArgumentException("유저가 없습니다. id"+userId));
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new IllegalArgumentException("채팅방이 없습니다. id:"+chatRoomId));
+        // 유저가 이미 채팅방에 있는지 확인
+        //있을경우
+        if (userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId).isPresent()){
+            throw new IllegalArgumentException("채팅방에 이미 유저가 있습니다 userId:"+userId);
 
-        // masterId 얻고 이 유저의 현재 재생 시각 get
-        Long masterId = chatRoom.getMasterId();
-        // 현재 재생시각 적용
+        }
+        else{
+            // masterId 얻고 이 유저의 현재 재생 시각 get
+            Long masterId = chatRoom.getMasterId();
+            // 현재 재생시각 적용
 
-        // UserChatRoom 에 유저 등록
-        UserChatRoom.setUserChatRoom(user, chatRoom);
-        // currentMember += 1
-        chatRoom.addUser();
+
+            // UserChatRoom 에 유저 등록
+            UserChatRoom.setUserChatRoom(user, chatRoom);
+            // currentMember += 1
+            chatRoom.addUser();
+        }
     }
+
+
 
     /**
      * 유저 채팅방 퇴장
@@ -112,7 +123,8 @@ public class ChatRoomService {
                 .orElseThrow(()->new IllegalArgumentException("채팅방이 없습니다. id:"+chatRoomId));
 
 
-        UserChatRoom userChatRoom = userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId);
+        UserChatRoom userChatRoom = userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId)
+                .orElseThrow(()->new IllegalArgumentException("채팅방에 유저가 존재하지 않음 userId:"+userId));
         // 중간 테이블 삭제
         userChatRoomRepository.delete(userChatRoom);
         // User, ChatRoom 에도 삭제 적용
