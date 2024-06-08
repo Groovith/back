@@ -12,7 +12,8 @@ import lombok.NoArgsConstructor;
 @Entity
 public class Message{
 
-    @Id @GeneratedValue
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
