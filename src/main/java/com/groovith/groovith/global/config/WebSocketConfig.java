@@ -29,6 +29,5 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         config.setApplicationDestinationPrefixes("/pub");
         // 메세지 받을때 // 메세지 sub 요청 url : 유저에게 메시지 전달할 때 사용할 목적지 접두사 설정, topic - 1대다, queue - 1대1
         config.enableSimpleBroker("/sub");
-
     }
 }
