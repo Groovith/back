@@ -49,8 +49,16 @@ public class ChatRoomApiController {
     }
 
     /**
-     * 채팅방 찾기
+     * 채팅방 검색
      * */
+
+    /**
+     * 채팅방 삭제
+     */
+    @DeleteMapping("/api/chat/chatroom/{chatRoomId}")
+    public void deleteChatRoom(@PathVariable(name = "chatRoomId")Long chatRoomId){
+        chatRoomService.deleteChatRoom(chatRoomId);
+    }
 
 
     @Data
