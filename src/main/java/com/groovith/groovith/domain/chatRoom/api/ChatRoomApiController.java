@@ -25,7 +25,7 @@ public class ChatRoomApiController {
     /**
      *  채팅방 생성
      * */
-    @PostMapping("/api/chat/chatroom")
+    @PostMapping("/api/chatroom")
     public CreateChatRoomResponseDto createChatRoom(@RequestBody CreateChatRoomRequestDto request) {
         Long chatRoomId = chatRoomService.create(request);
 
@@ -35,7 +35,7 @@ public class ChatRoomApiController {
     /**
      *  채팅방 목록 조회
      * */
-    @GetMapping("/api/chat/chatroom")
+    @GetMapping("/api/chatroom")
     public Result chatRooms(){
         return new Result(chatRoomService.findAllDesc());
     }
@@ -44,7 +44,7 @@ public class ChatRoomApiController {
     /**
      * 채팅방 상세 조회
      * */
-    @GetMapping("/api/chat/chatroom/{chatRoomId}")
+    @GetMapping("/api/chatroom/{chatRoomId}")
     public ChatRoomDetailDto findChatRoomDetail(@PathVariable(name = "chatRoomId")Long chatRoomId){
         return chatRoomService.findChatRoomDetail(chatRoomId);
     }
@@ -52,7 +52,7 @@ public class ChatRoomApiController {
     /**
      * 채팅방 입장
      * */
-    @PostMapping("api/chat/chatroom/{chatRoomId}")
+    @PostMapping("api/chatroom/{chatRoomId}")
     public void enterChatRoom(@RequestBody EnterChatRoomRequestDto request){
         chatRoomService.enterChatRoom(request.getUserId(), request.getChatRoomId());
     }
@@ -61,7 +61,7 @@ public class ChatRoomApiController {
     /**
      * 채팅방 삭제
      */
-    @DeleteMapping("/api/chat/chatroom/{chatRoomId}")
+    @DeleteMapping("/api/chatroom/{chatRoomId}")
     public void deleteChatRoom(@PathVariable(name = "chatRoomId")Long chatRoomId){
         chatRoomService.deleteChatRoom(chatRoomId);
     }
