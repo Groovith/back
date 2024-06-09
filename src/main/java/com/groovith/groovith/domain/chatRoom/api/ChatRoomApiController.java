@@ -4,6 +4,7 @@ import com.groovith.groovith.domain.chatRoom.application.ChatRoomService;
 import com.groovith.groovith.domain.chatRoom.dto.ChatRoomDetailDto;
 import com.groovith.groovith.domain.chatRoom.dto.CreateChatRoomRequestDto;
 import com.groovith.groovith.domain.chatRoom.dto.CreateChatRoomResponseDto;
+import com.groovith.groovith.domain.chatRoom.dto.EnterChatRoomRequestDto;
 import com.groovith.groovith.domain.message.application.MessageService;
 import com.groovith.groovith.domain.user.application.UserService;
 import lombok.AllArgsConstructor;
@@ -49,8 +50,13 @@ public class ChatRoomApiController {
     }
 
     /**
-     * 채팅방 검색
+     * 채팅방 입장
      * */
+    @PostMapping("api/chat/chatroom/{chatRoomId}")
+    public void enterChatRoom(@RequestBody EnterChatRoomRequestDto request){
+        chatRoomService.enterChatRoom(request.getUserId(), request.getChatRoomId());
+    }
+
 
     /**
      * 채팅방 삭제
