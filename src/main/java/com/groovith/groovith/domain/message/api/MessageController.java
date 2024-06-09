@@ -40,7 +40,7 @@ public class MessageController {
     @MessageMapping("/api/chat/{chatRoomId}")
     public void send(@Payload MessageDto messageDto)
     {
-        log.info(String.format("roomid: %s, chatRoomId: %s, userId: %s", messageDto, messageDto.getChatRoomId(), messageDto.getUserId()));
+        /*log.info(String.format("roomid: %s, chatRoomId: %s, userId: %s", messageDto, messageDto.getChatRoomId(), messageDto.getUserId()));
         // 입장시
         if(messageDto.getType() == MessageType.JOIN){
            ChatRoomDetailDto detail = chatRoomService.findChatRoomDetail(messageDto.getChatRoomId());
@@ -55,7 +55,8 @@ public class MessageController {
         else if (messageDto.getType()== MessageType.CHAT) {
             messageService.save(messageDto);
             template.convertAndSend("/sub/api/chat/" + messageDto.getChatRoomId(), messageDto);
-        }
+        }*/
+        template.convertAndSend("/sub/api/chat/" + messageDto.getChatRoomId(), messageDto);
     }
 
     /**

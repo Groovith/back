@@ -2,16 +2,15 @@ package com.groovith.groovith.domain.user.api;
 
 import com.groovith.groovith.domain.user.application.UserService;
 import com.groovith.groovith.domain.user.dto.JoinDto;
+import com.groovith.groovith.domain.user.dto.UserDetailsResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api")
 public class UserController {
 
     private final UserService userService;
@@ -26,4 +25,8 @@ public class UserController {
         }
     }
 
+    @GetMapping("/user")
+    public ResponseEntity<UserDetailsResponse> getCurrentUserDetails(@RequestHeader("access") String accessToken) {
+        return userService.getCurrentUserDetails(accessToken);
+    }
 }

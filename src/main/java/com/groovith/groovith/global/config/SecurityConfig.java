@@ -86,6 +86,7 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/", "/join").permitAll()
 //                        .requestMatchers("/admin").hasRole("ADMIN") // 어드민 경로 인가 설정
                         .requestMatchers("/reissue").permitAll()
+                        .requestMatchers("/ws/**").permitAll() // 추후 웹소켓 인증 구현 필요
                         .anyRequest().authenticated());
 
         http

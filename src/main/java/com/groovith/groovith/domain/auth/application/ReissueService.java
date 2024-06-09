@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 
@@ -19,6 +20,7 @@ public class ReissueService {
     private final JwtUtil jwtUtil;
     private final RefreshRepository refreshRepository;
 
+    @Transactional
     public void handleReissue(HttpServletRequest request, HttpServletResponse response) {
         //get refresh token
         String refresh = getRefreshToken(request);
@@ -50,8 +52,8 @@ public class ReissueService {
         String role = jwtUtil.getRole(refresh);
 
         //make new JWT
-        String newAccess = jwtUtil.createJwt("access", username, role, 600000L);
-        String newRefresh = jwtUtil.createJwt("refresh", username, role, 86400000L);
+        String newAccess = jwtUtil.createJwt("access", username, role, 600000L);        // 1시간 유효
+        String newRefresh = jwtUtil.createJwt("refresh", username, role, 604800000L);   // 7일 유효
 
         //Refresh 토큰 저장 DB에 기존의 Refresh 토큰 삭제 후 새 Refresh 토큰 저장
         refreshRepository.deleteByRefresh(refresh);

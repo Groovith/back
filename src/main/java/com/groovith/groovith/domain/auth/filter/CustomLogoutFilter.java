@@ -11,6 +11,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.filter.GenericFilterBean;
 
 import java.io.IOException;
@@ -26,7 +27,8 @@ public class CustomLogoutFilter extends GenericFilterBean {
         doFilter((HttpServletRequest) request, (HttpServletResponse) response, chain);
     }
 
-    private void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+    @Transactional
+    public void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
 
         //path and method verify
         String requestUri = request.getRequestURI();

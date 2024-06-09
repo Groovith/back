@@ -1,6 +1,7 @@
 package com.groovith.groovith.domain.message.dto;
 
 import com.groovith.groovith.domain.chatRoom.domain.UserChatRoom;
+import com.groovith.groovith.domain.message.domain.CommandType;
 import com.groovith.groovith.domain.message.domain.Message;
 import com.groovith.groovith.domain.message.domain.MessageType;
 import jakarta.persistence.EnumType;
@@ -24,8 +25,15 @@ public class MessageDto {
 
     private Long userId;
 
+    private String username;
+
     @Enumerated(EnumType.STRING)
     private MessageType type;   //  CHAT, JOIN, LEAVE, PLAYER
+
+    @Enumerated(EnumType.STRING)
+    private CommandType command;
+
+    private String track;
 
     public Message toEntity(UserChatRoom userChatRoom){
         return Message.builder()
