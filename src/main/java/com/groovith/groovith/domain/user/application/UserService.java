@@ -54,6 +54,7 @@ public class UserService {
                 .orElseThrow(()->new IllegalArgumentException("유저가 존재하지 않습니다. userId:"+userId));
         UserDetailsResponse userDetailsResponse = new UserDetailsResponse(userId, user.getUsername());
 
+
         return new ResponseEntity<>(userDetailsResponse, HttpStatus.OK);
     }
 }
