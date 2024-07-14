@@ -52,8 +52,6 @@ public class UserService {
         Long userId = jwtUtil.getUserId(accessToken);
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(()->new IllegalArgumentException("유저가 존재하지 않습니다. userId:"+userId));
-
-        log.info("userId:"+userId);
         UserDetailsResponse userDetailsResponse = new UserDetailsResponse(userId, user.getUsername());
 
         return new ResponseEntity<>(userDetailsResponse, HttpStatus.OK);
