@@ -121,8 +121,6 @@ public class ChatRoomService {
                 .orElseThrow(()->new IllegalArgumentException("유저가 없습니다. id"+userId));
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new IllegalArgumentException("채팅방이 없습니다. id:"+chatRoomId));
-
-
         UserChatRoom userChatRoom = userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId)
                 .orElseThrow(()->new IllegalArgumentException("채팅방에 유저가 존재하지 않음 userId:"+userId));
         // 중간 테이블 삭제

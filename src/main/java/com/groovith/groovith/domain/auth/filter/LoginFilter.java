@@ -3,6 +3,7 @@ package com.groovith.groovith.domain.auth.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groovith.groovith.domain.auth.dao.RefreshRepository;
 import com.groovith.groovith.domain.auth.domain.RefreshEntity;
+import com.groovith.groovith.domain.auth.dto.CustomUserDetails;
 import com.groovith.groovith.domain.auth.dto.LoginDto;
 import com.groovith.groovith.global.util.JwtUtil;
 import jakarta.servlet.FilterChain;
@@ -11,7 +12,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -59,9 +59,11 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
-
         //유저 정보
-        String username = authentication.getName();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+
+        //String username = authentication.getName();
 
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
@@ -69,11 +71,11 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         String role = auth.getAuthority();
 
         //토큰 생성
-        String access = jwtUtil.createJwt("access", username, role, 600000L);
-        String refresh = jwtUtil.createJwt("refresh", username, role, 86400000L);
+        String access = jwtUtil.createJwt("access", userId, role, 600000L);
+        String refresh = jwtUtil.createJwt("refresh", userId, role, 86400000L);
 
         //Refresh 토큰 저장
-        addRefreshEntity(username, refresh, 86400000L);
+        addRefreshEntity(userId, refresh, 86400000L);
 
         //응답 설정
         response.setHeader("access", access);
@@ -87,12 +89,12 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         response.setStatus(401);
     }
 
-    private void addRefreshEntity(String username, String refresh, Long expiredMs) {
+    private void addRefreshEntity(Long userId, String refresh, Long expiredMs) {
 
         Date date = new Date(System.currentTimeMillis() + expiredMs);
 
         RefreshEntity refreshEntity = new RefreshEntity();
-        refreshEntity.setUsername(username);
+        refreshEntity.setUserId(userId);
         refreshEntity.setRefresh(refresh);
         refreshEntity.setExpiration(date.toString());
 
@@ -103,7 +105,9 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         Cookie cookie = new Cookie(key, value);
         cookie.setMaxAge(24 * 60 * 60);
+        // https 통신시
         //cookie.setSecure(true);
+        // 쿠키 범위 설정
         //cookie.setPath("/");
         cookie.setHttpOnly(true);
 

@@ -48,16 +48,17 @@ public class ReissueService {
             throw new IllegalArgumentException("invalid refresh token");
         }
 
-        String username = jwtUtil.getUsername(refresh);
+        Long userId = jwtUtil.getUserId(refresh);
+        //String username = jwtUtil.getUsername(refresh);
         String role = jwtUtil.getRole(refresh);
 
         //make new JWT
-        String newAccess = jwtUtil.createJwt("access", username, role, 600000L);        // 1시간 유효
-        String newRefresh = jwtUtil.createJwt("refresh", username, role, 604800000L);   // 7일 유효
+        String newAccess = jwtUtil.createJwt("access", userId, role, 600000L);        // 1시간 유효
+        String newRefresh = jwtUtil.createJwt("refresh", userId, role, 604800000L);   // 7일 유효
 
         //Refresh 토큰 저장 DB에 기존의 Refresh 토큰 삭제 후 새 Refresh 토큰 저장
         refreshRepository.deleteByRefresh(refresh);
-        addRefreshEntity(username, newRefresh, 86400000L);
+        addRefreshEntity(userId, newRefresh, 86400000L);
 
         //response
         response.setHeader("access", newAccess);
@@ -76,11 +77,11 @@ public class ReissueService {
         return null;
     }
 
-    private void addRefreshEntity(String username, String refresh, Long expiredMs) {
+    private void addRefreshEntity(Long userId, String refresh, Long expiredMs) {
         Date date = new Date(System.currentTimeMillis() + expiredMs);
 
         RefreshEntity refreshEntity = new RefreshEntity();
-        refreshEntity.setUsername(username);
+        refreshEntity.setUserId(userId);
         refreshEntity.setRefresh(refresh);
         refreshEntity.setExpiration(date.toString());
 
