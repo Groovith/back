@@ -25,8 +25,10 @@ public class Message{
     @Enumerated(EnumType.STRING)
     private MessageType messageType;
 
+    @Column(name = "chatRoom_id")
     private Long chatRoomId;
 
+    @Column(name = "user_id")
     private Long userId;
 
     @Builder
