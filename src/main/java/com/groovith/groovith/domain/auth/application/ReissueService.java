@@ -39,13 +39,13 @@ public class ReissueService {
         // 토큰이 refresh인지 확인 (발급시 페이로드에 명시)
         String category = jwtUtil.getCategory(refresh);
         if (!category.equals("refresh")) {
-            throw new IllegalArgumentException("invalid refresh token");
+            throw new IllegalArgumentException("category is not refresh token");
         }
 
         //DB에 저장되어 있는지 확인
         Boolean isExist = refreshRepository.existsByRefresh(refresh);
         if (!isExist) {
-            throw new IllegalArgumentException("invalid refresh token");
+            throw new IllegalArgumentException("refresh Token doesn't exist");
         }
 
         String username = jwtUtil.getUsername(refresh);
