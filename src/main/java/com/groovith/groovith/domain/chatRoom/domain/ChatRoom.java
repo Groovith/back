@@ -32,6 +32,7 @@ public class ChatRoom {
     private String imageUrl;
 
     // 현재 방에 있는 사람 수
+    @Column(name = "current_member")
     private int currentMember;
 
     @Enumerated(EnumType.STRING)
@@ -74,5 +75,3 @@ public class ChatRoom {
     }
 
 }
-
-

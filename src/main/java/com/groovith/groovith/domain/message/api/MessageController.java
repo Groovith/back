@@ -12,11 +12,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -45,7 +47,6 @@ public class MessageController {
         if(messageDto.getType() == MessageType.JOIN){
            ChatRoomDetailDto detail = chatRoomService.findChatRoomDetail(messageDto.getChatRoomId());
            // 입장시 추가 로직 필요 + 예외처리 필요
-            chatRoomService.enterChatRoom(messageDto.getUserId(), messageDto.getChatRoomId());
         }
 //        // 퇴장시
 //        else if (messageDto.getType() == MessageType.LEAVE) {
@@ -53,6 +54,7 @@ public class MessageController {
 //        }
         //채팅시
         else if (messageDto.getType()== MessageType.CHAT) {
+            log.info("Message sent to /sub/api/chat/" + messageDto.getChatRoomId());
             messageService.save(messageDto);
             template.convertAndSend("/sub/api/chat/" + messageDto.getChatRoomId(), messageDto);
         }*/
@@ -66,6 +68,10 @@ public class MessageController {
     public Result messages(@PathVariable(name = "chatRoomId")Long chatRoomId ){
         return new Result(messageService.findAllDesc(chatRoomId));
     }
+
+
+
+
 
     @Data
     @AllArgsConstructor
