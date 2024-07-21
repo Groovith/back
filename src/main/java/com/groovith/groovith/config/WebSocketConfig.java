@@ -1,7 +1,5 @@
 package com.groovith.groovith.config;
 
-import com.groovith.groovith.global.handler.StompExceptionHandler;
-import com.groovith.groovith.global.handler.StompHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;

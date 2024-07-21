@@ -1,14 +1,9 @@
-package com.groovith.groovith.global.handler;
+package com.groovith.groovith.config;
 
-import com.groovith.groovith.global.exception.UnauthorizedException;
-import lombok.RequiredArgsConstructor;
+import com.groovith.groovith.exception.UnauthorizedException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.StreamingHttpOutputMessage;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageDeliveryException;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.MessageBuilder;
@@ -39,7 +34,6 @@ public class StompExceptionHandler extends StompSubProtocolErrorHandler {
             stompHeaderAccessor.setMessage(ex.getMessage());
             stompHeaderAccessor.setHeader("HttpStatus", 401);
             byte[] errorPayload = ex.getMessage().getBytes();
-            log.info("stompHeader: " + stompHeaderAccessor);
             return MessageBuilder.createMessage(errorPayload, stompHeaderAccessor.getMessageHeaders());
         }
 

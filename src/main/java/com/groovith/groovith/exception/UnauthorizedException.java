@@ -1,4 +1,4 @@
-package com.groovith.groovith.global.exception;
+package com.groovith.groovith.exception;
 
 import org.springframework.web.client.HttpClientErrorException;
 

@@ -1,8 +1,6 @@
-package com.groovith.groovith.global.handler;
+package com.groovith.groovith.config;
 
-import com.groovith.groovith.global.exception.UnauthorizedException;
-import com.groovith.groovith.global.util.JwtUtil;
-import io.jsonwebtoken.MalformedJwtException;
+import com.groovith.groovith.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;

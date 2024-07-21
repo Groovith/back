@@ -1,6 +1,6 @@
-package com.groovith.groovith.global.util;
+package com.groovith.groovith.security;
 
-import com.groovith.groovith.global.exception.UnauthorizedException;
+import com.groovith.groovith.exception.UnauthorizedException;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
