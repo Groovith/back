@@ -46,9 +46,9 @@ public class JwtUtil {
 
     public void validateToken(String token, String userId){
         if (token == null){
-            throw new UnauthorizedException("헤더에 Authorization가 존재하지않습니다.");
+            throw new UnauthorizedException("헤더에 access 가 존재하지않습니다.");
         } else if ( token.isEmpty()) {
-            throw new UnauthorizedException("헤더에 Authorization에 값이 존재하지않습니다.");
+            throw new UnauthorizedException("헤더의 access 에 값이 존재하지않습니다.");
         }
         // 토큰 유효성 검증
         try{
