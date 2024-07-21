@@ -2,7 +2,7 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.repository.RefreshRepository;
 import com.groovith.groovith.repository.UserRepository;
-import com.groovith.groovith.domain.UserEntity;
+import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.JoinDto;
 import com.groovith.groovith.dto.UserDetailsResponse;
 import com.groovith.groovith.security.JwtUtil;
@@ -33,11 +33,11 @@ public class UserService {
             throw new IllegalArgumentException("User with given username already exists");
         }
 
-        UserEntity data = new UserEntity();
+        User data = new User();
 
         data.setUsername(username);
         data.setPassword(bCryptPasswordEncoder.encode(password));
-        data.setRole("ROLE_ADMIN");
+        // data.setRole("ROLE_USER"); 롤은 현재 사용하지 않음
 
         userRepository.save(data);
     }
@@ -50,7 +50,7 @@ public class UserService {
 //            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 //        }
         Long userId = jwtUtil.getUserId(accessToken);
-        UserEntity user = userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(()->new IllegalArgumentException("유저가 존재하지 않습니다. userId:"+userId));
         UserDetailsResponse userDetailsResponse = new UserDetailsResponse(userId, user.getUsername());
 

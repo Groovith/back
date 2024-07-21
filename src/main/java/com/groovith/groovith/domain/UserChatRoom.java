@@ -20,7 +20,7 @@ public class UserChatRoom{
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id")
-    private UserEntity user;
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="chatRoom_id")
@@ -31,7 +31,7 @@ public class UserChatRoom{
 
     // 빌더패턴 + 양방향
     @Builder
-    public UserChatRoom(UserEntity user, ChatRoom chatRoom){
+    public UserChatRoom(User user, ChatRoom chatRoom){
         this.user = user;
         this.chatRoom = chatRoom;
     }
@@ -39,7 +39,7 @@ public class UserChatRoom{
     /** 연관관계 편의 매서드 - UserChatRoom 에서 User, ChatRoom 양쪽 관리 **/
 
 
-    public static UserChatRoom setUserChatRoom(UserEntity user, ChatRoom chatRoom){
+    public static UserChatRoom setUserChatRoom(User user, ChatRoom chatRoom){
         UserChatRoom userChatRoom = UserChatRoom.builder()
                 .user(user)
                 .chatRoom(chatRoom)
@@ -49,7 +49,7 @@ public class UserChatRoom{
         return userChatRoom;
     }
 
-    public static void deleteUserChatRoom(UserChatRoom userChatRoom, UserEntity user, ChatRoom chatRoom){
+    public static void deleteUserChatRoom(UserChatRoom userChatRoom, User user, ChatRoom chatRoom){
         user.getUserChatRoom().remove(userChatRoom);
         chatRoom.getUserChatRooms().remove(userChatRoom);
     }

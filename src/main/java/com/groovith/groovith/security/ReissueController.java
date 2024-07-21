@@ -1,6 +1,6 @@
-package com.groovith.groovith.controller;
+package com.groovith.groovith.security;
 
-import com.groovith.groovith.service.ReissueService;
+import com.groovith.groovith.security.ReissueService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

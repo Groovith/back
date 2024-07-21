@@ -1,10 +1,10 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.repository.FollowRepository;
-import com.groovith.groovith.domain.FollowEntity;
+import com.groovith.groovith.domain.Follow;
 import com.groovith.groovith.dto.FollowResponse;
 import com.groovith.groovith.repository.UserRepository;
-import com.groovith.groovith.domain.UserEntity;
+import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.UserDetailsResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,16 +22,16 @@ public class FollowService {
     private final UserRepository userRepository;
 
     public FollowResponse getFollowing(String username) {
-        UserEntity userEntity = userRepository.findByUsername(username).orElse(null);
-        if (userEntity == null) {
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) {
             return null; // 예외 추가 필요
         }
 
         List<UserDetailsResponse> followingList = new ArrayList<>();
 
-        for(FollowEntity followEntity : userEntity.getFollowing()) {
+        for(Follow follow : user.getFollowing()) {
             UserDetailsResponse response = new UserDetailsResponse();
-            response.setUsername(followEntity.getFollowing().getUsername());
+            response.setUsername(follow.getFollowing().getUsername());
             followingList.add(response);
         }
 
@@ -39,16 +39,16 @@ public class FollowService {
     }
 
     public FollowResponse getFollowers(String username) {
-        UserEntity userEntity = userRepository.findByUsername(username).orElse(null);
-        if (userEntity == null) {
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) {
             return null; // 예외 추가 필요
         }
 
         List<UserDetailsResponse> followerList = new ArrayList<>();
 
-        for(FollowEntity followEntity : userEntity.getFollowers()) {
+        for(Follow follow : user.getFollowers()) {
             UserDetailsResponse response = new UserDetailsResponse();
-            response.setUsername(followEntity.getFollowing().getUsername());
+            response.setUsername(follow.getFollowing().getUsername());
             followerList.add(response);
         }
 
@@ -56,8 +56,8 @@ public class FollowService {
     }
 
     public ResponseEntity<?> follow(String followerUsername, String followingUsername) {
-        UserEntity follower = userRepository.findByUsername(followerUsername).orElse(null);
-        UserEntity following = userRepository.findByUsername(followingUsername).orElse(null);
+        User follower = userRepository.findByUsername(followerUsername).orElse(null);
+        User following = userRepository.findByUsername(followingUsername).orElse(null);
 
         if (follower == null) {
             throw new IllegalArgumentException("Follower doesn't exist"); // 팔로워 없음 예외 발생
@@ -75,7 +75,7 @@ public class FollowService {
             throw new IllegalArgumentException("Already following");
         }
 
-        FollowEntity follow = new FollowEntity();
+        Follow follow = new Follow();
         follow.setFollowing(following);
         follow.setFollower(follower);
         followRepository.save(follow);
@@ -85,8 +85,8 @@ public class FollowService {
 
     @Transactional
     public ResponseEntity<?> unfollow(String followerUsername, String followingUsername) {
-        UserEntity follower = userRepository.findByUsername(followerUsername).orElse(null);
-        UserEntity following = userRepository.findByUsername(followingUsername).orElse(null);
+        User follower = userRepository.findByUsername(followerUsername).orElse(null);
+        User following = userRepository.findByUsername(followingUsername).orElse(null);
 
         if (follower == null) {
             throw new IllegalArgumentException("Follower doesn't exist"); // 팔로워 없음 예외 발생

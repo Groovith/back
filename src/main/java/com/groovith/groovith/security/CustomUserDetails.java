@@ -1,6 +1,6 @@
-package com.groovith.groovith.dto;
+package com.groovith.groovith.security;
 
-import com.groovith.groovith.domain.UserEntity;
+import com.groovith.groovith.domain.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -9,10 +9,10 @@ import java.util.Collection;
 
 public class CustomUserDetails  implements UserDetails {
 
-    private final UserEntity userEntity;
+    private final User user;
 
-    public CustomUserDetails(UserEntity userEntity) {
-        this.userEntity = userEntity;
+    public CustomUserDetails(User user) {
+        this.user = user;
     }
 
 
@@ -26,7 +26,7 @@ public class CustomUserDetails  implements UserDetails {
             @Override
             public String getAuthority() {
 
-                return userEntity.getRole();
+                return user.getRole();
             }
         });
 
@@ -36,16 +36,16 @@ public class CustomUserDetails  implements UserDetails {
     @Override
     public String getPassword() {
 
-        return userEntity.getPassword();
+        return user.getPassword();
     }
 
     public Long getUserId(){
-        return userEntity.getId();
+        return user.getId();
     }
 
     @Override
     public String getUsername() {
-        return userEntity.getUsername();
+        return user.getUsername();
     }
 
 

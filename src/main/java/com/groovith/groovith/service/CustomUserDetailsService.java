@@ -1,8 +1,8 @@
 package com.groovith.groovith.service;
 
-import com.groovith.groovith.dto.CustomUserDetails;
+import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.repository.UserRepository;
-import com.groovith.groovith.domain.UserEntity;
+import com.groovith.groovith.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -17,7 +17,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        UserEntity userData = userRepository.findByUsername(username).orElse(null);
+        User userData = userRepository.findByUsername(username).orElse(null);
 
         if (userData != null) {
             return new CustomUserDetails(userData);

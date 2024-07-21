@@ -14,18 +14,18 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class FollowEntity {
+public class Follow {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
     @JoinColumn(name = "follower_id")
-    private UserEntity follower;
+    private User follower;
 
     @ManyToOne
     @JoinColumn(name = "following_id")
-    private UserEntity following;
+    private User following;
 
     @CreationTimestamp
     private LocalDateTime followedAt;

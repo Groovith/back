@@ -1,7 +1,5 @@
 package com.groovith.groovith.domain;
 
-import com.groovith.groovith.domain.UserChatRoom;
-import com.groovith.groovith.domain.FollowEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,9 +10,10 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
+@Table(name="user")
 @Setter
 @Getter
-public class UserEntity {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,10 +23,10 @@ public class UserEntity {
     private String role;
 
     @OneToMany(mappedBy = "follower")
-    private Set<FollowEntity> following = new HashSet<>();
+    private Set<Follow> following = new HashSet<>();
 
     @OneToMany(mappedBy = "following")
-    private Set<FollowEntity> followers = new HashSet<>();
+    private Set<Follow> followers = new HashSet<>();
 
     @OneToMany(mappedBy = "user")
     private List<UserChatRoom> userChatRoom = new ArrayList<>();
