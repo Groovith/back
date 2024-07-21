@@ -56,8 +56,9 @@ public class SecurityConfig {
 
                         CorsConfiguration configuration = new CorsConfiguration();
 
-                        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:3000"));
-                        //configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "https://apic.app"));
+                        //configuration.setAllowedOrigins(Collections.singletonList("http://localhost:3000"));
+                        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:5173"));
+                        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "https://apic.app"));
                         configuration.setAllowedMethods(Collections.singletonList("*"));
                         configuration.setAllowCredentials(true);
                         configuration.setAllowedHeaders(Collections.singletonList("*"));
@@ -85,7 +86,7 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/login", "/", "/join").permitAll()
+                        .requestMatchers("/login", "/", "/api/join").permitAll()
 //                        .requestMatchers("/admin").hasRole("ADMIN") // 어드민 경로 인가 설정
                         .requestMatchers("/reissue").permitAll()
                         .requestMatchers("/ws/**").permitAll() // 추후 웹소켓 인증 구현 필요
