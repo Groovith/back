@@ -2,15 +2,13 @@ package com.groovith.groovith.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groovith.groovith.repository.RefreshRepository;
-import com.groovith.groovith.domain.RefreshEntity;
-import com.groovith.groovith.dto.CustomUserDetails;
+import com.groovith.groovith.domain.Refresh;
 import com.groovith.groovith.dto.LoginDto;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -81,7 +79,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         String refresh = jwtUtil.createJwt("refresh", userId, role, 86400000L);
 
         //Refresh 토큰 저장
-        addRefreshEntity(userId, refresh, 86400000L);
+        addRefresh(userId, refresh, 86400000L);
 
         //응답 설정
         response.setHeader("access", access);
@@ -95,11 +93,11 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         response.setStatus(401);
     }
 
-    private void addRefreshEntity(Long userId, String refresh, Long expiredMs) {
+    private void addRefresh(Long userId, String refresh, Long expiredMs) {
 
         Date date = new Date(System.currentTimeMillis() + expiredMs);
 
-        RefreshEntity refreshEntity = new RefreshEntity();
+        Refresh refreshEntity = new Refresh();
         refreshEntity.setUserId(userId);
         refreshEntity.setRefresh(refresh);
         refreshEntity.setExpiration(date.toString());

@@ -1,7 +1,6 @@
 package com.groovith.groovith.security;
 
-import com.groovith.groovith.dto.CustomUserDetails;
-import com.groovith.groovith.domain.UserEntity;
+import com.groovith.groovith.domain.User;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -67,10 +66,10 @@ public class JwtFilter extends OncePerRequestFilter {
         String username = jwtUtil.getUsername(accessToken);
         String role = jwtUtil.getRole(accessToken);
 
-        UserEntity userEntity = new UserEntity();
-        userEntity.setUsername(username);
-        userEntity.setRole(role);
-        CustomUserDetails customUserDetails = new CustomUserDetails(userEntity);
+        User user = new User();
+        user.setUsername(username);
+        user.setRole(role);
+        CustomUserDetails customUserDetails = new CustomUserDetails(user);
 
         Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authToken);

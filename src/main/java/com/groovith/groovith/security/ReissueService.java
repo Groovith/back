@@ -1,7 +1,7 @@
-package com.groovith.groovith.service;
+package com.groovith.groovith.security;
 
 import com.groovith.groovith.repository.RefreshRepository;
-import com.groovith.groovith.domain.RefreshEntity;
+import com.groovith.groovith.domain.Refresh;
 import com.groovith.groovith.security.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
@@ -58,7 +58,7 @@ public class ReissueService {
 
         //Refresh 토큰 저장 DB에 기존의 Refresh 토큰 삭제 후 새 Refresh 토큰 저장
         refreshRepository.deleteByRefresh(refresh);
-        addRefreshEntity(userId, newRefresh, 86400000L);
+        addRefresh(userId, newRefresh, 86400000L);
 
         //response
         response.setHeader("access", newAccess);
@@ -77,15 +77,15 @@ public class ReissueService {
         return null;
     }
 
-    private void addRefreshEntity(Long userId, String refresh, Long expiredMs) {
+    private void addRefresh(Long userId, String refresh, Long expiredMs) {
         Date date = new Date(System.currentTimeMillis() + expiredMs);
 
-        RefreshEntity refreshEntity = new RefreshEntity();
-        refreshEntity.setUserId(userId);
-        refreshEntity.setRefresh(refresh);
-        refreshEntity.setExpiration(date.toString());
+        Refresh newRefresh = new Refresh();
+        newRefresh.setUserId(userId);
+        newRefresh.setRefresh(refresh);
+        newRefresh.setExpiration(date.toString());
 
-        refreshRepository.save(refreshEntity);
+        refreshRepository.save(newRefresh);
     }
 
     private Cookie createCookie(String key, String value) {

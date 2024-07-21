@@ -7,7 +7,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-public class RefreshEntity {
+public class Refresh {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -9,7 +9,7 @@ import com.groovith.groovith.dto.ChatRoomDetailDto;
 import com.groovith.groovith.dto.ChatRoomListResponseDto;
 import com.groovith.groovith.dto.CreateChatRoomRequestDto;
 import com.groovith.groovith.repository.UserRepository;
-import com.groovith.groovith.domain.UserEntity;
+import com.groovith.groovith.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,7 +37,7 @@ public class ChatRoomService {
 
         // 채팅방 생성유저
         Long userId = request.getUserId();
-        UserEntity user = userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(()->new IllegalArgumentException("유저가 존재하지 않습니다. id=" + userId));
         UserChatRoom.setUserChatRoom(user, chatRoom);
 
@@ -88,7 +88,7 @@ public class ChatRoomService {
      * */
     public void enterChatRoom(Long userId, Long chatRoomId){
         // 유저, 채팅방 조회
-        UserEntity user = userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(()->new IllegalArgumentException("유저가 없습니다. id"+userId));
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new IllegalArgumentException("채팅방이 없습니다. id:"+chatRoomId));
@@ -117,7 +117,7 @@ public class ChatRoomService {
      * 유저 채팅방 퇴장
      * */
     public void leaveChatRoom(Long userId, Long chatRoomId){
-        UserEntity user = userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(()->new IllegalArgumentException("유저가 없습니다. id"+userId));
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new IllegalArgumentException("채팅방이 없습니다. id:"+chatRoomId));
