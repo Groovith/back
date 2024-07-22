@@ -57,7 +57,7 @@ public class SecurityConfig {
 
                         configuration.setAllowedOrigins(Collections.singletonList("http://localhost:3000"));
                         configuration.setAllowedOrigins(Collections.singletonList("http://localhost:5173"));
-                        //configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "https://apic.app"));
+                        configuration.setAllowedOrigins(Collections.singletonList("https://apic.app"));
                         configuration.setAllowedMethods(Collections.singletonList("*"));
                         configuration.setAllowCredentials(true);
                         configuration.setAllowedHeaders(Collections.singletonList("*"));

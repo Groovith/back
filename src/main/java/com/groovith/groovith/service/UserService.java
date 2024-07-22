@@ -37,7 +37,7 @@ public class UserService {
 
         data.setUsername(username);
         data.setPassword(bCryptPasswordEncoder.encode(password));
-        // data.setRole("ROLE_USER"); 롤은 현재 사용하지 않음
+        data.setRole("ROLE_USER"); //롤은 현재 사용하지 않음
 
         userRepository.save(data);
     }
