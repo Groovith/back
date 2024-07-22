@@ -1,5 +1,7 @@
 package com.groovith.groovith.controller;
 
+import com.groovith.groovith.domain.User;
+import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.service.UserService;
 import com.groovith.groovith.dto.JoinDto;
 import com.groovith.groovith.dto.UserDetailsResponse;
@@ -25,8 +27,19 @@ public class UserController {
         }
     }
 
+    /**
+     * 현재 User 의 정보를 반환하는 API.
+     * @param accessToken 서버 Access Token.
+     * @return 성공 시 200(Ok) + UserDetailsResponse | 유저가 존재하지 않는 경우 404(Not Found) + message
+     */
     @GetMapping("/user")
-    public ResponseEntity<UserDetailsResponse> getCurrentUserDetails(@RequestHeader("access") String accessToken) {
-        return userService.getCurrentUserDetails(accessToken);
+    public ResponseEntity<?> getCurrentUserDetails(@RequestHeader("access") String accessToken) {
+        try {
+            User user = userService.getUser(accessToken);
+            UserDetailsResponse response = new UserDetailsResponse(user.getId(), user.getUsername());
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (UserNotFoundException e) {
+            return new ResponseEntity<>("User Not Found", HttpStatus.NOT_FOUND);
+        }
     }
 }

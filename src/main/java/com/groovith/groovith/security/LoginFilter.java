@@ -28,7 +28,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
-    private RefreshRepository refreshRepository;
+    private final RefreshRepository refreshRepository;
 
     public LoginFilter(AuthenticationManager authenticationManager, JwtUtil jwtUtil, RefreshRepository refreshRepository) {
         this.authenticationManager = authenticationManager;
@@ -75,8 +75,8 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         String role = auth.getAuthority();
 
         //토큰 생성
-        String access = jwtUtil.createJwt("access", userId, role, 600000L);
-        String refresh = jwtUtil.createJwt("refresh", userId, role, 86400000L);
+        String access = jwtUtil.createJwt("access", userId, role, 86400000L);
+        String refresh = jwtUtil.createJwt("refresh", userId, role, 604800000L);
 
         //Refresh 토큰 저장
         addRefresh(userId, refresh, 86400000L);
