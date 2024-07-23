@@ -44,6 +44,24 @@ class UserRepositoryTest {
     }
 
     @Test
+    public void existsByUsername() throws Exception{
+        //given
+        String username = "user";
+        String username1 = "ksy";
+        String password = "1234";
+
+        User data = createUser(username, password);
+        userRepository.save(data);
+        //when
+        Boolean exist = userRepository.existsByUsername(username);
+        Boolean notExist = userRepository.existsByUsername(username1);
+
+        //then
+        Assertions.assertThat(exist).isEqualTo(true);
+        Assertions.assertThat(notExist).isEqualTo(false);
+    }
+
+    @Test
     public void findByUsername(){
         //given
         String username = "user";
@@ -56,6 +74,7 @@ class UserRepositoryTest {
         //then
         Assertions.assertThat(findUser).isEqualTo(user);
     }
+
 
 
 
