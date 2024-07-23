@@ -126,7 +126,7 @@ public class StreamingController {
                     return new ResponseEntity<>("연결된 서비스가 없습니다.", HttpStatus.BAD_REQUEST);
                 }
                 case SPOTIFY -> {
-                    String response = spotifyService.searchTrack(user.getSpotifyAccessToken(), query);
+                    String response = spotifyService.searchTrack(user, query);
                     return new ResponseEntity<>(response, HttpStatus.OK);
                 }
             }
