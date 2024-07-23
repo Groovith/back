@@ -2,6 +2,7 @@ package com.groovith.groovith.repository;
 
 import com.groovith.groovith.domain.*;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -15,10 +16,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
+@Transactional
 class UserRepositoryTest {
 
     @Autowired
@@ -34,6 +40,7 @@ class UserRepositoryTest {
 
         //when
         User user = userRepository.save(data);
+        System.out.println("id"+user.getId());
 
         //then
         Assertions.assertThat(user.getUsername()).isEqualTo(username);
@@ -76,6 +83,17 @@ class UserRepositoryTest {
     }
 
 
+    @Test
+    public void findById(){
+        //given
+        User data = createUser("user", "1234");
+        User user = userRepository.save(data);
+        //when
+        User findUser = userRepository.findById(user.getId())
+                .orElseThrow(()->new IllegalArgumentException("유저가없습니다 user_id:"+user.getId()));
+        //then
+        Assertions.assertThat(findUser).isEqualTo(user);
+    }
 
 
     public User createUser(String username, String password){
