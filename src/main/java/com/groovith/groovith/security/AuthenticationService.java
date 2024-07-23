@@ -2,7 +2,6 @@ package com.groovith.groovith.security;
 
 import com.groovith.groovith.repository.RefreshRepository;
 import com.groovith.groovith.domain.Refresh;
-import com.groovith.groovith.security.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,7 +14,7 @@ import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
-public class ReissueService {
+public class AuthenticationService {
 
     private final JwtUtil jwtUtil;
     private final RefreshRepository refreshRepository;

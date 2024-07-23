@@ -47,6 +47,7 @@ public class UserService {
 
     /**
      * Access Token 을 사용해 User 객체 반환
+     *
      * @param accessToken 서버 Access Token
      * @return 찾은 User 객체 | User 가 DB에 없으면 UserNotFoundException 발생
      */
@@ -55,13 +56,14 @@ public class UserService {
         Long userId = jwtUtil.getUserId(accessToken);
 
         return userRepository.findById(userId)
-                .orElseThrow(()-> new UserNotFoundException(userId));
+                .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
     /**
      * Spotify 인증 후 발급 받은 토큰 저장
-     * @param id User ID
-     * @param accessToken Spotify Access Token
+     *
+     * @param id           User ID
+     * @param accessToken  Spotify Access Token
      * @param refreshToken Spotify Refresh Token
      */
     public void saveSpotifyTokens(Long id, String accessToken, String refreshToken) {
@@ -74,6 +76,7 @@ public class UserService {
 
     /**
      * Spotify 토큰 삭제 및 연결 해제
+     *
      * @param id User Id
      */
     public void removeSpotifyTokens(Long id) {

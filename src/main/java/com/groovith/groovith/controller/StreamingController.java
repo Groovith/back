@@ -43,7 +43,7 @@ public class StreamingController {
      * Spotify Access Token 과 Refresh 토큰을 User 테이블에 저장하여 관리.
      * User 의 Streaming 서비스를 SPOTIFY 로 설정.
      *
-     * @param code callback url parameter 에서 제공받는 값.
+     * @param requestDto callback url parameter 에서 제공받는 값.
      * @return 성공 시 200(Ok) | code 가 없거나 유효하지 않은 경우 400(Bad Request) | 토큰 요청 시도 중 오류 발생 시 500
      */
     @PostMapping("/spotify")

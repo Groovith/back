@@ -96,7 +96,7 @@ public class SpotifyService {
         body.add("refresh_token", user.getSpotifyRefreshToken());
         body.add("client_id", clientId);
 
-        HttpEntity<MultiValueMap<String,String>> request = new HttpEntity<>(body, headers);
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
         ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
 
         String accessToken = (String) Objects.requireNonNull(response.getBody()).get("access_token");
@@ -111,13 +111,13 @@ public class SpotifyService {
      * Spotify 공통 요청 처리 메서드.
      * Access 토큰 만료 시 자동으로 토큰 갱신 요청 후, 기존 요청 다시 시도.
      *
-     * @param url 요청할 Spotify API URL
-     * @param method HTTP 메서드 (GET, POST 등)
-     * @param request 요청 HttpEntity (헤더와 바디 포함)
+     * @param url          요청할 Spotify API URL
+     * @param method       HTTP 메서드 (GET, POST 등)
+     * @param request      요청 HttpEntity (헤더와 바디 포함)
      * @param responseType 응답 타입
-     * @param user 요청을 보낼 사용자
+     * @param user         요청을 보낼 사용자
+     * @param <T>          반환 타입 (String, Map 등)
      * @return 응답 엔티티
-     * @param <T> 반환 타입 (String, Map 등)
      */
     private <T> ResponseEntity<T> executeSpotifyRequest(String url, HttpMethod method, HttpEntity<?> request, Class<T> responseType, User user) {
         RestTemplate restTemplate = new RestTemplate();
@@ -148,7 +148,7 @@ public class SpotifyService {
     /**
      * 트랙 검색
      *
-     * @param user 요청한 User Entity
+     * @param user  요청한 User Entity
      * @param query 검색 쿼리
      * @return 검색 결과
      */
