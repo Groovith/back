@@ -5,7 +5,6 @@ import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.JoinDto;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.security.JwtUtil;
-import org.aspectj.lang.annotation.Before;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,7 +15,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -56,7 +54,7 @@ class UserServiceTest {
                         data.getPassword().equals(encodedPassword) &&
                         data.getRole().equals("ROLE_USER") &&
                         data.getStreaming() == StreamingType.NONE
-        ));;
+        ));
     }
 
     @Test
