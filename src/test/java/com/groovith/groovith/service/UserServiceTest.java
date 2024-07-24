@@ -43,10 +43,11 @@ class UserServiceTest {
         // userRepository.save()가 리턴할 유저
         String encodedPassword = "encodedPassword";
 
+
+        //when
         when(userRepository.existsByUsername(username)).thenReturn(false);
         when(bCryptPasswordEncoder.encode(password)).thenReturn(encodedPassword);
 
-        //when
         userService.join(joinDto);
 
         //then
