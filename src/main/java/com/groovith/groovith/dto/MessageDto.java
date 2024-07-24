@@ -15,8 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
  * 통신에 사용할 메세지
  * */
 @Data
-@Transactional
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MessageDto {
 
     private String content;
@@ -42,14 +40,5 @@ public class MessageDto {
                 .userChatRoom(userChatRoom)
                 .build();
     }
-//
-//    @Builder
-//    public Message(String content, UserChatRoom userChatRoom, MessageType messageType){
-//        this.content = content;
-//        this.userChatRoom = userChatRoom;
-//        this.messageType = messageType;
-//        userChatRoom.getMessages().add(this);
-//    }
-//
 
 }
