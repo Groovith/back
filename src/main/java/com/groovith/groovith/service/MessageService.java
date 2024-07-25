@@ -1,6 +1,7 @@
 package com.groovith.groovith.service;
 
 
+import com.groovith.groovith.domain.Message;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.UserChatRoomRepository;
 import com.groovith.groovith.domain.UserChatRoom;
@@ -28,13 +29,13 @@ public class MessageService {
     private final ChatRoomRepository chatRoomRepository;
     private final UserChatRoomRepository userChatRoomRepository;
 
-    public Long save(MessageDto messageDto){
+    public Message save(MessageDto messageDto){
 
         UserChatRoom userChatRoom = userChatRoomRepository
                 .findByUserIdAndChatRoomId(messageDto.getUserId(), messageDto.getChatRoomId())
                 .orElseThrow(()->new IllegalArgumentException(
                         "채팅방에 유저가 존재하지 않음 userId"+messageDto.getUserId()+" chatroomId:"+messageDto.getChatRoomId()));
-        return messageRepository.save(messageDto.toEntity(userChatRoom)).getId();
+        return messageRepository.save(messageDto.toEntity(userChatRoom));
     }
 
     /**
