@@ -25,10 +25,8 @@ public class MessageDto {
 
     private String username;
 
-    @Enumerated(EnumType.STRING)
     private MessageType type;   //  CHAT, JOIN, LEAVE, PLAYER
 
-    @Enumerated(EnumType.STRING)
     private CommandType command;
 
     private String track;
@@ -40,5 +38,14 @@ public class MessageDto {
                 .userChatRoom(userChatRoom)
                 .build();
     }
+//
+//    @Builder
+//    public Message(String content, UserChatRoom userChatRoom, MessageType messageType){
+//        this.content = content;
+//        this.userChatRoom = userChatRoom;
+//        this.messageType = messageType;
+//        userChatRoom.getMessages().add(this);
+//    }
+//
 
 }
