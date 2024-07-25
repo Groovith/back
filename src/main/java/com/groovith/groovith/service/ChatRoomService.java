@@ -1,6 +1,8 @@
 package com.groovith.groovith.service;
 
 
+import com.groovith.groovith.exception.ChatRoomNotFoundException;
+import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.UserChatRoomRepository;
 import com.groovith.groovith.domain.ChatRoom;
@@ -31,18 +33,18 @@ public class ChatRoomService {
     /**
      * 채팅방 생성
      * */
-    public Long create(CreateChatRoomRequestDto request){
+    public ChatRoom create(CreateChatRoomRequestDto request){
         // 생성 실패해도 id 늘어남
         ChatRoom chatRoom = chatRoomRepository.save(request.toEntity());
 
         // 채팅방 생성유저
         Long userId = request.getUserId();
         User user = userRepository.findById(userId)
-                .orElseThrow(()->new IllegalArgumentException("유저가 존재하지 않습니다. id=" + userId));
+                .orElseThrow(()->new UserNotFoundException(userId));
+
+        // 유저 - 채팅방 연관관계 생성
         UserChatRoom.setUserChatRoom(user, chatRoom);
-
-
-        return chatRoom.getId();
+        return chatRoom;
     }
 
     /**
@@ -55,14 +57,6 @@ public class ChatRoomService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 채팅방 조회(테스트용)
-     * */
-    @Transactional(readOnly = true)
-    public ChatRoom findById(Long chatRoomId){
-        return chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()->new IllegalArgumentException("채팅방이 없음 id:"+chatRoomId));
-    }
 
     /**
      * 채팅방 상세 조회
@@ -70,13 +64,13 @@ public class ChatRoomService {
     @Transactional(readOnly = true)
     public ChatRoomDetailDto findChatRoomDetail(Long chatRoomId){
         ChatRoom findChatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()->new IllegalArgumentException("채팅방이 없음 id:"+chatRoomId));
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
 
         return new ChatRoomDetailDto(findChatRoom);
     }
 
     /**
-     *  유저 채팅방 삭제
+     *  채팅방 삭제
      * */
     public void deleteChatRoom(Long chatRoomId){
         chatRoomRepository.deleteById(chatRoomId);
@@ -84,19 +78,18 @@ public class ChatRoomService {
 
 
     /**
-     * 유저 채팅방 입장
+     * 채팅방 입장
      * */
     public void enterChatRoom(Long userId, Long chatRoomId){
         // 유저, 채팅방 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(()->new IllegalArgumentException("유저가 없습니다. id"+userId));
+                .orElseThrow(()->new UserNotFoundException(userId));
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()->new IllegalArgumentException("채팅방이 없습니다. id:"+chatRoomId));
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
         // 유저가 이미 채팅방에 있는지 확인
         //있을경우
         if (userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId).isPresent()){
             throw new IllegalArgumentException("채팅방에 이미 유저가 있습니다 userId:"+userId);
-
         }
         else{
             // masterId 얻고 이 유저의 현재 재생 시각 get
@@ -114,18 +107,23 @@ public class ChatRoomService {
 
 
     /**
-     * 유저 채팅방 퇴장
+     *  채팅방 퇴장
      * */
-    public void leaveChatRoom(Long userId, Long chatRoomId){
+    public void leaveChatRoom(Long userId, Long chatRoomId) {
+
         User user = userRepository.findById(userId)
-                .orElseThrow(()->new IllegalArgumentException("유저가 없습니다. id"+userId));
+                .orElseThrow(()->new UserNotFoundException(userId));
+
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()->new IllegalArgumentException("채팅방이 없습니다. id:"+chatRoomId));
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+
         UserChatRoom userChatRoom = userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId)
                 .orElseThrow(()->new IllegalArgumentException("채팅방에 유저가 존재하지 않음 userId:"+userId));
+
         // 중간 테이블 삭제
         userChatRoomRepository.delete(userChatRoom);
-        // User, ChatRoom 에도 삭제 적용
+
+        // User, ChatRoom의 연관관계 삭제
         UserChatRoom.deleteUserChatRoom(userChatRoom, user, chatRoom);
         // current 1 감소
         chatRoom.subUser();

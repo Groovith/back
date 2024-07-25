@@ -43,8 +43,7 @@ public class ChatRoomDetailDto {
         this.totalUsers = chatRoom.getTotalMember();
         this.currentUsers = chatRoom.getCurrentMember();
         // 수정 필요
-        this.masterId = chatRoom.getUserChatRooms().get(0).getUser().getId();
-        this.position = 1;
+        this.masterId = chatRoom.getMasterId();
         // 플레이리스트 추가 필요
     }
 }
