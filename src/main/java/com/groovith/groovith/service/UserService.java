@@ -1,19 +1,14 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.StreamingType;
-import com.groovith.groovith.dto.SpotifyTokensResponseDto;
+import com.groovith.groovith.dto.SpotifyTokenResponseDto;
 import com.groovith.groovith.exception.UserNotFoundException;
-import com.groovith.groovith.repository.RefreshRepository;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.JoinDto;
-import com.groovith.groovith.dto.UserDetailsResponse;
 import com.groovith.groovith.security.JwtUtil;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -97,11 +92,10 @@ public class UserService {
      * @param userId User Id
      * @return SpotifyTokensResponseDto
      */
-    public SpotifyTokensResponseDto getSpotifyTokens(Long userId) {
+    public SpotifyTokenResponseDto getSpotifyTokens(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-        SpotifyTokensResponseDto responseDto = new SpotifyTokensResponseDto();
-        responseDto.setSpotifyAccessToken(user.getSpotifyAccessToken());
-        responseDto.setSpotifyRefreshToken(user.getSpotifyRefreshToken());
+        SpotifyTokenResponseDto responseDto = new SpotifyTokenResponseDto();
+        responseDto.setSpotifyToken(user.getSpotifyAccessToken());
 
         return responseDto;
     }

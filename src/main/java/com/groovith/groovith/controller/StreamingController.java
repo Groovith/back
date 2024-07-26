@@ -3,7 +3,8 @@ package com.groovith.groovith.controller;
 import com.groovith.groovith.domain.StreamingType;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.ConnectSpotifyRequestDto;
-import com.groovith.groovith.dto.SpotifyTokensResponseDto;
+import com.groovith.groovith.dto.SpotifyTokenResponseDto;
+import com.groovith.groovith.dto.StreamingTypeResponseDto;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.service.SpotifyService;
 import com.groovith.groovith.service.UserService;
@@ -32,9 +33,15 @@ public class StreamingController {
      * @return 성공 시 200, 스티리밍 서비스 정보(없는 경우 NONE)
      */
     @GetMapping()
-    ResponseEntity<?> getStreaming(@RequestHeader("access") String accessToken) {
+    ResponseEntity<StreamingTypeResponseDto> getStreaming(@RequestHeader("access") String accessToken) {
         User user = userService.getUser(accessToken);
-        return new ResponseEntity<>(user.getStreaming().toString(), HttpStatus.OK);
+        StreamingTypeResponseDto responseDto = new StreamingTypeResponseDto();
+        switch (user.getStreaming()) {
+            case NONE -> responseDto.setType(StreamingType.NONE);
+            case SPOTIFY -> responseDto.setType(StreamingType.SPOTIFY);
+        }
+
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
     /**
@@ -48,9 +55,9 @@ public class StreamingController {
      * @return 성공 시 200(Ok) | code 가 없거나 유효하지 않은 경우 400(Bad Request) | 토큰 요청 시도 중 오류 발생 시 500
      */
     @PostMapping("/spotify")
-    ResponseEntity<SpotifyTokensResponseDto> connectSpotify(@RequestHeader("access") String accessToken, @RequestBody ConnectSpotifyRequestDto requestDto) {
+    ResponseEntity<SpotifyTokenResponseDto> connectSpotify(@RequestHeader("access") String accessToken, @RequestBody ConnectSpotifyRequestDto requestDto) {
         String code = requestDto.getCode();
-        SpotifyTokensResponseDto responseDto = new SpotifyTokensResponseDto();
+        SpotifyTokenResponseDto responseDto = new SpotifyTokenResponseDto();
 
         // code 가 비어있는 경우
         if (code.equals("")) {
@@ -64,8 +71,7 @@ public class StreamingController {
             // code 통해서 토큰 발행 요청
             Map<String, String> tokens = spotifyService.requestSpotifyTokens(code);
             userService.saveSpotifyTokens(user.getId(), tokens.get("access_token"), tokens.get("refresh_token"));
-            responseDto.setSpotifyAccessToken(tokens.get("access_token"));
-            responseDto.setSpotifyRefreshToken(tokens.get("refresh_token"));
+            responseDto.setSpotifyToken(tokens.get("access_token"));
             return new ResponseEntity<>(responseDto, HttpStatus.OK);
         } catch (UserNotFoundException e) {
             // 유저 없음
@@ -85,7 +91,7 @@ public class StreamingController {
      * @return SpotifyTokensResponseDto
      */
     @GetMapping("/spotify")
-    ResponseEntity<SpotifyTokensResponseDto> getTokens(@RequestHeader("access") String accessToken) {
+    ResponseEntity<SpotifyTokenResponseDto> getTokens(@RequestHeader("access") String accessToken) {
         User user = userService.getUser(accessToken);
         return new ResponseEntity<>(spotifyService.refreshSpotifyTokens(user), HttpStatus.OK);
     }
