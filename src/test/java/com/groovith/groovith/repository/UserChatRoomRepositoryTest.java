@@ -35,6 +35,7 @@ public class UserChatRoomRepositoryTest {
                 .chatRoomStatus(ChatRoomStatus.PUBLIC)
                 .chatRoomType(ChatRoomType.SONG)
                 .build();
+
         ChatRoom chatRoom = chatRoomRepository.save(data1);
 
         UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom);
