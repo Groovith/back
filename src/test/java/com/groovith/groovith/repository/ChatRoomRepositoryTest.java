@@ -1,6 +1,7 @@
 package com.groovith.groovith.repository;
 
 import com.groovith.groovith.domain.ChatRoom;
+import com.groovith.groovith.domain.ChatRoomStatus;
 import com.groovith.groovith.domain.ChatRoomType;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import org.assertj.core.api.Assertions;
@@ -95,6 +96,7 @@ public class ChatRoomRepositoryTest {
     ChatRoom createChatRoom(String name){
         return ChatRoom.builder()
                 .name(name)
+                .chatRoomStatus(ChatRoomStatus.PUBLIC)
                 .chatRoomType(ChatRoomType.SONG)
                 .build();
     }
