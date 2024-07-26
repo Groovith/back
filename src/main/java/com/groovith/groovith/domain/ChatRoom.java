@@ -37,12 +37,16 @@ public class ChatRoom {
     private int currentMember;
 
     @Enumerated(EnumType.STRING)
+    private ChatRoomStatus status;
+
+    @Enumerated(EnumType.STRING)
     private ChatRoomType type;
 
 
     @Builder
-    public ChatRoom(String name, ChatRoomType chatRoomType) {
+    public ChatRoom(String name,ChatRoomStatus chatRoomStatus, ChatRoomType chatRoomType) {
         this.name = name;
+        this.status = chatRoomStatus;
         this.type = chatRoomType;
     }
 

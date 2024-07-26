@@ -37,6 +37,7 @@ public class ChatRoomService {
         // 생성 실패해도 id 늘어남
         ChatRoom chatRoom = chatRoomRepository.save(request.toEntity());
 
+
         // 채팅방 생성유저
         Long userId = request.getUserId();
         User user = userRepository.findById(userId)
@@ -92,8 +93,13 @@ public class ChatRoomService {
             throw new IllegalArgumentException("채팅방에 이미 유저가 있습니다 userId:"+userId);
         }
         else{
+            // 채팅방에 아무도 없을경우 처음부터 재생`
+
             // masterId 얻고 이 유저의 현재 재생 시각 get
-            Long masterId = chatRoom.getMasterId();
+            if (chatRoom.getTotalMember()>0){
+                Long masterId = chatRoom.getMasterId();
+            }
+
             // 현재 재생시각 적용
 
 
