@@ -76,7 +76,7 @@ public class AuthenticationService {
         return null;
     }
 
-    private void addRefresh(Long userId, String refresh, Long expiredMs) {
+    public void addRefresh(Long userId, String refresh, Long expiredMs) {
         Date date = new Date(System.currentTimeMillis() + expiredMs);
 
         Refresh newRefresh = new Refresh();
@@ -94,5 +94,26 @@ public class AuthenticationService {
         //cookie.setPath("/");
         cookie.setHttpOnly(true);
         return cookie;
+    }
+
+    /**
+     * Refresh 토큰 삭제
+     *
+     * @param refresh String refresh 토큰
+     */
+    @Transactional
+    public void deleteRefresh(String refresh) {
+        refreshRepository.deleteByRefresh(refresh);
+    }
+
+    /**
+     * Refresh 토큰 유효성 검사 -> RefreshRepository 에 있는 경우 true
+     *
+     * @param refresh String Refresh token
+     * @return true | false
+     */
+    @Transactional(readOnly = true)
+    public boolean isRefreshTokenValid(String refresh) {
+        return refreshRepository.existsByRefresh(refresh);
     }
 }

@@ -18,7 +18,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class CustomLogoutFilter extends GenericFilterBean {
     private final JwtUtil jwtUtil;
-    private final RefreshRepository refreshRepository;
+    private final AuthenticationService authenticationService;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -82,7 +82,7 @@ public class CustomLogoutFilter extends GenericFilterBean {
 
         //DB에 저장되어 있는지 확인 및 로그아웃 처리
         try {
-            if (!isRefreshTokenValid(refresh)) {
+            if (!authenticationService.isRefreshTokenValid(refresh)) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
@@ -93,7 +93,7 @@ public class CustomLogoutFilter extends GenericFilterBean {
 
         //Refresh 토큰 DB에서 제거
         try {
-            deleteRefreshToken(refresh);
+            authenticationService.deleteRefresh(refresh);
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return;
@@ -107,15 +107,5 @@ public class CustomLogoutFilter extends GenericFilterBean {
         response.addCookie(cookie);
         response.setStatus(HttpServletResponse.SC_OK);
 
-    }
-
-    @Transactional(readOnly = true)
-    public boolean isRefreshTokenValid(String refresh) {
-            return refreshRepository.existsByRefresh(refresh);
-    }
-
-    @Transactional
-    public void deleteRefreshToken(String refresh) {
-            refreshRepository.deleteByRefresh(refresh);
     }
 }

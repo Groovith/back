@@ -1,6 +1,7 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.User;
+import com.groovith.groovith.dto.SpotifyTokensResponseDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -80,7 +81,7 @@ public class SpotifyService {
      * @param user 토큰 갱신이 필요한 User Entity
      * @return 새로 발급된 Access 토큰
      */
-    public String refreshSpotifyToken(User user) throws HttpClientErrorException {
+    public SpotifyTokensResponseDto refreshSpotifyTokens(User user) throws HttpClientErrorException {
         RestTemplate restTemplate = new RestTemplate();
         String url = "https://accounts.spotify.com/api/token";
 
@@ -94,17 +95,21 @@ public class SpotifyService {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("grant_type", "refresh_token");
         body.add("refresh_token", user.getSpotifyRefreshToken());
-        body.add("client_id", clientId);
+        //body.add("client_id", clientId);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
         ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
 
         String accessToken = (String) Objects.requireNonNull(response.getBody()).get("access_token");
-        String refreshToken = (String) Objects.requireNonNull(response.getBody()).get("refresh_token");
+        //String refreshToken = (String) Objects.requireNonNull(response.getBody()).get("refresh_token");
 
-        userService.saveSpotifyTokens(user.getId(), accessToken, refreshToken);
+        userService.saveSpotifyTokens(user.getId(), accessToken, "");
 
-        return accessToken;
+        SpotifyTokensResponseDto responseDto = new SpotifyTokensResponseDto();
+        responseDto.setSpotifyAccessToken(accessToken);
+        //responseDto.setSpotifyRefreshToken(refreshToken);
+
+        return responseDto;
     }
 
     /**
@@ -128,7 +133,7 @@ public class SpotifyService {
         } catch (HttpClientErrorException e) {
             if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
                 // 401 Unauthorized (Access Token 만료) 메시지 반환 시 토큰 갱신 시도
-                String newAccessToken = refreshSpotifyToken(user);
+                String newAccessToken = refreshSpotifyTokens(user).getSpotifyAccessToken();
                 HttpHeaders headers = new HttpHeaders();
                 headers.setBearerAuth(newAccessToken);
                 HttpEntity<?> newRequest = new HttpEntity<>(request.getBody(), headers);

@@ -1,10 +1,7 @@
 package com.groovith.groovith.config;
 
 import com.groovith.groovith.repository.RefreshRepository;
-import com.groovith.groovith.security.CustomLogoutFilter;
-import com.groovith.groovith.security.JwtFilter;
-import com.groovith.groovith.security.LoginFilter;
-import com.groovith.groovith.security.JwtUtil;
+import com.groovith.groovith.security.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +29,7 @@ public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtUtil jwtUtil;
     private final RefreshRepository refreshRepository;
+    private final AuthenticationService authenticationService;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -96,9 +94,9 @@ public class SecurityConfig {
         http
                 .addFilterBefore(new JwtFilter(jwtUtil), LoginFilter.class);
         http
-                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshRepository), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, authenticationService), UsernamePasswordAuthenticationFilter.class);
         http
-                .addFilterBefore(new CustomLogoutFilter(jwtUtil, refreshRepository), LogoutFilter.class);
+                .addFilterBefore(new CustomLogoutFilter(jwtUtil, authenticationService), LogoutFilter.class);
 
 
         //세션 설정
