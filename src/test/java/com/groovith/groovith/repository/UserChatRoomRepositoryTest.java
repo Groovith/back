@@ -32,8 +32,10 @@ public class UserChatRoomRepositoryTest {
 
         ChatRoom data1 = ChatRoom.builder()
                 .name("room")
+                .chatRoomStatus(ChatRoomStatus.PUBLIC)
                 .chatRoomType(ChatRoomType.SONG)
                 .build();
+
         ChatRoom chatRoom = chatRoomRepository.save(data1);
 
         UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom);
@@ -59,6 +61,7 @@ public class UserChatRoomRepositoryTest {
 
         ChatRoom data1 = ChatRoom.builder()
                 .name("room")
+                .chatRoomStatus(ChatRoomStatus.PUBLIC)
                 .chatRoomType(ChatRoomType.SONG)
                 .build();
         ChatRoom chatRoom = chatRoomRepository.save(data1);

@@ -10,12 +10,6 @@ import lombok.NoArgsConstructor;
  * */
 
 @Data
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CreateChatRoomResponseDto  {
     private Long chatRoomId;
-
-    @Builder
-    public CreateChatRoomResponseDto(Long chatRoomId){
-        this.chatRoomId = chatRoomId;
-    }
 }

@@ -1,5 +1,6 @@
 package com.groovith.groovith.domain;
 
+import com.groovith.groovith.exception.NoUserInChatRoomException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -36,15 +37,19 @@ public class ChatRoom {
     private int currentMember;
 
     @Enumerated(EnumType.STRING)
+    private ChatRoomStatus status;
+
+    @Enumerated(EnumType.STRING)
     private ChatRoomType type;
 
 
     @Builder
-    public ChatRoom(String name, ChatRoomType chatRoomType) {
+    public ChatRoom(String name,ChatRoomStatus chatRoomStatus, ChatRoomType chatRoomType) {
         this.name = name;
+        this.status = chatRoomStatus;
         this.type = chatRoomType;
-        this.currentMember = 1; // 생성될때 멤버 1명
     }
+
     /**
      * 비즈니스 메서드
      **/
@@ -57,7 +62,7 @@ public class ChatRoom {
     public Long getMasterId(){
         List<UserChatRoom> userChatRoom = this.getUserChatRooms();
         if (userChatRoom.isEmpty()){
-            throw new NullPointerException();
+            throw new NoUserInChatRoomException(this.getId());
         }
         else{
             return userChatRoom.get(0).getUser().getId();
@@ -71,7 +76,11 @@ public class ChatRoom {
 
     // 채팅방 유저 퇴장
     public void subUser(){
+        if(currentMember == 0){
+            throw new NoUserInChatRoomException(this.getId());
+        }
         this.currentMember -= 1;
+
     }
 
 }
