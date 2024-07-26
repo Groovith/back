@@ -15,8 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
  * 통신에 사용할 메세지
  * */
 @Data
-@Transactional
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MessageDto {
 
     private String content;
@@ -27,10 +25,8 @@ public class MessageDto {
 
     private String username;
 
-    @Enumerated(EnumType.STRING)
     private MessageType type;   //  CHAT, JOIN, LEAVE, PLAYER
 
-    @Enumerated(EnumType.STRING)
     private CommandType command;
 
     private String track;
