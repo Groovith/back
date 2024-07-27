@@ -11,4 +11,6 @@ import java.util.List;
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     @Query("Select c FROM ChatRoom c ORDER BY c.id DESC ")
     List<ChatRoom> findAllDesc();
+
+    List<ChatRoom> findChatRoomByNameContaining(String name);
 }
