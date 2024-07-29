@@ -2,6 +2,7 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.StreamingType;
 import com.groovith.groovith.dto.SpotifyTokenResponseDto;
+import com.groovith.groovith.dto.UserDetailsResponseDto;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.domain.User;
@@ -47,7 +48,7 @@ public class UserService {
      * @param accessToken 서버 Access Token
      * @return 찾은 User 객체 | User 가 DB에 없으면 UserNotFoundException 발생
      */
-    public User getUser(String accessToken) {
+    public User getUserByAccessToken(String accessToken) {
 
         Long userId = jwtUtil.getUserId(accessToken);
 
@@ -55,19 +56,20 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
+    public UserDetailsResponseDto getUserByUsername(String username) {
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
+        return new UserDetailsResponseDto(user);
+    }
+
     /**
      * Spotify 인증 후 발급 받은 토큰 저장
      *
      * @param userId       User ID
-     * @param accessToken  Spotify Access Token
      * @param refreshToken Spotify Refresh Token (없을 경우 저장하지 않음)
      */
-    public void saveSpotifyTokens(Long userId, String accessToken, String refreshToken) {
+    public void saveSpotifyToken(Long userId, String refreshToken) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-        user.setSpotifyAccessToken(accessToken);
-        if (!refreshToken.equals("")) {
-            user.setSpotifyRefreshToken(refreshToken);
-        }
+        user.setSpotifyRefreshToken(refreshToken);
         user.setStreaming(StreamingType.SPOTIFY);
         userRepository.save(user);
     }
@@ -77,10 +79,9 @@ public class UserService {
      *
      * @param userId User Id
      */
-    public void removeSpotifyTokens(Long userId) {
+    public void removeSpotifyToken(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        user.setSpotifyAccessToken(null);
         user.setSpotifyRefreshToken(null);
         user.setStreaming(StreamingType.NONE);
         userRepository.save(user);
@@ -92,10 +93,10 @@ public class UserService {
      * @param userId User Id
      * @return SpotifyTokensResponseDto
      */
-    public SpotifyTokenResponseDto getSpotifyTokens(Long userId) {
+    public SpotifyTokenResponseDto getSpotifyToken(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         SpotifyTokenResponseDto responseDto = new SpotifyTokenResponseDto();
-        responseDto.setSpotifyToken(user.getSpotifyAccessToken());
+        responseDto.setSpotifyAccessToken(user.getSpotifyRefreshToken());
 
         return responseDto;
     }

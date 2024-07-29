@@ -12,6 +12,6 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FollowResponse {
-    private List<UserDetailsResponse> following;
-    private List<UserDetailsResponse> follower;
+    private List<UserDetailsResponseDto> following;
+    private List<UserDetailsResponseDto> follower;
 }

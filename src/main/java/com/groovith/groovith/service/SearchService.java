@@ -2,10 +2,10 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.User;
-import com.groovith.groovith.dto.ChatRoomDetailDto;
+import com.groovith.groovith.dto.ChatRoomDetailsDto;
 import com.groovith.groovith.dto.SearchChatRoomsResponseDto;
 import com.groovith.groovith.dto.SearchUsersResponseDto;
-import com.groovith.groovith.dto.UserDetailsResponse;
+import com.groovith.groovith.dto.UserDetailsResponseDto;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -22,21 +22,21 @@ public class SearchService {
 
     public SearchUsersResponseDto searchUsersByName(String name) {
         List<User> users = userRepository.findByUsernameContaining(name);
-        List<UserDetailsResponse> userDetailsResponses = new ArrayList<>();
+        List<UserDetailsResponseDto> userResponsDtos = new ArrayList<>();
         for (User user : users) {
-            UserDetailsResponse dto = new UserDetailsResponse(user.getId(), user.getUsername());
-            userDetailsResponses.add(dto);
+            UserDetailsResponseDto dto = new UserDetailsResponseDto(user.getId(), user.getUsername());
+            userResponsDtos.add(dto);
         }
-        return new SearchUsersResponseDto(userDetailsResponses);
+        return new SearchUsersResponseDto(userResponsDtos);
     }
 
     public SearchChatRoomsResponseDto searchChatRoomsByName(String name) {
         List<ChatRoom> chatRooms = chatRoomRepository.findChatRoomByNameContaining(name);
-        List<ChatRoomDetailDto> chatRoomDetailDtos = new ArrayList<>();
+        List<ChatRoomDetailsDto> chatRoomDetailsDtos = new ArrayList<>();
         for (ChatRoom chatRoom : chatRooms) {
-            ChatRoomDetailDto dto = new ChatRoomDetailDto(chatRoom);
-            chatRoomDetailDtos.add(dto);
+            ChatRoomDetailsDto dto = new ChatRoomDetailsDto(chatRoom);
+            chatRoomDetailsDtos.add(dto);
         }
-        return new SearchChatRoomsResponseDto(chatRoomDetailDtos);
+        return new SearchChatRoomsResponseDto(chatRoomDetailsDtos);
     }
 }

@@ -26,8 +26,6 @@ public class User {
     @Enumerated(EnumType.STRING)
     private StreamingType streaming;
 
-    @Column(name = "spotify_access_token")
-    private String spotifyAccessToken;
     @Column(name = "spotify_refresh_token")
     private String spotifyRefreshToken;
 

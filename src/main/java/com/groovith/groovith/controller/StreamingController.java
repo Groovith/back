@@ -13,8 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 /**
  * 외부 스트리밍 서비스와 연결 설정 및 유저의 서비스 종류에 따라 필요 API 를 호출하고 결과를 반환해주는 컨트롤러.
  */
@@ -34,7 +32,7 @@ public class StreamingController {
      */
     @GetMapping()
     ResponseEntity<StreamingTypeResponseDto> getStreaming(@RequestHeader("access") String accessToken) {
-        User user = userService.getUser(accessToken);
+        User user = userService.getUserByAccessToken(accessToken);
         StreamingTypeResponseDto responseDto = new StreamingTypeResponseDto();
         switch (user.getStreaming()) {
             case NONE -> responseDto.setType(StreamingType.NONE);
@@ -48,7 +46,7 @@ public class StreamingController {
      * Spotify API 를 유저 계정에 연결.
      * 기존에 연결된 다른 서비스가 있는 경우 연결 해제.
      * 클라이언트에서 OAuth2.0 인증 후 Callback URL Search Parameter 로 받은 code 를 이용해서 Spotify 에 토큰 요청
-     * Spotify Access Token 과 Refresh 토큰을 User 테이블에 저장하여 관리.
+     * Spotify Refresh 토큰을 User 테이블에 저장하여 관리.
      * User 의 Streaming 서비스를 SPOTIFY 로 설정.
      *
      * @param requestDto callback url parameter 에서 제공받는 값.
@@ -66,12 +64,10 @@ public class StreamingController {
         }
 
         try {
-            User user = userService.getUser(accessToken);
+            User user = userService.getUserByAccessToken(accessToken);
 
             // code 통해서 토큰 발행 요청
-            Map<String, String> tokens = spotifyService.requestSpotifyTokens(code);
-            userService.saveSpotifyTokens(user.getId(), tokens.get("access_token"), tokens.get("refresh_token"));
-            responseDto.setSpotifyToken(tokens.get("access_token"));
+            responseDto = spotifyService.requestSpotifyTokens(user, code);
             return new ResponseEntity<>(responseDto, HttpStatus.OK);
         } catch (UserNotFoundException e) {
             // 유저 없음
@@ -92,7 +88,7 @@ public class StreamingController {
      */
     @GetMapping("/spotify")
     ResponseEntity<SpotifyTokenResponseDto> getTokens(@RequestHeader("access") String accessToken) {
-        User user = userService.getUser(accessToken);
+        User user = userService.getUserByAccessToken(accessToken);
         return new ResponseEntity<>(spotifyService.refreshSpotifyTokens(user), HttpStatus.OK);
     }
 
@@ -107,12 +103,12 @@ public class StreamingController {
     @DeleteMapping("/spotify")
     ResponseEntity<?> disconnectSpotify(@RequestHeader("access") String accessToken) {
         try {
-            User user = userService.getUser(accessToken);
+            User user = userService.getUserByAccessToken(accessToken);
             if (user.getStreaming() != StreamingType.SPOTIFY) {
                 return new ResponseEntity<>("Spotify에 연결되어 있지 않습니다.", HttpStatus.BAD_REQUEST);
             }
 
-            userService.removeSpotifyTokens(user.getId());
+            userService.removeSpotifyToken(user.getId());
 
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (UserNotFoundException e) {
@@ -120,41 +116,5 @@ public class StreamingController {
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    /**
-     * 검색 API -> 현재 트랙만 반환
-     * Access Token 을 이용해 연결된 스트리밍 서비스를 판별.
-     * 해당하는 서비스를 이용해 검색 요청 후 결과 반환.
-     *
-     * @param accessToken 서버 Access 토큰, 유저 정보 파악
-     * @param query       검색 쿼리
-     * @return 성공 시 200(Ok) + 검색 결과 | 연결된 서비스가 없을 시 400(Bad Request) + message | 서버 오류 시 500(Internal Server Error) + message | query를 작성하지 않아 주소가 다른 경우 403
-     */
-    @GetMapping("/search")
-    ResponseEntity<?> search(@RequestHeader("access") String accessToken, @RequestParam(value = "query") String query) {
-        // 검색 쿼리가 빈 경우 -> 빈 결과 반환
-        if (query.trim().equals("")) {
-            return new ResponseEntity<>(HttpStatus.OK);
-        }
-
-        try {
-            User user = userService.getUser(accessToken);
-            switch (user.getStreaming()) {
-                case NONE -> { // 연결된 서비스가 없는 경우
-                    return new ResponseEntity<>("연결된 서비스가 없습니다.", HttpStatus.BAD_REQUEST);
-                }
-                case SPOTIFY -> {
-                    String response = spotifyService.searchTrack(user, query);
-                    return new ResponseEntity<>(response, HttpStatus.OK);
-                }
-            }
-        } catch (UserNotFoundException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        return new ResponseEntity<>(query, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

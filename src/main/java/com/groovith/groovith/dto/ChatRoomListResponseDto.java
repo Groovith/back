@@ -23,17 +23,17 @@ public class ChatRoomListResponseDto {
 
     private Long chatRoomId;
     private String chatRoomName;
-    private int totalMember;
+    /*private int totalMember;
     private int currentMember;
     private String currentSong;
     private  String lastMessage;
-    private Date lastSentAt;
+    private Date lastSentAt;*/
 
     public ChatRoomListResponseDto(ChatRoom chatRoom){
         this.chatRoomId = chatRoom.getId();
         this.chatRoomName = chatRoom.getName();
-        this.totalMember = chatRoom.getTotalMember();
-        this.currentMember = chatRoom.getCurrentMember();
+        /*this.totalMember = chatRoom.getTotalMember();
+        this.currentMember = chatRoom.getCurrentMember();*/
     }
 //    @Builder
 //    public ChatRoomListResponseDto(Long chatRoomId, String chatRoomName, int totalMember,

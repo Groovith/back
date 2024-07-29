@@ -41,10 +41,11 @@ public class SpotifyService {
      * Spotify 토큰 요청
      * 참조: https://developer.spotify.com/documentation/web-api/tutorials/code-flow
      *
+     * @param user 유저 엔티티
      * @param code 사용자로부터 전달받는 인증 코드. Spotify OAuth 인증 후 Callback url 에서 파라미터로 확인 가능.
      * @return Spotify access_token 과 refresh_token 반환
      */
-    public Map<String, String> requestSpotifyTokens(String code) {
+    public SpotifyTokenResponseDto requestSpotifyTokens(User user, String code) {
         RestTemplate restTemplate = new RestTemplate();
         String url = "https://accounts.spotify.com/api/token";
 
@@ -67,11 +68,15 @@ public class SpotifyService {
             throw new RuntimeException("Spotify 토큰 요청 오류" + response.getBody());
         }
 
-        Map<String, String> tokens = new HashMap<>();
-        tokens.put("access_token", (String) Objects.requireNonNull(response.getBody()).get("access_token"));
-        tokens.put("refresh_token", (String) Objects.requireNonNull(response.getBody()).get("refresh_token"));
+        String accessToken = (String) Objects.requireNonNull(response.getBody()).get("access_token");
+        String refreshToken = (String) Objects.requireNonNull(response.getBody()).get("refresh_token");
 
-        return tokens;
+        userService.saveSpotifyToken(user.getId(), refreshToken);
+
+        SpotifyTokenResponseDto responseDto = new SpotifyTokenResponseDto();
+        responseDto.setSpotifyAccessToken(accessToken);
+
+        return responseDto;
     }
 
     /**
@@ -101,13 +106,9 @@ public class SpotifyService {
         ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
 
         String accessToken = (String) Objects.requireNonNull(response.getBody()).get("access_token");
-        //String refreshToken = (String) Objects.requireNonNull(response.getBody()).get("refresh_token");
-
-        userService.saveSpotifyTokens(user.getId(), accessToken, "");
 
         SpotifyTokenResponseDto responseDto = new SpotifyTokenResponseDto();
-        responseDto.setSpotifyToken(accessToken);
-        //responseDto.setSpotifyRefreshToken(refreshToken);
+        responseDto.setSpotifyAccessToken(accessToken);
 
         return responseDto;
     }
@@ -133,7 +134,7 @@ public class SpotifyService {
         } catch (HttpClientErrorException e) {
             if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
                 // 401 Unauthorized (Access Token 만료) 메시지 반환 시 토큰 갱신 시도
-                String newAccessToken = refreshSpotifyTokens(user).getSpotifyToken();
+                String newAccessToken = refreshSpotifyTokens(user).getSpotifyAccessToken();
                 HttpHeaders headers = new HttpHeaders();
                 headers.setBearerAuth(newAccessToken);
                 HttpEntity<?> newRequest = new HttpEntity<>(request.getBody(), headers);
@@ -148,24 +149,5 @@ public class SpotifyService {
         }
 
         return response;
-    }
-
-    /**
-     * 트랙 검색
-     *
-     * @param user  요청한 User Entity
-     * @param query 검색 쿼리
-     * @return 검색 결과
-     */
-    public String searchTrack(User user, String query) {
-        String url = "https://api.spotify.com/v1/search?q=" + URLEncoder.encode(query, StandardCharsets.UTF_8) + "&type=track";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(user.getSpotifyAccessToken());
-
-        HttpEntity<String> request = new HttpEntity<>(headers);
-        ResponseEntity<String> response = executeSpotifyRequest(url, HttpMethod.GET, request, String.class, user);
-
-        return response.getBody();
     }
 }

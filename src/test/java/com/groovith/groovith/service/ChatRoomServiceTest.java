@@ -1,8 +1,7 @@
 package com.groovith.groovith.service;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.groovith.groovith.domain.*;
-import com.groovith.groovith.dto.ChatRoomDetailDto;
+import com.groovith.groovith.dto.ChatRoomDetailsDto;
 import com.groovith.groovith.dto.ChatRoomListResponseDto;
 import com.groovith.groovith.dto.CreateChatRoomRequestDto;
 import com.groovith.groovith.repository.ChatRoomRepository;
@@ -21,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
@@ -94,7 +92,7 @@ class ChatRoomServiceTest {
         ChatRoom chatRoom = createChatRoom("room");
         // ReflectionTestUtils 사용하면 필드값 임의로 지정가능
         ReflectionTestUtils.setField(chatRoom, "id", chatroomId);
-        ChatRoomDetailDto dto = new ChatRoomDetailDto(chatRoom);
+        ChatRoomDetailsDto dto = new ChatRoomDetailsDto(chatRoom);
         dto.setChatRoomId(chatroomId);
 
         System.out.println(dto.getChatRoomId());
@@ -102,13 +100,13 @@ class ChatRoomServiceTest {
         when(chatRoomRepository.findById(anyLong()))
                 .thenReturn(Optional.of(chatRoom));
 
-        ChatRoomDetailDto chatRoomDetailDto = chatRoomService.findChatRoomDetail(chatroomId);
+        ChatRoomDetailsDto chatRoomDetailsDto = chatRoomService.findChatRoomDetail(chatroomId);
 
         //then
-        Assertions.assertThat(chatRoomDetailDto.getChatRoomId()).isEqualTo(chatroomId);
-        Assertions.assertThat(chatRoomDetailDto.getName()).isEqualTo("room");
-        Assertions.assertThat(chatRoomDetailDto.getStatus()).isEqualTo(ChatRoomStatus.PUBLIC);
-        Assertions.assertThat(chatRoomDetailDto.getType()).isEqualTo(ChatRoomType.SONG);
+        Assertions.assertThat(chatRoomDetailsDto.getChatRoomId()).isEqualTo(chatroomId);
+        Assertions.assertThat(chatRoomDetailsDto.getName()).isEqualTo("room");
+        Assertions.assertThat(chatRoomDetailsDto.getStatus()).isEqualTo(ChatRoomStatus.PUBLIC);
+        Assertions.assertThat(chatRoomDetailsDto.getType()).isEqualTo(ChatRoomType.SONG);
     }
 
     @Test

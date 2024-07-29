@@ -4,27 +4,22 @@ import com.groovith.groovith.domain.Follow;
 import com.groovith.groovith.domain.StreamingType;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.FollowResponse;
-import com.groovith.groovith.dto.UserDetailsResponse;
+import com.groovith.groovith.dto.UserDetailsResponseDto;
 import com.groovith.groovith.repository.FollowRepository;
 import com.groovith.groovith.repository.UserRepository;
 import org.assertj.core.api.Assertions;
-import org.assertj.core.api.FloatingPointNumberAssert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
 class FollowServiceTest {
@@ -81,7 +76,7 @@ class FollowServiceTest {
         //then
         Assertions.assertThat(followResponse.getFollowing().size()).isEqualTo(2);
         Assertions.assertThat(followResponse.getFollowing()
-                .stream().map(UserDetailsResponse::getUsername).toList()
+                .stream().map(UserDetailsResponseDto::getUsername).toList()
                         .contains(user3.getUsername()))
                 .isEqualTo(false);
 
@@ -111,7 +106,7 @@ class FollowServiceTest {
         //then
         Assertions.assertThat(followResponse.getFollower().size()).isEqualTo(2);
         Assertions.assertThat(followResponse.getFollower()
-                        .stream().map(UserDetailsResponse::getUsername).toList()
+                        .stream().map(UserDetailsResponseDto::getUsername).toList()
                         .contains(user3.getUsername()))
                 .isEqualTo(false);
 

@@ -6,5 +6,5 @@ import java.util.List;
 
 @Data
 public class SearchChatRoomsResponseDto {
-    private final List<ChatRoomDetailDto> chatRooms;
+    private final List<ChatRoomDetailsDto> chatRooms;
 }

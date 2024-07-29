@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class SpotifyTokenResponseDto {
     private String message;
-    private String spotifyToken;
+    private String spotifyAccessToken;
 }

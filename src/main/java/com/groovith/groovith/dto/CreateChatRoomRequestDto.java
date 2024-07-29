@@ -15,41 +15,41 @@ import lombok.NoArgsConstructor;
 public class CreateChatRoomRequestDto {
     private Long userId;
     private String name;
-    private ChatRoomStatus chatRoomStatus;  // "private" | "friends" | "public"
-    private ChatRoomType chatRoomType;     // "song" | "album" | "artist" | "playlist"
-
-    private Long songId;
-    private Long albumId;
-    private Long artistId;
-    private Long playlistId;
+//    private ChatRoomStatus chatRoomStatus;  // "private" | "friends" | "public"
+//    private ChatRoomType chatRoomType;     // "song" | "album" | "artist" | "playlist"
+//
+//    private Long songId;
+//    private Long albumId;
+//    private Long artistId;
+//    private Long playlistId;
 
     public CreateChatRoomRequestDto(Long userId, String name, ChatRoomStatus chatRoomStatus, ChatRoomType chatRoomType, Long typeId) {
         this.userId = userId;
         this.name = name;
-        this.chatRoomStatus = chatRoomStatus;
-        this.chatRoomType = chatRoomType;
-
-        switch (chatRoomType) {
-            case SONG:
-                this.songId = typeId;
-                break;
-            case ALBUM:
-                this.albumId = typeId;
-                break;
-            case ARTIST:
-                this.artistId = typeId;
-                break;
-            case PLAYLIST:
-                this.playlistId = typeId;
-                break;
-        }
+//        this.chatRoomStatus = chatRoomStatus;
+//        this.chatRoomType = chatRoomType;
+//
+//        switch (chatRoomType) {
+//            case SONG:
+//                this.songId = typeId;
+//                break;
+//            case ALBUM:
+//                this.albumId = typeId;
+//                break;
+//            case ARTIST:
+//                this.artistId = typeId;
+//                break;
+//            case PLAYLIST:
+//                this.playlistId = typeId;
+//                break;
+//        }
     }
     // ChatRoom 엔티티로 변환
     public ChatRoom toEntity(){
         ChatRoom chatRoom =  ChatRoom.builder()
                             .name(this.name)
-                            .chatRoomStatus(this.chatRoomStatus)
-                            .chatRoomType(this.chatRoomType)
+                            //.chatRoomStatus(this.chatRoomStatus)
+                            //.chatRoomType(this.chatRoomType)
                             .build();
         return chatRoom;
     }

@@ -1,13 +1,14 @@
 package com.groovith.groovith.service;
 
 
+import com.groovith.groovith.dto.ChatRoomDetailsListDto;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.UserChatRoomRepository;
 import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.UserChatRoom;
-import com.groovith.groovith.dto.ChatRoomDetailDto;
+import com.groovith.groovith.dto.ChatRoomDetailsDto;
 import com.groovith.groovith.dto.ChatRoomListResponseDto;
 import com.groovith.groovith.dto.CreateChatRoomRequestDto;
 import com.groovith.groovith.repository.UserRepository;
@@ -28,20 +29,22 @@ public class ChatRoomService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
+    private final UserService userService;
     private final UserChatRoomRepository userChatRoomRepository;
 
     /**
      * 채팅방 생성
      * */
-    public ChatRoom create(CreateChatRoomRequestDto request){
+    public ChatRoom create(String accessToken, CreateChatRoomRequestDto request){
         // 생성 실패해도 id 늘어남
         ChatRoom chatRoom = chatRoomRepository.save(request.toEntity());
 
 
         // 채팅방 생성유저
-        Long userId = request.getUserId();
+        /*Long userId = request.getUserId();
         User user = userRepository.findById(userId)
-                .orElseThrow(()->new UserNotFoundException(userId));
+                .orElseThrow(()->new UserNotFoundException(userId));*/
+        User user = userService.getUserByAccessToken(accessToken);
 
         // 유저 - 채팅방 연관관계 생성
         UserChatRoom.setUserChatRoom(user, chatRoom);
@@ -58,16 +61,33 @@ public class ChatRoomService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 내 채팅방 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public ChatRoomDetailsListDto getChatRooms(String accessToken) {
+        User user = userService.getUserByAccessToken(accessToken);
+
+        // UserChatRoom 에서 현재 사용자가 참가 중인 채팅방 가져오기
+        List<UserChatRoom> userChatRoomList = userChatRoomRepository.findByUserId(user.getId());
+
+        // UserChatRoom 에서 ChatRoom 엔티티를 추출하려 List 로 변환
+        List<ChatRoom> chatRoomList = userChatRoomList.stream().map(UserChatRoom::getChatRoom).toList();
+
+        // ChatRoom 엔티티를 ChatRoomDetailsDto 로 변환 후 반환
+        return new ChatRoomDetailsListDto(chatRoomList.stream().map(ChatRoomDetailsDto::new).toList());
+    }
+
 
     /**
      * 채팅방 상세 조회
      * */
     @Transactional(readOnly = true)
-    public ChatRoomDetailDto findChatRoomDetail(Long chatRoomId){
+    public ChatRoomDetailsDto findChatRoomDetail(Long chatRoomId){
         ChatRoom findChatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
 
-        return new ChatRoomDetailDto(findChatRoom);
+        return new ChatRoomDetailsDto(findChatRoom);
     }
 
     /**
@@ -81,24 +101,23 @@ public class ChatRoomService {
     /**
      * 채팅방 입장
      * */
-    public void enterChatRoom(Long userId, Long chatRoomId){
+    public void enterChatRoom(String accessToken, Long chatRoomId){
         // 유저, 채팅방 조회
-        User user = userRepository.findById(userId)
-                .orElseThrow(()->new UserNotFoundException(userId));
+        User user = userService.getUserByAccessToken(accessToken);
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
         // 유저가 이미 채팅방에 있는지 확인
-        //있을경우
-        if (userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId).isPresent()){
-            throw new IllegalArgumentException("채팅방에 이미 유저가 있습니다 userId:"+userId);
+        //있을경우 -> chatRoomId와 Redirect 메시지 전달 (클라이언트는 해당 id의 채팅방 페이지로 리디렉션)
+        if (userChatRoomRepository.findByUserIdAndChatRoomId(user.getId(), chatRoomId).isPresent()){
+            //throw new IllegalArgumentException("채팅방에 이미 유저가 있습니다 userId:"+user.getId());
         }
         else{
             // 채팅방에 아무도 없을경우 처음부터 재생`
 
             // masterId 얻고 이 유저의 현재 재생 시각 get
-            if (chatRoom.getTotalMember()>0){
+            /*if (chatRoom.getTotalMember()>0){
                 Long masterId = chatRoom.getMasterId();
-            }
+            }*/
 
             // 현재 재생시각 적용
 
@@ -106,7 +125,7 @@ public class ChatRoomService {
             // UserChatRoom 에 유저 등록
             UserChatRoom.setUserChatRoom(user, chatRoom);
             // currentMember += 1
-            chatRoom.addUser();
+//            chatRoom.addUser();
         }
     }
 
@@ -115,16 +134,15 @@ public class ChatRoomService {
     /**
      *  채팅방 퇴장
      * */
-    public void leaveChatRoom(Long userId, Long chatRoomId) {
+    public void leaveChatRoom(String accessToken, Long chatRoomId) {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(()->new UserNotFoundException(userId));
+        User user = userService.getUserByAccessToken(accessToken);
 
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
 
-        UserChatRoom userChatRoom = userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId)
-                .orElseThrow(()->new IllegalArgumentException("채팅방에 유저가 존재하지 않음 userId:"+userId));
+        UserChatRoom userChatRoom = userChatRoomRepository.findByUserIdAndChatRoomId(user.getId(), chatRoomId)
+                .orElseThrow(()->new IllegalArgumentException("채팅방에 유저가 존재하지 않음 userId:" + user.getId()));
 
         // 중간 테이블 삭제
         userChatRoomRepository.delete(userChatRoom);
@@ -132,7 +150,7 @@ public class ChatRoomService {
         // User, ChatRoom의 연관관계 삭제
         UserChatRoom.deleteUserChatRoom(userChatRoom, user, chatRoom);
         // current 1 감소
-        chatRoom.subUser();
+//        chatRoom.subUser();
     }
 
 }

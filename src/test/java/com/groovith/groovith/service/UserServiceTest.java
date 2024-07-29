@@ -68,7 +68,7 @@ class UserServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         //when
-        User findUser = userService.getUser(accessToken);
+        User findUser = userService.getUserByAccessToken(accessToken);
 
         //then
         Assertions.assertThat(findUser).isEqualTo(user);
@@ -88,7 +88,7 @@ class UserServiceTest {
         when(userRepository.save(any())).thenReturn(any());
 
         //when
-        userService.saveSpotifyTokens(userId, accessToken, refreshToken);
+        userService.saveSpotifyToken(userId, accessToken, refreshToken);
 
         //then
         Assertions.assertThat(user.getId()).isEqualTo(userId);
@@ -111,7 +111,7 @@ class UserServiceTest {
         when(userRepository.save(any())).thenReturn(any());
 
         //when
-        userService.removeSpotifyTokens(user.getId());
+        userService.removeSpotifyToken(user.getId());
 
         //then
         Assertions.assertThat(user.getId()).isEqualTo(userId);

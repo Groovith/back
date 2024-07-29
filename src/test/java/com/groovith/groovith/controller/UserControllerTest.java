@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groovith.groovith.domain.StreamingType;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.JoinDto;
-import com.groovith.groovith.dto.UserDetailsResponse;
+import com.groovith.groovith.dto.UserDetailsResponseDto;
 import com.groovith.groovith.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,11 +64,11 @@ class UserControllerTest {
         //given
         String accessToken = "access";
         User user = createUser(1L, "user", "1234");
-        UserDetailsResponse response = new UserDetailsResponse(user.getId(), user.getUsername());
+        UserDetailsResponseDto response = new UserDetailsResponseDto(user.getId(), user.getUsername());
 
 
         //when
-        when(userService.getUser(accessToken)).thenReturn(user);
+        when(userService.getUserByAccessToken(accessToken)).thenReturn(user);
         ResultActions actions = mockMvc.perform(
                 get("/api/user")
                         .contentType(MediaType.APPLICATION_JSON)

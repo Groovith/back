@@ -5,19 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.ChatRoomStatus;
 import com.groovith.groovith.domain.ChatRoomType;
-import com.groovith.groovith.domain.User;
-import com.groovith.groovith.dto.ChatRoomDetailDto;
+import com.groovith.groovith.dto.ChatRoomDetailsDto;
 import com.groovith.groovith.dto.ChatRoomListResponseDto;
 import com.groovith.groovith.dto.CreateChatRoomRequestDto;
 import com.groovith.groovith.dto.EnterChatRoomRequestDto;
 import com.groovith.groovith.service.ChatRoomService;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -26,7 +23,6 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -118,7 +114,7 @@ class ChatRoomControllerTest {
         Long chatRoomId = 1L;
         ChatRoom chatRoom = createChatRoom("room");
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
-        ChatRoomDetailDto detailDto = new ChatRoomDetailDto(chatRoom);
+        ChatRoomDetailsDto detailDto = new ChatRoomDetailsDto(chatRoom);
         //when
         when(chatRoomService.findChatRoomDetail(anyLong()))
                 .thenReturn(detailDto);

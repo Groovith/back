@@ -15,15 +15,15 @@ public class FollowController {
     private final FollowService followService;
 
     // 팔로잉 목록 조회
-    @GetMapping("/{username}/following")
-    public ResponseEntity<FollowResponse> getFollowing(@PathVariable String username) {
-        return new ResponseEntity<>(followService.getFollowing(username), HttpStatus.OK);
+    @GetMapping("/users/{userId}/following")
+    public ResponseEntity<FollowResponse> getFollowing(@PathVariable Long userId) {
+        return new ResponseEntity<>(followService.getFollowing(userId), HttpStatus.OK);
     }
 
     // 팔로워 목록 조회
-    @GetMapping("/{username}/followers")
-    public ResponseEntity<FollowResponse> getFollowers(@PathVariable String username) {
-        return new ResponseEntity<>(followService.getFollowers(username), HttpStatus.OK);
+    @GetMapping("/users/{userId}/followers")
+    public ResponseEntity<FollowResponse> getFollowers(@PathVariable Long userId) {
+        return new ResponseEntity<>(followService.getFollowers(userId), HttpStatus.OK);
     }
 
     // 팔로우
@@ -34,7 +34,7 @@ public class FollowController {
     }
 
     // 언팔로우
-    @PostMapping("/unfollow")
+    @DeleteMapping("/follow")
     public ResponseEntity<?> unfollow(@RequestBody FollowRequest request) {
         return followService.unfollow(request.getFollower(), request.getFollowing());
     }

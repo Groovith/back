@@ -2,8 +2,6 @@ package com.groovith.groovith.dto;
 
 
 import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.ChatRoomStatus;
-import com.groovith.groovith.domain.ChatRoomType;
 import lombok.Data;
 
 /**
@@ -26,11 +24,11 @@ import lombok.Data;
 
 // chatroom 상세조회 dto
 @Data
-public class ChatRoomDetailDto {
+public class ChatRoomDetailsDto {
 
     private Long chatRoomId;
     private String name;
-    private int totalUsers;
+    /*private int totalUsers;
     private int currentUsers;
     private Long masterId;
     private Long playListId;
@@ -38,13 +36,13 @@ public class ChatRoomDetailDto {
     private int position;
     private Boolean paused;
     private ChatRoomType type;
-    private ChatRoomStatus status;
+    private ChatRoomStatus status;*/
     // position paused
 
-    public ChatRoomDetailDto(ChatRoom chatRoom){
+    public ChatRoomDetailsDto(ChatRoom chatRoom){
         this.chatRoomId = chatRoom.getId();
         this.name = chatRoom.getName();
-        this.totalUsers = chatRoom.getTotalMember();
+        /*this.totalUsers = chatRoom.getTotalMember();
         this.currentUsers = chatRoom.getCurrentMember();
         this.status = chatRoom.getStatus();
         this.type = chatRoom.getType();
@@ -52,6 +50,6 @@ public class ChatRoomDetailDto {
         if (totalUsers > 0){
             this.masterId = chatRoom.getMasterId();
         }
-        // 플레이리스트 추가 필요
+        // 플레이리스트 추가 필요*/
     }
 }

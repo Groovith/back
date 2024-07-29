@@ -5,7 +5,7 @@ import com.groovith.groovith.domain.Follow;
 import com.groovith.groovith.dto.FollowResponse;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.domain.User;
-import com.groovith.groovith.dto.UserDetailsResponse;
+import com.groovith.groovith.dto.UserDetailsResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,16 +21,16 @@ public class FollowService {
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
 
-    public FollowResponse getFollowing(String username) {
-        User user = userRepository.findByUsername(username).orElse(null);
+    public FollowResponse getFollowing(Long userId) {
+        User user = userRepository.findById(userId).orElse(null);
         if (user == null) {
             return null; // 예외 추가 필요
         }
 
-        List<UserDetailsResponse> followingList = new ArrayList<>();
+        List<UserDetailsResponseDto> followingList = new ArrayList<>();
 
         for(Follow follow : user.getFollowing()) {
-            UserDetailsResponse response = new UserDetailsResponse();
+            UserDetailsResponseDto response = new UserDetailsResponseDto();
             response.setUsername(follow.getFollowing().getUsername());
             followingList.add(response);
         }
@@ -38,16 +38,16 @@ public class FollowService {
         return new FollowResponse(followingList, null);
     }
 
-    public FollowResponse getFollowers(String username) {
-        User user = userRepository.findByUsername(username).orElse(null);
+    public FollowResponse getFollowers(Long userId) {
+        User user = userRepository.findById(userId).orElse(null);
         if (user == null) {
             return null; // 예외 추가 필요
         }
 
-        List<UserDetailsResponse> followerList = new ArrayList<>();
+        List<UserDetailsResponseDto> followerList = new ArrayList<>();
 
         for(Follow follow : user.getFollowers()) {
-            UserDetailsResponse response = new UserDetailsResponse();
+            UserDetailsResponseDto response = new UserDetailsResponseDto();
             response.setUsername(follow.getFollowing().getUsername());
             followerList.add(response);
         }
