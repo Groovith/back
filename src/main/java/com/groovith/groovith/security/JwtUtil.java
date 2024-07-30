@@ -46,17 +46,10 @@ public class JwtUtil {
     }
 
     public void validateToken(String token, Long userId){
-        if (token == null){
-            throw new UnauthorizedException("헤더에 access 가 존재하지않습니다.");
-        } else if ( token.isEmpty()) {
-            throw new UnauthorizedException("헤더의 access 에 값이 존재하지않습니다.");
-        }
-
         // 토큰 유효성 검증
         try{
             Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
         } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e){
-
             throw new UnauthorizedException("JWT 토큰값이 잘못되었습니다.", e);
         } catch (ExpiredJwtException e){
 
