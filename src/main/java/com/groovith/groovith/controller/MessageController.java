@@ -53,6 +53,10 @@ public class MessageController {
             messageService.save(messageDto);
             template.convertAndSend("/sub/api/chat/" + messageDto.getChatRoomId(), messageDto);
         }*/
+
+        // 메세지 저장 테스트
+        //messageService.save(messageDto);
+
         template.convertAndSend("/sub/api/chat/" + messageDto.getChatRoomId(), messageDto);
     }
 
@@ -63,9 +67,6 @@ public class MessageController {
     public Result messages(@PathVariable(name = "chatRoomId")Long chatRoomId ){
         return new Result(messageService.findAllDesc(chatRoomId));
     }
-
-
-
 
 
     @Data

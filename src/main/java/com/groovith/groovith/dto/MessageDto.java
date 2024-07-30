@@ -31,13 +31,12 @@ public class MessageDto {
 
     private String track;
 
-    public Message toEntity(UserChatRoom userChatRoom){
-        return Message.builder()
-                .content(content)
-                .messageType(type)
-                .userChatRoom(userChatRoom)
-                .build();
-    }
+//    public Message toEntity(UserChatRoom userChatRoom){
+//        return Message.builder()
+//                .content(content)
+//                .messageType(type)
+//                .build();
+//    }
 //
 //    @Builder
 //    public Message(String content, UserChatRoom userChatRoom, MessageType messageType){

@@ -30,7 +30,11 @@ public class ChatRoom {
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL)
     private final List<UserChatRoom> userChatRooms = new ArrayList<>();
 
-     private String imageUrl;
+    private String imageUrl;
+
+    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE)
+    private final List<Message> messages = new ArrayList<>();
+
 
     // 현재 방에 있는 사람 수
 //    @Column(name = "current_member")

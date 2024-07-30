@@ -1,7 +1,9 @@
 package com.groovith.groovith.service;
 
 
+import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.Message;
+import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.UserChatRoomRepository;
 import com.groovith.groovith.domain.UserChatRoom;
@@ -25,17 +27,18 @@ import java.util.stream.Collectors;
 public class MessageService {
 
     private final MessageRepository messageRepository;
-    private final UserRepository userRepository;
     private final ChatRoomRepository chatRoomRepository;
-    private final UserChatRoomRepository userChatRoomRepository;
 
     public Message save(MessageDto messageDto){
 
-        UserChatRoom userChatRoom = userChatRoomRepository
-                .findByUserIdAndChatRoomId(messageDto.getUserId(), messageDto.getChatRoomId())
-                .orElseThrow(()->new IllegalArgumentException(
-                        "채팅방에 유저가 존재하지 않음 userId"+messageDto.getUserId()+" chatroomId:"+messageDto.getChatRoomId()));
-        return messageRepository.save(messageDto.toEntity(userChatRoom));
+        Long chatRoomId = messageDto.getChatRoomId();
+        ChatRoom chatRoom = chatRoomRepository.findById(messageDto.getChatRoomId())
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+
+        Message message = Message.setMessage(
+                messageDto.getContent(),chatRoom, messageDto.getUserId(), messageDto.getType());
+
+        return messageRepository.save(message);
     }
 
     /**
