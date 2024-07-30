@@ -15,28 +15,37 @@ public class Message{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="userChatRoom_id")
-    UserChatRoom userChatRoom;
-
     private String content;
 
     @Enumerated(EnumType.STRING)
     private MessageType messageType;
 
-    @Column(name = "chatRoom_id")
-    private Long chatRoomId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="chatRoom_id")
+    private ChatRoom chatRoom;
 
     @Column(name = "user_id")
     private Long userId;
 
     @Builder
-    public Message(String content, UserChatRoom userChatRoom, MessageType messageType){
+    public Message(String content,ChatRoom chatRoom, Long userId, MessageType messageType){
         this.content = content;
-        this.userChatRoom = userChatRoom;
         this.messageType = messageType;
-        this.chatRoomId = userChatRoom.getChatRoom().getId();
-        this.userId = userChatRoom.getUser().getId();
-        userChatRoom.getMessages().add(this);
+        this.chatRoom = chatRoom;
+        this.userId = userId;
+    }
+
+    /**
+     * 연관관계 편의 메서드, 메세지 생성은 setMessage()로 생성
+     * */
+    public static Message setMessage(String content,ChatRoom chatRoom, Long userId, MessageType messageType){
+        Message message = Message.builder()
+                .content(content)
+                .messageType(messageType)
+                .chatRoom(chatRoom)
+                .userId(userId)
+                .build();
+        chatRoom.getMessages().add(message);
+        return message;
     }
 }

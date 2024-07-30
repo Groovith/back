@@ -6,9 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
@@ -25,9 +22,6 @@ public class UserChatRoom{
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="chatRoom_id")
     private ChatRoom chatRoom;
-
-    @OneToMany(mappedBy = "userChatRoom")
-    private List<Message> messages = new ArrayList<>();
 
     // 빌더패턴 + 양방향
     @Builder

@@ -45,7 +45,7 @@ public class MessageListDto {
     //sentAt: "0000-00-00T00:00:00Z",
     public MessageListDto(Message message){
         this.messageId = message.getId();
-        this.chatRoomId = message.getChatRoomId();
+        this.chatRoomId = message.getChatRoom().getId();
         this.senderId = message.getUserId();
         this.content = message.getContent();
         this.type = message.getMessageType();

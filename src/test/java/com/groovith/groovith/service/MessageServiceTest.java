@@ -5,6 +5,7 @@ import com.groovith.groovith.controller.UserController;
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.dto.MessageDto;
 import com.groovith.groovith.dto.MessageListDto;
+import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.MessageRepository;
 import com.groovith.groovith.repository.UserChatRoomRepository;
 import org.assertj.core.api.Assertions;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,24 +30,31 @@ class MessageServiceTest {
 
     @InjectMocks MessageService messageService;
     @Mock private MessageRepository messageRepository;
-    @Mock private UserChatRoomRepository userChatRoomRepository;
+    @Mock private ChatRoomRepository chatRoomRepository;
 
     @Test
     public void save(){
         //given
-        UserChatRoom userChatRoom = createUserChatRoom();
+        Long userId = 1L;
+        Long chatRoomId = 1L;
+        String content = "Hi";
+
+        ChatRoom chatRoom = ChatRoom.builder()
+                .name("room")
+                .build();
+        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
 
         MessageDto messageDto = new MessageDto();
-        messageDto.setContent("hi");
+        messageDto.setContent(content);
         messageDto.setType(MessageType.CHAT);
-        messageDto.setUserId(1L);
-        messageDto.setChatRoomId(1L);
+        messageDto.setUserId(userId);
+        messageDto.setChatRoomId(chatRoomId);
 
-        Message message = messageDto.toEntity(userChatRoom);
+        Message message = Message.setMessage("hi", chatRoom, userId, MessageType.CHAT);
 
         //when
-        when(userChatRoomRepository.findByUserIdAndChatRoomId(anyLong(), anyLong()))
-                .thenReturn(Optional.of(userChatRoom));
+        when(chatRoomRepository.findById(anyLong()))
+                .thenReturn(Optional.of(chatRoom));
         when(messageRepository.save(any(Message.class)))
                 .thenReturn(message);
 
