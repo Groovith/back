@@ -45,7 +45,7 @@ public class JwtUtil {
         return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().getExpiration().before(new Date());
     }
 
-    public void validateToken(String token, Long userId){
+    public void validateToken(String token){
         // 토큰 유효성 검증
         try{
             Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
