@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -22,6 +23,7 @@ import java.io.PrintWriter;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -65,16 +67,29 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        // username, role 값을 획득
-        String username = jwtUtil.getUsername(accessToken);
-        String role = jwtUtil.getRole(accessToken);
+        // 토큰 정보와 DB 내 유저가 일치하는지 확인 -> 일치하는 경우 CustomUserDetails 생성
+//        String username = jwtUtil.getUsername(accessToken);
+//        String role = jwtUtil.getRole(accessToken);
+        Long userId = jwtUtil.getUserId(accessToken);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(userId.toString());
 
-        User user = new User();
-        user.setUsername(username);
-        user.setRole(role);
-        CustomUserDetails customUserDetails = new CustomUserDetails(user);
+        if (userDetails == null) {
+            // 해당하는 유저가 없는 경우
+            //response body
+            PrintWriter writer = response.getWriter();
+            writer.print("User does not exist");
 
-        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
+            //response status code
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
+
+//        User user = new User();
+//        user.setUsername(username);
+//        user.setRole(role);
+//        CustomUserDetails customUserDetails = new CustomUserDetails(user);
+
+        Authentication authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authToken);
 
         filterChain.doFilter(request, response);
