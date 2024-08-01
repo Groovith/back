@@ -1,4 +1,4 @@
-package com.groovith.groovith.service;
+package com.groovith.groovith.security;
 
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.repository.UserRepository;
@@ -16,14 +16,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-
-        User userData = userRepository.findByUsername(username).orElse(null);
-
-        if (userData != null) {
-            return new CustomUserDetails(userData);
-        }
-
-
-        return null;
+        User user = userRepository.findByUsername(username).orElseThrow(() ->new UsernameNotFoundException("Username not found."));
+        return new CustomUserDetails(user);
     }
 }

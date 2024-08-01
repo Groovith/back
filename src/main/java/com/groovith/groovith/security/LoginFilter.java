@@ -98,7 +98,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         authenticationService.addRefresh(userId, refresh, 86400000L);
 
         // 응답 설정
-        response.setHeader("access", access);
+        response.setHeader("Authorization", "Bearer " + access);
         response.addCookie(createCookie("refresh", refresh));
         response.setStatus(HttpStatus.OK.value());
     }
