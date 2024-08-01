@@ -48,12 +48,12 @@ public class AuthenticationService {
         }
 
         Long userId = jwtUtil.getUserId(refresh);
-        //String username = jwtUtil.getUsername(refresh);
+        String username = jwtUtil.getUsername(refresh);
         String role = jwtUtil.getRole(refresh);
 
         //make new JWT
-        String newAccess = jwtUtil.createJwt("access", userId, role, 86400000L);        // 24시간 유효
-        String newRefresh = jwtUtil.createJwt("refresh", userId, role, 604800000L);   // 7일 유효
+        String newAccess = jwtUtil.createJwt("access", userId, username, role, 86400000L);        // 24시간 유효
+        String newRefresh = jwtUtil.createJwt("refresh", userId, username, role, 604800000L);   // 7일 유효
 
         //Refresh 토큰 저장 DB에 기존의 Refresh 토큰 삭제 후 새 Refresh 토큰 저장
         refreshRepository.deleteByRefresh(refresh);

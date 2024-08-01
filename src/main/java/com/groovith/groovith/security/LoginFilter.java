@@ -65,8 +65,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         //유저 정보
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long userId = userDetails.getUserId();
-
-        //String username = authentication.getName();
+        String username = authentication.getName();
 
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
@@ -91,8 +90,8 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         }
 
         // 토큰 생성
-        String access = jwtUtil.createJwt("access", userId, role, 86400000L);
-        String refresh = jwtUtil.createJwt("refresh", userId, role, 604800000L);
+        String access = jwtUtil.createJwt("access", userId, username, role, 86400000L);
+        String refresh = jwtUtil.createJwt("refresh", userId, username, role, 604800000L);
 
         // Refresh 토큰 저장
         authenticationService.addRefresh(userId, refresh, 86400000L);

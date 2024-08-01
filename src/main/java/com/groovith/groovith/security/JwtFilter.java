@@ -70,8 +70,8 @@ public class JwtFilter extends OncePerRequestFilter {
         // 토큰 정보와 DB 내 유저가 일치하는지 확인 -> 일치하는 경우 CustomUserDetails 생성
 //        String username = jwtUtil.getUsername(accessToken);
 //        String role = jwtUtil.getRole(accessToken);
-        Long userId = jwtUtil.getUserId(accessToken);
-        UserDetails userDetails = userDetailsService.loadUserByUsername(userId.toString());
+        String username = jwtUtil.getUsername(accessToken);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
         if (userDetails == null) {
             // 해당하는 유저가 없는 경우

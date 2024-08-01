@@ -64,10 +64,11 @@ public class JwtUtil {
         // 웹소켓에 연결 시도한 유저와 토큰에서의 userId가 다를 경우
     }
 
-    public String createJwt(String category, Long userId, String role, Long expiredMs) {
+    public String createJwt(String category, Long userId, String username, String role, Long expiredMs) {
         return Jwts.builder()
                 .claim("category", category)
                 .claim("userId", userId)
+                .claim("username", username)
                 .claim("role", role)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiredMs))
