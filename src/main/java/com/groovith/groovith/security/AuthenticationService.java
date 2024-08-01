@@ -60,7 +60,7 @@ public class AuthenticationService {
         addRefresh(userId, newRefresh, 86400000L);
 
         //response
-        response.setHeader("access", newAccess);
+        response.setHeader("Authorization", "Bearer " + newAccess);
         response.addCookie(createCookie("refresh", newRefresh));
     }
 
