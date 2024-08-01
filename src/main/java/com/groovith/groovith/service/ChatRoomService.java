@@ -65,8 +65,8 @@ public class ChatRoomService {
      * 내 채팅방 목록 조회
      */
     @Transactional(readOnly = true)
-    public ChatRoomDetailsListDto getChatRooms(String accessToken) {
-        User user = userService.getUserByAccessToken(accessToken);
+    public ChatRoomDetailsListDto getChatRoomsById(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
         // UserChatRoom 에서 현재 사용자가 참가 중인 채팅방 가져오기
         List<UserChatRoom> userChatRoomList = userChatRoomRepository.findByUserId(user.getId());

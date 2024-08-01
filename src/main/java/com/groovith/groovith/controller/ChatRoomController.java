@@ -1,7 +1,9 @@
 package com.groovith.groovith.controller;
 
 import com.groovith.groovith.domain.ChatRoom;
+import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.*;
+import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.ChatRoomService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,8 +47,8 @@ public class ChatRoomController {
      * 내 채팅방 목록 조회
      */
     @GetMapping("/api/chatroom")
-    public ResponseEntity<ChatRoomDetailsListDto> getChatRooms(@RequestHeader String access) {
-        return new ResponseEntity<>(chatRoomService.getChatRooms(access), HttpStatus.OK);
+    public ResponseEntity<ChatRoomDetailsListDto> getChatRooms(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return new ResponseEntity<>(chatRoomService.getChatRoomsById(userDetails.getUserId()), HttpStatus.OK);
     }
 
 
