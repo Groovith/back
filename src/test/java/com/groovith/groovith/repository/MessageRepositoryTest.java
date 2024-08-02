@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,23 +28,20 @@ class MessageRepositoryTest {
         //given
         String content = "Hi";
         User user = new User();
-        ChatRoom chatRoom = ChatRoom
-                .builder()
-                .name("room")
-                .chatRoomType(ChatRoomType.SONG)
-                .build();
-
-        Message message = Message.builder()
-                .content(content)
-                .userChatRoom(UserChatRoom.setUserChatRoom(user, chatRoom))
-                .messageType(MessageType.CHAT)
-                .build();
+        ChatRoom chatRoom = createChatRoom();
+        Message message = createMessage(chatRoom);
+        LocalDateTime now = LocalDateTime.now();
 
         //when
         Message savedMessage = messageRepository.save(message);
 
         //then
         Assertions.assertThat(savedMessage).isEqualTo(message);
+        Assertions.assertThat(savedMessage.getCreatedAt()).isEqualTo(message.getCreatedAt());
+
+        System.out.println("message created date : "+ savedMessage.getCreatedAt());
+        System.out.println("message created date : "+ savedMessage.getCreatedAt()
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
     }
 
     @Test
@@ -51,10 +50,10 @@ class MessageRepositoryTest {
         User user = createUser();
         ChatRoom chatRoom = createChatRoom();
         ChatRoom chatRoom1 = createChatRoom();
-        Message m1 = createMessage(user, chatRoom);
-        Message m2 = createMessage(user, chatRoom);
-        Message m3 = createMessage(user, chatRoom);
-        Message m4 = createMessage(user, chatRoom1);
+        Message m1 = createMessage(chatRoom);
+        Message m2 = createMessage(chatRoom);
+        Message m3 = createMessage(chatRoom);
+        Message m4 = createMessage(chatRoom1);
         messageRepository.save(m1);
         messageRepository.save(m2);
         messageRepository.save(m3);
@@ -85,16 +84,15 @@ class MessageRepositoryTest {
         ChatRoom chatRoom = ChatRoom
                 .builder()
                 .name("room")
-                .chatRoomType(ChatRoomType.SONG)
                 .build();
         chatRoomRepository.save(chatRoom);
         return chatRoom;
     }
 
-    public Message createMessage(User user, ChatRoom chatRoom){
+    public Message createMessage(ChatRoom chatRoom){
         Message message = Message.builder()
                 .content("hi")
-                .userChatRoom(UserChatRoom.setUserChatRoom(user, chatRoom))
+                .chatRoom(chatRoom)
                 .messageType(MessageType.CHAT)
                 .build();
         return message;
