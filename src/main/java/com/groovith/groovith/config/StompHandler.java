@@ -12,6 +12,8 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 @Slf4j
 @RequiredArgsConstructor
 @Component
@@ -42,6 +44,9 @@ public class StompHandler implements ChannelInterceptor {
             log.info("userId : {}", userId);
 
             jwtUtil.validateToken(token);
+
+            // userId를 세션에 저장
+            Objects.requireNonNull(accessor.getSessionAttributes()).put("userId", userId);
         }
         return message;
     }
