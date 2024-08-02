@@ -50,7 +50,7 @@ class MessageServiceTest {
         messageDto.setUserId(userId);
         messageDto.setChatRoomId(chatRoomId);
 
-        Message message = Message.setMessage("hi", chatRoom, userId, MessageType.CHAT);
+        Message message = Message.setMessage(content, chatRoom, userId, MessageType.CHAT);
 
         //when
         when(chatRoomRepository.findById(anyLong()))
@@ -63,16 +63,17 @@ class MessageServiceTest {
 
         //then
         Assertions.assertThat(savedMessage).isEqualTo(message);
+
     }
 
     @Test
     public void findAllDesc(){
         //given
-        UserChatRoom userChatRoom = createUserChatRoom();
+        ChatRoom chatRoom = createChatRoom();
 
         List<Message> data = new ArrayList<>();
         for(int i=0; i<5; i++){
-            Message message = createMessage(userChatRoom);
+            Message message = createMessage(chatRoom);
             data.add(message);
         }
         List<MessageListDto>messageList = data.stream().map(MessageListDto::new).collect(Collectors.toList());
@@ -87,20 +88,17 @@ class MessageServiceTest {
 
     }
 
-    public UserChatRoom createUserChatRoom(){
-        User user = new User();
-        ChatRoom chatRoom = ChatRoom.builder()
+    public ChatRoom createChatRoom(){
+        return ChatRoom.builder()
                 .name("room")
-                .chatRoomType(ChatRoomType.SONG)
                 .build();
-        return UserChatRoom.setUserChatRoom(user, chatRoom);
     }
 
-    public Message createMessage(UserChatRoom userChatRoom){
+    public Message createMessage(ChatRoom chatRoom){
         return Message.builder()
-                .content("1")
+                .content("content")
                 .messageType(MessageType.CHAT)
-                .userChatRoom(userChatRoom)
+                .chatRoom(chatRoom)
                 .build();
     }
 }
