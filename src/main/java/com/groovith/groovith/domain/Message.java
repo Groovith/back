@@ -6,10 +6,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-public class Message{
+public class Message extends BaseTime{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
