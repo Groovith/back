@@ -26,21 +26,20 @@ public class StompHandler implements ChannelInterceptor {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
         // 웹소켓 연결시 Stomp 메세지 헤더의 Authorization 에 담긴 jwtToken 검증
         if (StompCommand.CONNECT == accessor.getCommand()){
-            String token = accessor.getFirstNativeHeader("access");
 
-            //access -> Authorization 변경시 추가 코드
-//            String token = accessor.getFirstNativeHeader("Authorization");
-//            if (token == null) {
-//                throw new UnauthorizedException("Authorization 헤더가 없습니다.");
-//            } else if (token.isEmpty()) {
-//                throw new UnauthorizedException("Authorization 헤더에 값이 없습니다.");
-//            } else if (token.startsWith(BEARER_PREFIX)) {
-//                token = token.substring(BEARER_PREFIX.length());
-//            }
+            String token = accessor.getFirstNativeHeader("Authorization");
+
+            if (token == null) {
+                throw new UnauthorizedException("Authorization 헤더가 없습니다.");
+            } else if (token.isEmpty()) {
+                throw new UnauthorizedException("Authorization 헤더에 값이 없습니다.");
+            } else if (token.startsWith(BEARER_PREFIX)) {
+                token = token.substring(BEARER_PREFIX.length());
+            }
 
             // userId 를 토큰에서부터 받아오게끔 수정
             Long userId = jwtUtil.getUserId(token);
-            log.info("userId:{}", userId);
+            log.info("userId : {}", userId);
 
             jwtUtil.validateToken(token);
         }
