@@ -151,6 +151,11 @@ public class ChatRoomService {
         UserChatRoom.deleteUserChatRoom(userChatRoom, user, chatRoom);
         // current 1 감소
 //        chatRoom.subUser();
+
+        // 유저 퇴장시, 채팅방이 비어있다면 현재 채팅방 삭제
+        if(chatRoom.getUserChatRooms().isEmpty()){
+            chatRoomRepository.deleteById(chatRoomId);
+        }
     }
 
 }
