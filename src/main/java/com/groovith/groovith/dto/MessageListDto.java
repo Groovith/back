@@ -55,6 +55,7 @@ public class MessageListDto {
         this.userId = message.getUserId();
         this.content = message.getContent();
         this.type = message.getMessageType();
+        this.username = message.getUsername();
         this.createdAt = message.getCreatedAt();
     }
 }

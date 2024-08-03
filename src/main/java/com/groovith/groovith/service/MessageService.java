@@ -38,7 +38,7 @@ public class MessageService {
                 .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
 
         Message message = Message.setMessage(
-                messageDto.getContent(),chatRoom, messageDto.getUserId(), messageDto.getType());
+                messageDto.getContent(),chatRoom, messageDto.getUserId(), messageDto.getType(), messageDto.getUsername());
 
         return messageRepository.save(message);
     }
@@ -48,6 +48,7 @@ public class MessageService {
      * */
     @Transactional(readOnly = true)
     public List<MessageListDto> findAllDesc(Long chatRoomId){
+
         return messageRepository.findAllByChatRoomId(chatRoomId).stream()
                 .map(MessageListDto::new)
                 .collect(Collectors.toList());
