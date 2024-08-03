@@ -29,23 +29,27 @@ public class Message extends BaseTime{
     @Column(name = "user_id")
     private Long userId;
 
+    private String username;
+
     @Builder
-    public Message(String content,ChatRoom chatRoom, Long userId, MessageType messageType){
+    public Message(String content,ChatRoom chatRoom, Long userId, MessageType messageType, String username){
         this.content = content;
         this.messageType = messageType;
         this.chatRoom = chatRoom;
         this.userId = userId;
+        this.username = username;
     }
 
     /**
      * 연관관계 편의 메서드, 메세지 생성은 setMessage()로 생성
      * */
-    public static Message setMessage(String content,ChatRoom chatRoom, Long userId, MessageType messageType){
+    public static Message setMessage(String content,ChatRoom chatRoom, Long userId, MessageType messageType, String username){
         Message message = Message.builder()
                 .content(content)
                 .messageType(messageType)
                 .chatRoom(chatRoom)
                 .userId(userId)
+                .username(username)
                 .build();
         chatRoom.getMessages().add(message);
         return message;

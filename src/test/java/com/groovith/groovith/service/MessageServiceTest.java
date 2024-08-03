@@ -50,7 +50,7 @@ class MessageServiceTest {
         messageDto.setUserId(userId);
         messageDto.setChatRoomId(chatRoomId);
 
-        Message message = Message.setMessage(content, chatRoom, userId, MessageType.CHAT);
+        Message message = Message.setMessage(content, chatRoom, userId, MessageType.CHAT, messageDto.getUsername());
 
         //when
         when(chatRoomRepository.findById(anyLong()))

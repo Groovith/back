@@ -83,6 +83,7 @@ public class MessageController {
         messageDto.setUserId(userId);
         messageDto.setContent(messageRequestDto.getContent());
         messageDto.setType(messageRequestDto.getType());
+        messageDto.setUsername(user.get().getUsername());
         Message message = messageService.save(messageDto);
 
         // 메시지 반환 Dto
