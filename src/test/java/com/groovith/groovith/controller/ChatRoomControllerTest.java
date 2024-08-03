@@ -9,6 +9,7 @@
 //import com.groovith.groovith.dto.ChatRoomListResponseDto;
 //import com.groovith.groovith.dto.CreateChatRoomRequestDto;
 //import com.groovith.groovith.dto.EnterChatRoomRequestDto;
+//import com.groovith.groovith.security.CustomUserDetails;
 //import com.groovith.groovith.service.ChatRoomService;
 //import org.junit.jupiter.api.Test;
 //import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@
 //import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 //import org.springframework.boot.test.mock.mockito.MockBean;
 //import org.springframework.http.MediaType;
+//import org.springframework.security.core.userdetails.User;
 //import org.springframework.security.test.context.support.WithMockUser;
 //import org.springframework.test.util.ReflectionTestUtils;
 //import org.springframework.test.web.servlet.MockMvc;
@@ -50,15 +52,15 @@
 //        Long chatRoomId = 1L;
 //        CreateChatRoomRequestDto requestDto = new CreateChatRoomRequestDto();
 //        requestDto.setName("room");
-//        requestDto.setChatRoomType(ChatRoomType.SONG);
-//        requestDto.setChatRoomStatus(ChatRoomStatus.PUBLIC);
-//        requestDto.setUserId(userId);
 //
 //        ChatRoom chatRoom = createChatRoom("room");
+//
 //        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+//
 //        //when
-//        when(chatRoomService.create(any(CreateChatRoomRequestDto.class)))
+//        when(chatRoomService.create(userId, requestDto))
 //                .thenReturn(chatRoom);
+//
 //
 //        ResultActions actions = mockMvc.perform(
 //                post("/api/chatroom")
@@ -158,7 +160,7 @@
 //
 //
 //        //when
-//        doNothing().when(chatRoomService).enterChatRoom(anyString(), anyLong());
+//        doNothing().when(chatRoomService).enterChatRoom(anyLong(), anyLong());
 //
 //        ResultActions actions = mockMvc.perform(
 //                post("/api/chatroom/{chatRoomId}", chatRoomId)

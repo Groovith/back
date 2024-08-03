@@ -6,11 +6,13 @@ import com.groovith.groovith.dto.ConnectSpotifyRequestDto;
 import com.groovith.groovith.dto.SpotifyTokenResponseDto;
 import com.groovith.groovith.dto.StreamingTypeResponseDto;
 import com.groovith.groovith.exception.UserNotFoundException;
+import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.SpotifyService;
 import com.groovith.groovith.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -31,8 +33,8 @@ public class StreamingController {
      * @return 성공 시 200, 스티리밍 서비스 정보(없는 경우 NONE)
      */
     @GetMapping()
-    ResponseEntity<StreamingTypeResponseDto> getStreaming(@RequestHeader("access") String accessToken) {
-        User user = userService.getUserByAccessToken(accessToken);
+    ResponseEntity<StreamingTypeResponseDto> getStreaming(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        User user = userDetails.getUser();
         StreamingTypeResponseDto responseDto = new StreamingTypeResponseDto();
         switch (user.getStreaming()) {
             case NONE -> responseDto.setType(StreamingType.NONE);
@@ -53,7 +55,7 @@ public class StreamingController {
      * @return 성공 시 200(Ok) | code 가 없거나 유효하지 않은 경우 400(Bad Request) | 토큰 요청 시도 중 오류 발생 시 500
      */
     @PostMapping("/spotify")
-    ResponseEntity<SpotifyTokenResponseDto> connectSpotify(@RequestHeader("access") String accessToken, @RequestBody ConnectSpotifyRequestDto requestDto) {
+    ResponseEntity<SpotifyTokenResponseDto> connectSpotify(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestBody ConnectSpotifyRequestDto requestDto) {
         String code = requestDto.getCode();
         SpotifyTokenResponseDto responseDto = new SpotifyTokenResponseDto();
 
@@ -64,7 +66,7 @@ public class StreamingController {
         }
 
         try {
-            User user = userService.getUserByAccessToken(accessToken);
+            User user = userDetails.getUser();
 
             // code 통해서 토큰 발행 요청
             responseDto = spotifyService.requestSpotifyTokens(user, code);
@@ -87,8 +89,8 @@ public class StreamingController {
      * @return SpotifyTokensResponseDto
      */
     @GetMapping("/spotify")
-    ResponseEntity<SpotifyTokenResponseDto> getTokens(@RequestHeader("access") String accessToken) {
-        User user = userService.getUserByAccessToken(accessToken);
+    ResponseEntity<SpotifyTokenResponseDto> getTokens(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        User user = userDetails.getUser();
         return new ResponseEntity<>(spotifyService.refreshSpotifyTokens(user), HttpStatus.OK);
     }
 
@@ -101,9 +103,9 @@ public class StreamingController {
      * @return 성공 시 200(Ok) | 연결되어 있지 않은 경우 400(Bad Request) + message | 서버 오류 시 500(Internal Server Error) + message
      */
     @DeleteMapping("/spotify")
-    ResponseEntity<?> disconnectSpotify(@RequestHeader("access") String accessToken) {
+    ResponseEntity<?> disconnectSpotify(@AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            User user = userService.getUserByAccessToken(accessToken);
+            User user = userDetails.getUser();
             if (user.getStreaming() != StreamingType.SPOTIFY) {
                 return new ResponseEntity<>("Spotify에 연결되어 있지 않습니다.", HttpStatus.BAD_REQUEST);
             }

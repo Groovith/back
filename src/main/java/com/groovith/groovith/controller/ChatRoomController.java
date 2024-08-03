@@ -27,8 +27,8 @@ public class ChatRoomController {
      *  채팅방 생성
      * */
     @PostMapping("/api/chatroom")
-    public ResponseEntity<CreateChatRoomResponseDto> createChatRoom(@RequestHeader String access, @RequestBody CreateChatRoomRequestDto request) {
-        ChatRoom chatRoom = chatRoomService.create(access, request);
+    public ResponseEntity<CreateChatRoomResponseDto> createChatRoom( @AuthenticationPrincipal CustomUserDetails userDetails, @RequestBody CreateChatRoomRequestDto request) {
+        ChatRoom chatRoom = chatRoomService.create(userDetails.getUserId(), request);
         CreateChatRoomResponseDto response = new CreateChatRoomResponseDto();
         response.setChatRoomId(chatRoom.getId());
 
@@ -64,8 +64,8 @@ public class ChatRoomController {
      * 채팅방 입장
      * */
     @PostMapping("api/chatroom/{chatRoomId}")
-    public ResponseEntity<?> enterChatRoom(@PathVariable(name = "chatRoomId") Long chatRoomId, @RequestHeader String access){
-        chatRoomService.enterChatRoom(access, chatRoomId);
+    public ResponseEntity<?> enterChatRoom(@PathVariable(name = "chatRoomId") Long chatRoomId, @AuthenticationPrincipal CustomUserDetails userDetails){
+        chatRoomService.enterChatRoom(userDetails.getUserId(), chatRoomId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -73,8 +73,8 @@ public class ChatRoomController {
      * 채팅방 퇴장
      * */
     @PutMapping("api/chatroom/{chatRoomId}")
-    public ResponseEntity<?> leaveChatRoom(@PathVariable(name = "chatRoomId") Long chatRoomId, @RequestHeader String access){
-        chatRoomService.leaveChatRoom(access, chatRoomId);
+    public ResponseEntity<?> leaveChatRoom(@PathVariable(name = "chatRoomId") Long chatRoomId, @AuthenticationPrincipal CustomUserDetails userDetails){
+        chatRoomService.leaveChatRoom(userDetails.getUserId(), chatRoomId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
