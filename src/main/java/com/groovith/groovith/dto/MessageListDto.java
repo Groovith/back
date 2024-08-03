@@ -1,6 +1,7 @@
 package com.groovith.groovith.dto;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.groovith.groovith.domain.PlayerCall;
 import com.groovith.groovith.domain.Message;
 import com.groovith.groovith.domain.MessageType;
@@ -31,24 +32,29 @@ import java.time.LocalDateTime;
 public class MessageListDto {
     private Long messageId;
     private Long chatRoomId;
-    private MessageType type;
-    private PlayerCall playerCall;
-    private Long playlistId;
-    private Long playlistIndex;
-    private Long newIndex;
-    //private TrackDto trackDto;
-    private Long position;
-    private Long senderId;
+    private Long userId;
+    private String username;
     private String content;
-    private LocalDateTime sentAt;
+    private MessageType type;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Seoul")
+    private LocalDateTime createdAt;
+
+//    private PlayerCall playerCall;
+//    private Long playlistId;
+//    private Long playlistIndex;
+//    private Long newIndex;
+//    private TrackDto trackDto;
+//    private Long position;
+//    private Long senderId;
 
     //sentAt: "0000-00-00T00:00:00Z",
     public MessageListDto(Message message){
         this.messageId = message.getId();
         this.chatRoomId = message.getChatRoom().getId();
-        this.senderId = message.getUserId();
+        this.userId = message.getUserId();
         this.content = message.getContent();
         this.type = message.getMessageType();
-        //this.sentAt = message.getCreatedDate();
+        this.createdAt = message.getCreatedAt();
     }
 }

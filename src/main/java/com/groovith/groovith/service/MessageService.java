@@ -3,6 +3,8 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.Message;
+import com.groovith.groovith.dto.MessageRequestDto;
+import com.groovith.groovith.dto.MessageResponseDto;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.UserChatRoomRepository;
