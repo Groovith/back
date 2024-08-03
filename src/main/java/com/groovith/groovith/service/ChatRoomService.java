@@ -35,7 +35,7 @@ public class ChatRoomService {
     /**
      * 채팅방 생성
      * */
-    public ChatRoom create(String accessToken, CreateChatRoomRequestDto request){
+    public ChatRoom create(Long userId, CreateChatRoomRequestDto request){
         // 생성 실패해도 id 늘어남
         ChatRoom chatRoom = chatRoomRepository.save(request.toEntity());
 
@@ -44,7 +44,9 @@ public class ChatRoomService {
         /*Long userId = request.getUserId();
         User user = userRepository.findById(userId)
                 .orElseThrow(()->new UserNotFoundException(userId));*/
-        User user = userService.getUserByAccessToken(accessToken);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(()->new UserNotFoundException(userId));
 
         // 유저 - 채팅방 연관관계 생성
         UserChatRoom.setUserChatRoom(user, chatRoom);
@@ -101,14 +103,15 @@ public class ChatRoomService {
     /**
      * 채팅방 입장
      * */
-    public void enterChatRoom(String accessToken, Long chatRoomId){
+    public void enterChatRoom(Long userId, Long chatRoomId){
         // 유저, 채팅방 조회
-        User user = userService.getUserByAccessToken(accessToken);
+        User user = userRepository.findById(userId)
+                .orElseThrow(()-> new UserNotFoundException(userId));
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
         // 유저가 이미 채팅방에 있는지 확인
         //있을경우 -> chatRoomId와 Redirect 메시지 전달 (클라이언트는 해당 id의 채팅방 페이지로 리디렉션)
-        if (userChatRoomRepository.findByUserIdAndChatRoomId(user.getId(), chatRoomId).isPresent()){
+        if (userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId).isPresent()){
             //throw new IllegalArgumentException("채팅방에 이미 유저가 있습니다 userId:"+user.getId());
         }
         else{
@@ -134,9 +137,10 @@ public class ChatRoomService {
     /**
      *  채팅방 퇴장
      * */
-    public void leaveChatRoom(String accessToken, Long chatRoomId) {
+    public void leaveChatRoom(Long userId, Long chatRoomId) {
 
-        User user = userService.getUserByAccessToken(accessToken);
+        User user = userRepository.findById(userId)
+                .orElseThrow(()-> new UserNotFoundException(userId));
 
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));

@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class CreateChatRoomRequestDto {
-    private Long userId;
+    //private Long userId;
     private String name;
 //    private ChatRoomStatus chatRoomStatus;  // "private" | "friends" | "public"
 //    private ChatRoomType chatRoomType;     // "song" | "album" | "artist" | "playlist"
@@ -24,7 +24,7 @@ public class CreateChatRoomRequestDto {
 //    private Long playlistId;
 
     public CreateChatRoomRequestDto(Long userId, String name, ChatRoomStatus chatRoomStatus, ChatRoomType chatRoomType, Long typeId) {
-        this.userId = userId;
+        //this.userId = userId;
         this.name = name;
 //        this.chatRoomStatus = chatRoomStatus;
 //        this.chatRoomType = chatRoomType;
