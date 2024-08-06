@@ -125,7 +125,7 @@ public class ChatRoomService {
             // UserChatRoom 에 유저 등록
             UserChatRoom.setUserChatRoom(user, chatRoom);
             // currentMember += 1
-//            chatRoom.addUser();
+            chatRoom.addUser();
         }
     }
 
@@ -151,10 +151,10 @@ public class ChatRoomService {
         // User, ChatRoom의 연관관계 삭제
         UserChatRoom.deleteUserChatRoom(userChatRoom, user, chatRoom);
         // current 1 감소
-//        chatRoom.subUser();
+        chatRoom.subUser();
 
         // 유저 퇴장시, 채팅방이 비어있다면 현재 채팅방 삭제
-        if(chatRoom.getUserChatRooms().isEmpty()){
+        if(chatRoom.getCurrentMemberCount()==0){
             chatRoomRepository.deleteById(chatRoomId);
         }
     }
