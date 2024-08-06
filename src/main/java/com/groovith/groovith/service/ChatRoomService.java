@@ -1,13 +1,16 @@
 package com.groovith.groovith.service;
 
 
-import com.groovith.groovith.dto.*;
+import com.groovith.groovith.dto.ChatRoomDetailsListDto;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.UserChatRoomRepository;
 import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.UserChatRoom;
+import com.groovith.groovith.dto.ChatRoomDetailsDto;
+import com.groovith.groovith.dto.ChatRoomListResponseDto;
+import com.groovith.groovith.dto.CreateChatRoomRequestDto;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.domain.User;
 import lombok.RequiredArgsConstructor;
@@ -169,4 +172,28 @@ public class ChatRoomService {
                 .map(userChatRoom -> userChatRoom.getUser().toUserChatRoomDto(userChatRoom.getUser()))
                 .collect(Collectors.toList());
     }
+
+    /**
+     * 채팅방으로 초대
+     */
+    public void invite(Long inviterId, Long inviteeId, Long chatRoomId){
+        log.info("invite service");
+        // 초대받은 유저가 채팅방에 이미 참가중인지 확인
+        if (userChatRoomRepository.findByUserIdAndChatRoomId(inviteeId, chatRoomId).isPresent()){
+            throw new IllegalArgumentException("채팅방에 유저가 이미 존재합니다");
+        }
+
+        User inviter = userRepository.findById(inviterId)
+                .orElseThrow(()->new UserNotFoundException(inviterId));
+        User invitee = userRepository.findById(inviteeId)
+                .orElseThrow(()-> new UserNotFoundException(inviteeId));
+
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+
+        // 초대받은 유저와 채팅방 연관관계 생성
+        UserChatRoom.setUserChatRoom(invitee, chatRoom);
+    }
+
+
 }
