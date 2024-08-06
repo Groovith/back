@@ -1,16 +1,13 @@
 package com.groovith.groovith.service;
 
 
-import com.groovith.groovith.dto.ChatRoomDetailsListDto;
+import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.UserChatRoomRepository;
 import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.UserChatRoom;
-import com.groovith.groovith.dto.ChatRoomDetailsDto;
-import com.groovith.groovith.dto.ChatRoomListResponseDto;
-import com.groovith.groovith.dto.CreateChatRoomRequestDto;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.domain.User;
 import lombok.RequiredArgsConstructor;

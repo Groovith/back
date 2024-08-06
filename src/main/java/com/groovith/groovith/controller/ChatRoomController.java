@@ -18,6 +18,7 @@ import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
+@RequestMapping("/api")
 @RestController
 public class ChatRoomController {
 
@@ -99,7 +100,7 @@ public class ChatRoomController {
     /**
      * 채팅방으로 초대
      * */
-    @PostMapping("/api/chatrooms/{chatRoomId}/members/{userId}")
+    @PostMapping("/chatrooms/{chatRoomId}/members/{userId}")
     public ResponseEntity<?> inviteChatRoom(
             @PathVariable(name="chatRoomId") Long chatRoomId, @PathVariable(name = "userId")Long userId, @AuthenticationPrincipal CustomUserDetails userDetails){
         chatRoomService.invite(userDetails.getUserId(), userId, chatRoomId);
