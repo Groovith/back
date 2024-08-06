@@ -162,4 +162,28 @@ public class ChatRoomService {
         }
     }
 
+
+    /**
+     * 채팅방으로 초대
+     */
+    public void invite(Long inviterId, Long inviteeId, Long chatRoomId){
+        log.info("invite service");
+        // 초대받은 유저가 채팅방에 이미 참가중인지 확인
+        if (userChatRoomRepository.findByUserIdAndChatRoomId(inviteeId, chatRoomId).isPresent()){
+            throw new IllegalArgumentException("채팅방에 유저가 이미 존재합니다");
+        }
+
+        User inviter = userRepository.findById(inviterId)
+                .orElseThrow(()->new UserNotFoundException(inviterId));
+        User invitee = userRepository.findById(inviteeId)
+                .orElseThrow(()-> new UserNotFoundException(inviteeId));
+
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+
+        // 초대받은 유저와 채팅방 연관관계 생성
+        UserChatRoom.setUserChatRoom(invitee, chatRoom);
+    }
+
+
 }
