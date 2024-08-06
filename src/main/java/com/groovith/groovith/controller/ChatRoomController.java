@@ -87,6 +87,17 @@ public class ChatRoomController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+
+    /**
+     * 채팅방으로 초대
+     * */
+    @PostMapping("/api/chatrooms/{chatRoomId}/members/{userId}")
+    public ResponseEntity<?> inviteChatRoom(
+            @PathVariable(name="chatRoomId") Long chatRoomId, @PathVariable(name = "userId")Long userId, @AuthenticationPrincipal CustomUserDetails userDetails){
+        chatRoomService.invite(userDetails.getUserId(), userId, chatRoomId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     @Data
     @AllArgsConstructor
     static class Result<T>{
