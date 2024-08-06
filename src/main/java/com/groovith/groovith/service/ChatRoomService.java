@@ -1,16 +1,13 @@
 package com.groovith.groovith.service;
 
 
-import com.groovith.groovith.dto.ChatRoomDetailsListDto;
+import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.UserChatRoomRepository;
 import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.UserChatRoom;
-import com.groovith.groovith.dto.ChatRoomDetailsDto;
-import com.groovith.groovith.dto.ChatRoomListResponseDto;
-import com.groovith.groovith.dto.CreateChatRoomRequestDto;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.domain.User;
 import lombok.RequiredArgsConstructor;
@@ -128,7 +125,7 @@ public class ChatRoomService {
             // UserChatRoom 에 유저 등록
             UserChatRoom.setUserChatRoom(user, chatRoom);
             // currentMember += 1
-//            chatRoom.addUser();
+            chatRoom.addUser();
         }
     }
 
@@ -154,14 +151,24 @@ public class ChatRoomService {
         // User, ChatRoom의 연관관계 삭제
         UserChatRoom.deleteUserChatRoom(userChatRoom, user, chatRoom);
         // current 1 감소
-//        chatRoom.subUser();
+        chatRoom.subUser();
 
         // 유저 퇴장시, 채팅방이 비어있다면 현재 채팅방 삭제
-        if(chatRoom.getUserChatRooms().isEmpty()){
+        if(chatRoom.getCurrentMemberCount()==0){
             chatRoomRepository.deleteById(chatRoomId);
         }
     }
 
+
+    @Transactional(readOnly = true)
+    public List<UserChatRoomDto> findAllUser(Long chatRoomId){
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+
+        return chatRoom.getUserChatRooms().stream()
+                .map(userChatRoom -> userChatRoom.getUser().toUserChatRoomDto(userChatRoom.getUser()))
+                .collect(Collectors.toList());
+    }
 
     /**
      * 채팅방으로 초대

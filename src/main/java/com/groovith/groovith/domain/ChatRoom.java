@@ -35,10 +35,9 @@ public class ChatRoom {
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE)
     private final List<Message> messages = new ArrayList<>();
 
-
     // 현재 방에 있는 사람 수
-//    @Column(name = "current_member")
-//    private int currentMember;
+    @Column(name = "current_member_count")
+    private int currentMemberCount;
 
 //    @Enumerated(EnumType.STRING)
 //    private ChatRoomStatus status;
@@ -52,6 +51,7 @@ public class ChatRoom {
         this.name = name;
         //this.status = chatRoomStatus;
         //this.type = chatRoomType;
+        this.currentMemberCount = 1; // 채팅방이 생성될때 처음인원 1명
     }
 
     /**
@@ -73,18 +73,14 @@ public class ChatRoom {
 //        }
 //    }
 
-    // 채팅방에 유저 입장
-//    public void addUser(){
-//        this.currentMember += 1;
-//    }
+    //채팅방에 유저 입장
+    public void addUser(){
+        this.currentMemberCount += 1;
+    }
 
-    // 채팅방 유저 퇴장
-//    public void subUser(){
-//        if(currentMember == 0){
-//            throw new NoUserInChatRoomException(this.getId());
-//        }
-//        this.currentMember -= 1;
-//
-//    }
+    //채팅방 유저 퇴장
+    public void subUser(){
+        this.currentMemberCount -= 1;
+    }
 
 }
