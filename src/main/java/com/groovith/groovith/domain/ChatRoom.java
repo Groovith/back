@@ -1,6 +1,5 @@
 package com.groovith.groovith.domain;
 
-import com.groovith.groovith.exception.NoUserInChatRoomException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -39,11 +38,16 @@ public class ChatRoom {
     @Column(name = "current_member_count")
     private int currentMemberCount;
 
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
+    @JoinColumn(name = "file_id")
+    private Image image;
+
 //    @Enumerated(EnumType.STRING)
 //    private ChatRoomStatus status;
 
 //    @Enumerated(EnumType.STRING)
 //    private ChatRoomType type;
+
 
 
     @Builder
