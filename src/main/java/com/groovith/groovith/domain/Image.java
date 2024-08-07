@@ -19,12 +19,6 @@ public class Image {
     @Column(name = "image_url")
     private String imageUrl;
 
-    @OneToOne(mappedBy = "image", fetch = FetchType.LAZY)
-    private User user;
-
-    @OneToOne(mappedBy = "image", fetch = FetchType.LAZY)
-    private ChatRoom chatRoom;
-
     @Builder
     public Image(String imageUrl){
         this.imageUrl = imageUrl;

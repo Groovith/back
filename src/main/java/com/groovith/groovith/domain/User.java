@@ -39,10 +39,8 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<UserChatRoom> userChatRoom = new ArrayList<>();
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
-    @JoinColumn(name = "image_id")
-    private Image image;
-
+    @Column(name = "image_url")
+    String imageUrl;
     public UserChatRoomDto toUserChatRoomDto(User user){
         return new UserChatRoomDto(user);
     }

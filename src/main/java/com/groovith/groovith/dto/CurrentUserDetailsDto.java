@@ -9,10 +9,12 @@ public class CurrentUserDetailsDto {
     private Long id;
     private String username;
     private StreamingType streaming;
+    private String imageUrl;
 
     public CurrentUserDetailsDto(User user) {
         this.id = user.getId();
         this.username = user.getUsername();
         this.streaming = user.getStreaming();
+        this.imageUrl = user.getImageUrl();
     }
 }
