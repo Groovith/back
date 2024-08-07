@@ -29,7 +29,7 @@ public class ImageController {
      * 채팅방 이미지 업로드(수정, 교체)
      * */
     @PutMapping("/upload/chatroom/{chatRoomId}")
-    public ResponseEntity<> chatRoomUploadFile(@RequestParam("file") MultipartFile file, @PathVariable("chatRoomId")Long chatRoomId) {
+    public ResponseEntity<?> chatRoomUploadFile(@RequestParam("file") MultipartFile file, @PathVariable("chatRoomId")Long chatRoomId) {
         imageService.chatRoomUpLoadFile(file, chatRoomId);
 
         return new ResponseEntity<>(HttpStatus.OK);
