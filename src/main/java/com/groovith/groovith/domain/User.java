@@ -39,6 +39,8 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<UserChatRoom> userChatRoom = new ArrayList<>();
 
+    @Column(name = "image_url")
+    String imageUrl;
     public UserChatRoomDto toUserChatRoomDto(User user){
         return new UserChatRoomDto(user);
     }
