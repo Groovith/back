@@ -1,6 +1,5 @@
 package com.groovith.groovith.service;
 
-
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.dto.ChatRoomDetailsListDto;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
@@ -129,7 +128,7 @@ public class ChatRoomService {
             // UserChatRoom 에 유저 등록
             UserChatRoom.setUserChatRoom(user, chatRoom);
             // currentMember += 1
-//            chatRoom.addUser();
+            chatRoom.addUser();
         }
     }
 
@@ -155,14 +154,48 @@ public class ChatRoomService {
         // User, ChatRoom의 연관관계 삭제
         UserChatRoom.deleteUserChatRoom(userChatRoom, user, chatRoom);
         // current 1 감소
-//        chatRoom.subUser();
+        chatRoom.subUser();
 
         // 유저 퇴장시, 채팅방이 비어있다면 현재 채팅방 삭제
-        if(chatRoom.getUserChatRooms().isEmpty()){
+        if(chatRoom.getCurrentMemberCount()==0){
             chatRoomRepository.deleteById(chatRoomId);
             // 채팅방 플레이리스트 함께 삭제
             currentPlaylistRepository.deleteByChatRoomId(chatRoomId);
         }
     }
+
+
+    @Transactional(readOnly = true)
+    public List<UserChatRoomDto> findAllUser(Long chatRoomId){
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+
+        return chatRoom.getUserChatRooms().stream()
+                .map(userChatRoom -> userChatRoom.getUser().toUserChatRoomDto(userChatRoom.getUser()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 채팅방으로 초대
+     */
+    public void invite(Long inviterId, Long inviteeId, Long chatRoomId){
+        log.info("invite service");
+        // 초대받은 유저가 채팅방에 이미 참가중인지 확인
+        if (userChatRoomRepository.findByUserIdAndChatRoomId(inviteeId, chatRoomId).isPresent()){
+            throw new IllegalArgumentException("채팅방에 유저가 이미 존재합니다");
+        }
+
+        User inviter = userRepository.findById(inviterId)
+                .orElseThrow(()->new UserNotFoundException(inviterId));
+        User invitee = userRepository.findById(inviteeId)
+                .orElseThrow(()-> new UserNotFoundException(inviteeId));
+
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+
+        // 초대받은 유저와 채팅방 연관관계 생성
+        UserChatRoom.setUserChatRoom(invitee, chatRoom);
+    }
+
 
 }

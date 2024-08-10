@@ -1,5 +1,6 @@
 package com.groovith.groovith.domain;
 
+import com.groovith.groovith.dto.UserChatRoomDto;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,4 +38,10 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<UserChatRoom> userChatRoom = new ArrayList<>();
+
+    @Column(name = "image_url")
+    String imageUrl;
+    public UserChatRoomDto toUserChatRoomDto(User user){
+        return new UserChatRoomDto(user);
+    }
 }

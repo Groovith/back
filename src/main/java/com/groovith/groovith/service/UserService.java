@@ -1,5 +1,6 @@
 package com.groovith.groovith.service;
 
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.groovith.groovith.domain.StreamingType;
 import com.groovith.groovith.dto.SpotifyTokenResponseDto;
 import com.groovith.groovith.dto.UserDetailsResponseDto;
@@ -9,23 +10,30 @@ import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.JoinDto;
 import com.groovith.groovith.security.JwtUtil;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final JwtUtil jwtUtil;
+    private final AmazonS3Client amazonS3Client;
+
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucket;
+    private String DEFAULT_IMG_URL = "https://groovith-bucket.s3.ap-northeast-2.amazonaws.com/user/user_default.png";
 
     public void join(JoinDto joinDto) throws IllegalArgumentException {
         String username = joinDto.getUsername();
         String password = joinDto.getPassword();
-
         Boolean isExist = userRepository.existsByUsername(username);
 
         if (isExist) {
@@ -38,6 +46,7 @@ public class UserService {
         data.setPassword(bCryptPasswordEncoder.encode(password));
         data.setRole("ROLE_USER");
         data.setStreaming(StreamingType.NONE);
+        data.setImageUrl(DEFAULT_IMG_URL);
 
         userRepository.save(data);
     }
