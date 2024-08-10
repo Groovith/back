@@ -1,15 +1,13 @@
 package com.groovith.groovith.service;
 
-
-import com.groovith.groovith.dto.*;
+import com.groovith.groovith.domain.*;
+import com.groovith.groovith.dto.ChatRoomDetailsListDto;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.UserNotFoundException;
-import com.groovith.groovith.repository.ChatRoomRepository;
-import com.groovith.groovith.repository.UserChatRoomRepository;
-import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.UserChatRoom;
-import com.groovith.groovith.repository.UserRepository;
-import com.groovith.groovith.domain.User;
+import com.groovith.groovith.repository.*;
+import com.groovith.groovith.dto.ChatRoomDetailsDto;
+import com.groovith.groovith.dto.ChatRoomListResponseDto;
+import com.groovith.groovith.dto.CreateChatRoomRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +26,7 @@ public class ChatRoomService {
     private final UserRepository userRepository;
     private final UserService userService;
     private final UserChatRoomRepository userChatRoomRepository;
+    private final CurrentPlaylistRepository currentPlaylistRepository;
 
     /**
      * 채팅방 생성
@@ -47,6 +46,10 @@ public class ChatRoomService {
 
         // 유저 - 채팅방 연관관계 생성
         UserChatRoom.setUserChatRoom(user, chatRoom);
+
+        // 채팅방 플레이리스트 생성
+        currentPlaylistRepository.save(new CurrentPlaylist(chatRoom.getId()));
+
         return chatRoom;
     }
 
@@ -156,6 +159,8 @@ public class ChatRoomService {
         // 유저 퇴장시, 채팅방이 비어있다면 현재 채팅방 삭제
         if(chatRoom.getCurrentMemberCount()==0){
             chatRoomRepository.deleteById(chatRoomId);
+            // 채팅방 플레이리스트 함께 삭제
+            currentPlaylistRepository.deleteByChatRoomId(chatRoomId);
         }
     }
 
