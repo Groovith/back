@@ -1,13 +1,10 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.*;
-import com.groovith.groovith.dto.ChatRoomDetailsListDto;
+import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.*;
-import com.groovith.groovith.dto.ChatRoomDetailsDto;
-import com.groovith.groovith.dto.ChatRoomListResponseDto;
-import com.groovith.groovith.dto.CreateChatRoomRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
