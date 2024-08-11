@@ -12,7 +12,23 @@ spring.datasource.url=jdbc:mysql://localhost:3306/{DB명}?useSSL=false&useUnicod
 spring.datasource.username={유저네임}
 spring.datasource.password={비밀번호}
 
+# MongoDB
+spring.data.mongodb.uri={MONGODB_URI}
+
 # JPA 설정
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+# Spotify API
+spotify.client-id={SPOTIFY APP CLIENT_ID}
+spotify.client-secret={SPOTIFY APP CLIENT_SECRET}
+spotify.redirect-uri={SPOTIFY APP CALLBACK URL}
+
+#S3 설정
+cloud.aws.region.static=ap-northeast-2
+cloud.aws.stack.auto-=false
+
+cloud.aws.s3.bucket={버킷이름}
+cloud.aws.credentials.accessKey={발급받은 엑세스키}
+cloud.aws.credentials.secretKey={발급받은 시크릿키}}
 ```
