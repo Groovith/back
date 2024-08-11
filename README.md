@@ -16,6 +16,11 @@ spring.datasource.password={비밀번호}
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
 
+# Spotify API
+spotify.client-id={SPOTIFY APP CLIENT_ID}
+spotify.client-secret={SPOTIFY APP CLIENT_SECRET}
+spotify.redirect-uri={SPOTIFY APP CALLBACK URL}
+
 #S3 설정
 cloud.aws.s3.bucket={버킷이름}
 cloud.aws.credentials.accessKey={발급받은 엑세스키}
