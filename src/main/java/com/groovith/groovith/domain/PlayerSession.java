@@ -15,4 +15,5 @@ public class PlayerSession {
     private Boolean repeat;
     private LocalDateTime startedAt;
     private AtomicInteger userCount;
+    private Long duration;
 }
