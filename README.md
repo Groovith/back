@@ -12,6 +12,9 @@ spring.datasource.url=jdbc:mysql://localhost:3306/{DB명}?useSSL=false&useUnicod
 spring.datasource.username={유저네임}
 spring.datasource.password={비밀번호}
 
+# MongoDB
+spring.data.mongodb.uri={MONGODB_URI}
+
 # JPA 설정
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
