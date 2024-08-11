@@ -15,4 +15,9 @@ spring.datasource.password={비밀번호}
 # JPA 설정
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+#S3 설정
+cloud.aws.s3.bucket={버킷이름}
+cloud.aws.credentials.accessKey={발급받은 엑세스키}
+cloud.aws.credentials.secretKey={발급받은 시크릿키}}
 ```
