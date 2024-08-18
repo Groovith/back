@@ -1,6 +1,7 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.ChatRoom;
+import com.groovith.groovith.domain.ChatRoomStatus;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.ChatRoomDetailsDto;
 import com.groovith.groovith.dto.SearchChatRoomsResponseDto;
@@ -34,8 +35,11 @@ public class SearchService {
         List<ChatRoom> chatRooms = chatRoomRepository.findChatRoomByNameContaining(name);
         List<ChatRoomDetailsDto> chatRoomDetailsDtos = new ArrayList<>();
         for (ChatRoom chatRoom : chatRooms) {
-            ChatRoomDetailsDto dto = new ChatRoomDetailsDto(chatRoom);
-            chatRoomDetailsDtos.add(dto);
+            // 공개 설정된 채팅방만 검색 결과에 포함
+            if(chatRoom.getStatus() == ChatRoomStatus.PUBLIC){
+                ChatRoomDetailsDto dto = new ChatRoomDetailsDto(chatRoom);
+                chatRoomDetailsDtos.add(dto);
+            }
         }
         return new SearchChatRoomsResponseDto(chatRoomDetailsDtos);
     }
