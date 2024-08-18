@@ -34,13 +34,13 @@ public class ChatRoom {
 
     // 현재 방에 있는 사람 수
     @Column(name = "current_member_count")
-    private int currentMemberCount;
+    private Integer currentMemberCount;
 
     @Column(name = "image_url")
     private String imageUrl;
 
-//    @Enumerated(EnumType.STRING)
-//    private ChatRoomStatus status;
+    @Enumerated(EnumType.STRING)
+    private ChatRoomStatus status;
 
 //    @Enumerated(EnumType.STRING)
 //    private ChatRoomType type;
@@ -48,9 +48,9 @@ public class ChatRoom {
 
 
     @Builder
-    public ChatRoom(String name) {
+    public ChatRoom(String name, ChatRoomStatus chatRoomStatus) {
         this.name = name;
-        //this.status = chatRoomStatus;
+        this.status = chatRoomStatus;
         //this.type = chatRoomType;
         this.currentMemberCount = 1; // 채팅방이 생성될때 처음인원 1명
         this.imageUrl = "https://groovith-bucket.s3.ap-northeast-2.amazonaws.com/chatroom/chatroom_default.png";

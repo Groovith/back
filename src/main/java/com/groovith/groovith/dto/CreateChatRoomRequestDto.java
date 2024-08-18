@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class CreateChatRoomRequestDto {
     //private Long userId;
     private String name;
-//    private ChatRoomStatus chatRoomStatus;  // "private" | "friends" | "public"
+    private ChatRoomStatus status;  // "private" | "public"
 //    private ChatRoomType chatRoomType;     // "song" | "album" | "artist" | "playlist"
 //
 //    private Long songId;
@@ -26,7 +26,7 @@ public class CreateChatRoomRequestDto {
     public CreateChatRoomRequestDto(Long userId, String name, ChatRoomStatus chatRoomStatus, ChatRoomType chatRoomType, Long typeId) {
         //this.userId = userId;
         this.name = name;
-//        this.chatRoomStatus = chatRoomStatus;
+        this.status = chatRoomStatus;
 //        this.chatRoomType = chatRoomType;
 //
 //        switch (chatRoomType) {
@@ -48,7 +48,7 @@ public class CreateChatRoomRequestDto {
     public ChatRoom toEntity(){
         ChatRoom chatRoom =  ChatRoom.builder()
                             .name(this.name)
-                            //.chatRoomStatus(this.chatRoomStatus)
+                            .chatRoomStatus(this.status)
                             //.chatRoomType(this.chatRoomType)
                             .build();
         return chatRoom;

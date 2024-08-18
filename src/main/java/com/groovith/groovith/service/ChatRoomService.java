@@ -32,12 +32,6 @@ public class ChatRoomService {
         // 생성 실패해도 id 늘어남
         ChatRoom chatRoom = chatRoomRepository.save(request.toEntity());
 
-
-        // 채팅방 생성유저
-        /*Long userId = request.getUserId();
-        User user = userRepository.findById(userId)
-                .orElseThrow(()->new UserNotFoundException(userId));*/
-
         User user = userRepository.findById(userId)
                 .orElseThrow(()->new UserNotFoundException(userId));
 
