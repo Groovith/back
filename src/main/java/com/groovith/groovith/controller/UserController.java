@@ -1,12 +1,10 @@
 package com.groovith.groovith.controller;
 
 import com.groovith.groovith.domain.User;
-import com.groovith.groovith.dto.CurrentUserDetailsDto;
+import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.UserService;
-import com.groovith.groovith.dto.JoinDto;
-import com.groovith.groovith.dto.UserDetailsResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,5 +40,11 @@ public class UserController {
     @GetMapping("/users/{username}")
     public ResponseEntity<UserDetailsResponseDto> getUserByUsername(@PathVariable String username) {
         return new ResponseEntity<>(userService.getUserByUsername(username), HttpStatus.OK);
+    }
+
+    // 이메일 중복 체크, 중복이 없을 시 200 SU, 중복이 존재하면 400 DI, 데이터베이스 오류 500 DBE
+    @PostMapping("/auth/email-check")
+    public ResponseEntity<EmailCheckResponseDto> checkEmail(@RequestBody EmailCheckRequestDto emailCheckRequestDto) {
+        return userService.checkEmail(emailCheckRequestDto.getEmail());
     }
 }

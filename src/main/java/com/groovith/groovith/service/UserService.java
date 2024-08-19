@@ -2,6 +2,7 @@ package com.groovith.groovith.service;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.groovith.groovith.domain.StreamingType;
+import com.groovith.groovith.dto.EmailCheckResponseDto;
 import com.groovith.groovith.dto.SpotifyTokenResponseDto;
 import com.groovith.groovith.dto.UserDetailsResponseDto;
 import com.groovith.groovith.exception.UserNotFoundException;
@@ -13,6 +14,7 @@ import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -108,5 +110,20 @@ public class UserService {
         responseDto.setSpotifyAccessToken(user.getSpotifyRefreshToken());
 
         return responseDto;
+    }
+
+    // 이메일 중복 검사
+    public ResponseEntity<EmailCheckResponseDto> checkEmail(String email) {
+        try {
+            boolean existsByEmail = userRepository.existsByEmail(email);
+            if (!existsByEmail) {
+                return EmailCheckResponseDto.success();
+            } else {
+                return EmailCheckResponseDto.duplicateId();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return EmailCheckResponseDto.databaseError();
+        }
     }
 }

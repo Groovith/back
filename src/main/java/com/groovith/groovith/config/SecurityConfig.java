@@ -86,7 +86,7 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/api/login", "/", "/api/join").permitAll()
+                        .requestMatchers("/api/login", "/", "/api/join","/api/auth/email-check").permitAll()
 //                        .requestMatchers("/admin").hasRole("ADMIN") // 어드민 경로 인가 설정
                         .requestMatchers("/api/reissue").permitAll() // 토큰 재발행
                         .requestMatchers("/ws/**").permitAll() // 추후 웹소켓 인증 구현 필요
