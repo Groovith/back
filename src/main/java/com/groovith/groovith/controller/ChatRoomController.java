@@ -3,6 +3,7 @@ package com.groovith.groovith.controller;
 import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.*;
+import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.ChatRoomService;
 import lombok.AllArgsConstructor;
@@ -64,16 +65,20 @@ public class ChatRoomController {
     /**
      * 채팅방 입장
      * */
-    @PostMapping("/chatrooms/{chatRoomId}/members")
+    @PutMapping("/chatrooms/{chatRoomId}/enter")
     public ResponseEntity<?> enterChatRoom(@PathVariable(name = "chatRoomId") Long chatRoomId, @AuthenticationPrincipal CustomUserDetails userDetails){
-        chatRoomService.enterChatRoom(userDetails.getUserId(), chatRoomId);
-        return new ResponseEntity<>(HttpStatus.OK);
+        try {
+            chatRoomService.enterChatRoom(userDetails.getUserId(), chatRoomId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        }catch (ChatRoomFullException e){
+            return new ResponseEntity<>("현재 채팅방이 최대인원으로 꽉 찼습니다",HttpStatus.FORBIDDEN);
+        }
     }
 
     /**
      * 채팅방 퇴장
      * */
-    @PutMapping("/chatrooms/{chatRoomId}/members")
+    @PutMapping("/chatrooms/{chatRoomId}/leave")
     public ResponseEntity<?> leaveChatRoom(@PathVariable(name = "chatRoomId") Long chatRoomId, @AuthenticationPrincipal CustomUserDetails userDetails){
         chatRoomService.leaveChatRoom(userDetails.getUserId(), chatRoomId);
         return new ResponseEntity<>(HttpStatus.OK);

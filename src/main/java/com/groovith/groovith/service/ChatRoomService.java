@@ -2,11 +2,13 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.dto.*;
+import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +26,7 @@ public class ChatRoomService {
     private final UserService userService;
     private final UserChatRoomRepository userChatRoomRepository;
     private final CurrentPlaylistRepository currentPlaylistRepository;
-
+    private final int MAX_MEMBER = 100;
     /**
      * 채팅방 생성
      * */
@@ -105,22 +107,16 @@ public class ChatRoomService {
         if (userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId).isPresent()){
             //throw new IllegalArgumentException("채팅방에 이미 유저가 있습니다 userId:"+user.getId());
         }
-        else{
-            // 채팅방에 아무도 없을경우 처음부터 재생`
 
-            // masterId 얻고 이 유저의 현재 재생 시각 get
-            /*if (chatRoom.getTotalMember()>0){
-                Long masterId = chatRoom.getMasterId();
-            }*/
-
-            // 현재 재생시각 적용
-
-
-            // UserChatRoom 에 유저 등록
-            UserChatRoom.setUserChatRoom(user, chatRoom);
-            // currentMember += 1
-            chatRoom.addUser();
+        // 채팅방 인원 제한 : 100명
+        if(chatRoom.getCurrentMemberCount() >= MAX_MEMBER){
+            throw new ChatRoomFullException(chatRoomId);
         }
+        // UserChatRoom 에 유저 등록
+        UserChatRoom.setUserChatRoom(user, chatRoom);
+        // currentMember += 1
+        chatRoom.addUser();
+
     }
 
 
