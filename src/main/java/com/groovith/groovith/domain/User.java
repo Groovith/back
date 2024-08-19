@@ -41,6 +41,10 @@ public class User {
 
     @Column(name = "image_url")
     String imageUrl;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
+    private List<Notification> notifications = new ArrayList<>();
+
     public UserChatRoomDto toUserChatRoomDto(User user){
         return new UserChatRoomDto(user);
     }

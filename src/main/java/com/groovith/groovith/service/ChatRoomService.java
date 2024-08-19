@@ -182,6 +182,7 @@ public class ChatRoomService {
 
         // 초대받은 유저와 채팅방 연관관계 생성
         UserChatRoom.setUserChatRoom(invitee, chatRoom);
+        chatRoom.addUser();
     }
 
 

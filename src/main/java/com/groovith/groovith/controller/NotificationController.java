@@ -24,7 +24,7 @@ public class NotificationController {
 
     private final SimpMessageSendingOperations template;
     private final NotificationService notificationService;
-
+    private final UserService userService;
 
     /**
      * 채팅방에 user 초대시 초대받는 유저에게 알림
@@ -33,10 +33,10 @@ public class NotificationController {
     @MessageMapping("/api/notification/{userId}")
     public ResponseEntity<?>  inviteNotification(@Payload InviteRequestDto inviteRequestDto, @DestinationVariable Long userId){
         InviteResponseDto inviteResponseDto = new InviteResponseDto();
-        // 알림 메세지 생성
+        // 알림 메세지 생성 및 저장
         String notification = notificationService.createInviteNotification(inviteRequestDto.getInviteeId(), inviteRequestDto.getInviterId(), inviteRequestDto.getChatRoomId());
-        inviteResponseDto.setMessage(notification);
 
+        inviteResponseDto.setMessage(notification);
         template.convertAndSend("/sub/api/notification/" + userId, inviteResponseDto);
         return new ResponseEntity<>(HttpStatus.OK);
     }
