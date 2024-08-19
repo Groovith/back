@@ -4,6 +4,7 @@ import com.groovith.groovith.domain.*;
 import com.groovith.groovith.dto.ChatRoomDetailsDto;
 import com.groovith.groovith.dto.ChatRoomListResponseDto;
 import com.groovith.groovith.dto.CreateChatRoomRequestDto;
+import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
 import com.groovith.groovith.repository.UserChatRoomRepository;
@@ -123,7 +124,7 @@ class ChatRoomServiceTest {
 
     @Test
     @DisplayName("채팅방 입장 테스트")
-    public void enterChatRoom(){
+    public void enterChatRoomTest1(){
         //given
         Long chatRoomId = 1L;
         Long userId = 1L;
@@ -154,6 +155,36 @@ class ChatRoomServiceTest {
         Assertions.assertThat(chatRoom.getUserChatRooms().get(0).getUser()).isEqualTo(user);
         Assertions.assertThat(user.getUserChatRoom().get(0).getChatRoom()).isEqualTo(chatRoom);
 
+    }
+
+    @Test
+    @DisplayName("채팅방 최대인원 테스트")
+    public void enterChatRoomTest2(){
+        //given
+        Long chatRoomId = 1L;
+        Long userId = 1L;
+        Integer now = 100;
+        // 입장할 유저
+        User user = new User();
+        user.setId(userId);
+        // 입장할 채팅방 - 현재 채팅방 꽉찬 상태
+        ChatRoom chatRoom = createChatRoom("name", ChatRoomStatus.PUBLIC);
+        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+        ReflectionTestUtils.setField(chatRoom, "currentMemberCount", now);
+
+        //when
+        when(userRepository.findById(anyLong()))
+                .thenReturn(Optional.of(user));
+        when(chatRoomRepository.findById(anyLong()))
+                .thenReturn(Optional.of(chatRoom));
+        // 유저 중복x 설정
+        when(userChatRoomRepository.findByUserIdAndChatRoomId(anyLong(), anyLong()))
+                .thenReturn(Optional.empty());
+
+        //then
+        Assertions.assertThatThrownBy(()->chatRoomService.enterChatRoom(userId, chatRoomId))
+                .isInstanceOf(ChatRoomFullException.class)
+                .hasMessage("ChatRoom with id: " + chatRoomId + " is full.");
     }
 
     @Test
@@ -230,7 +261,6 @@ class ChatRoomServiceTest {
         Assertions.assertThat(user.getUserChatRoom().size()).isEqualTo(0);
 
     }
-
 
     ChatRoom createChatRoom(String name, ChatRoomStatus chatRoomStatus){
         return ChatRoom.builder()
