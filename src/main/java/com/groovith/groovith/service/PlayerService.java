@@ -5,6 +5,7 @@ import com.groovith.groovith.domain.CurrentPlaylist;
 import com.groovith.groovith.domain.PlayerActionResponseType;
 import com.groovith.groovith.domain.PlayerSession;
 import com.groovith.groovith.dto.*;
+import com.groovith.groovith.exception.CurrentPlayListFullException;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
@@ -533,6 +534,12 @@ public class PlayerService {
 
         // 플레이리스트에 새로운 트랙 추가
         List<SpotifyTrackDto> updatedTracks = new ArrayList<>(currentPlaylist.getTracks());
+
+        // 플레이리스트가 다 찼을 경우(100곡)
+        if(currentPlaylist.getTracks().size() >= 100){
+            throw new CurrentPlayListFullException(currentPlaylist.get_id());
+        }
+
         updatedTracks.add(track);
         currentPlaylist.setTracks(updatedTracks);
         currentPlaylistRepository.save(currentPlaylist);
