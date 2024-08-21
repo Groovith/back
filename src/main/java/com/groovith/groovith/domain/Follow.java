@@ -29,4 +29,11 @@ public class Follow {
 
     @CreationTimestamp
     private LocalDateTime followedAt;
+
+    // 팔로우 요청을 받았는지(or 삭제했는지)/ 안받았는지
+    private FollowStatus status;    // ACCEPTED, PENDING, REJECTED
+
+    public void updateStatus(FollowStatus status){
+        this.status = status;
+    }
 }

@@ -1,5 +1,7 @@
 package com.groovith.groovith.service;
 
+import com.groovith.groovith.domain.FollowStatus;
+import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.FollowRepository;
 import com.groovith.groovith.domain.Follow;
 import com.groovith.groovith.dto.FollowResponse;
@@ -9,6 +11,7 @@ import com.groovith.groovith.dto.UserDetailsResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,6 +81,7 @@ public class FollowService {
         Follow follow = new Follow();
         follow.setFollowing(following);
         follow.setFollower(follower);
+        follow.setStatus(FollowStatus.PENDING); // 처음 상태는 보류중인 팔로우 요청
         followRepository.save(follow);
 
         return new ResponseEntity<>(HttpStatus.OK);
@@ -108,4 +112,20 @@ public class FollowService {
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+//    // 수락하거나 거절하지 않은 팔로우 요청 조회
+//    public ResponseEntity<?> findPendingFollows(Long userId){
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(()-> new UserNotFoundException(userId));
+//
+//        List<UserDetailsResponseDto> followList = new ArrayList<>();
+//
+//        for(Follow follow : user.getFollowers()) {
+//            UserDetailsResponseDto response = new UserDetailsResponseDto();
+//            response.setUsername(follow.getFollowing().getUsername());
+//            followerList.add(response);
+//        }
+//
+//        return new FollowResponse(null, followerList);
+//    }
 }
