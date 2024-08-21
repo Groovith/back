@@ -1,10 +1,9 @@
 package com.groovith.groovith.controller;
 
-import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.*;
-import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,14 +17,10 @@ public class UserController {
 
     private final UserService userService;
 
+    // 회원가입 요청
     @PostMapping("/join")
-    public ResponseEntity<?> join(@RequestBody JoinDto joinDto) {
-        try {
-            userService.join(joinDto);
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);
-        }
+    public ResponseEntity<JoinResponseDto> join(@RequestBody JoinRequestDto joinRequestDto) {
+        return userService.join(joinRequestDto);
     }
 
     /**
@@ -46,5 +41,17 @@ public class UserController {
     @PostMapping("/auth/email-check")
     public ResponseEntity<EmailCheckResponseDto> checkEmail(@RequestBody EmailCheckRequestDto emailCheckRequestDto) {
         return userService.checkEmail(emailCheckRequestDto.getEmail());
+    }
+
+    // 이메일 인증 번호 요청
+    @PostMapping("/auth/email-certification")
+    public ResponseEntity<EmailCertificationResponseDto> emailCertification(@RequestBody @Valid EmailCertificationRequestDto requestDto) {
+        return userService.emailCertification(requestDto);
+    }
+
+    // 이메일 인증 확인 요청
+    @PostMapping("/auth/check-certification")
+    public ResponseEntity<CheckCertificationResponseDto> checkCertification(@RequestBody @Valid CheckCertificationRequestDto requestDto) {
+        return userService.checkCertification(requestDto);
     }
 }

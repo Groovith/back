@@ -13,17 +13,17 @@ public class EmailCheckResponseDto {
     private String message;
 
     public static ResponseEntity<EmailCheckResponseDto> success() {
-        EmailCheckResponseDto responseDto = new EmailCheckResponseDto(ResponseCode.SUCCESS, "Success.");
+        EmailCheckResponseDto responseDto = new EmailCheckResponseDto(ResponseCode.SUCCESS, ResponseMessage.SUCCESS);
         return ResponseEntity.ok(responseDto);
     }
 
     public static ResponseEntity<EmailCheckResponseDto> duplicateId() {
-        EmailCheckResponseDto responseDto = new EmailCheckResponseDto(ResponseCode.DUPLICATE_ID, "Duplicate Id.");
+        EmailCheckResponseDto responseDto = new EmailCheckResponseDto(ResponseCode.DUPLICATE_ID, ResponseMessage.DUPLICATE_ID);
         return ResponseEntity.badRequest().body(responseDto);
     }
 
     public static ResponseEntity<EmailCheckResponseDto> databaseError() {
-        EmailCheckResponseDto responseDto = new EmailCheckResponseDto(ResponseCode.DATABASE_ERROR, "Database error.");
+        EmailCheckResponseDto responseDto = new EmailCheckResponseDto(ResponseCode.DATABASE_ERROR, ResponseMessage.DATABASE_ERROR);
         return ResponseEntity.internalServerError().body(responseDto);
     }
 }

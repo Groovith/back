@@ -1,23 +1,21 @@
 package com.groovith.groovith.service;
 
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.groovith.groovith.domain.Certification;
 import com.groovith.groovith.domain.StreamingType;
-import com.groovith.groovith.dto.EmailCheckResponseDto;
-import com.groovith.groovith.dto.SpotifyTokenResponseDto;
-import com.groovith.groovith.dto.UserDetailsResponseDto;
+import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.UserNotFoundException;
+import com.groovith.groovith.provider.EmailProvider;
+import com.groovith.groovith.repository.CertificationRepository;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.domain.User;
-import com.groovith.groovith.dto.JoinDto;
 import com.groovith.groovith.security.JwtUtil;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -25,32 +23,51 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final CertificationRepository certificationRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final JwtUtil jwtUtil;
+    private final EmailProvider emailProvider;
     private final AmazonS3Client amazonS3Client;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
-    private String DEFAULT_IMG_URL = "https://groovith-bucket.s3.ap-northeast-2.amazonaws.com/user/user_default.png";
+    @Value("${cloud.aws.s3.defaultUserImageUrl}")
+    private String DEFAULT_IMG_URL;
 
-    public void join(JoinDto joinDto) throws IllegalArgumentException {
-        String username = joinDto.getUsername();
-        String password = joinDto.getPassword();
-        Boolean isExist = userRepository.existsByUsername(username);
+    // 회원가입
+    public ResponseEntity<JoinResponseDto> join(JoinRequestDto joinRequestDto) {
 
-        if (isExist) {
-            throw new IllegalArgumentException("User with given username already exists");
+        try {
+            String username = joinRequestDto.getUsername();
+            String password = joinRequestDto.getPassword();
+            String email = joinRequestDto.getEmail();
+
+            // 동일한 유저네임, 이메일 확인
+            boolean isUsernameExist = userRepository.existsByUsername(username);
+            boolean isEmailExist = userRepository.existsByEmail(email);
+            if (isUsernameExist || isEmailExist) return JoinResponseDto.duplicateId();
+
+            // 이메일 인증 여부 확인
+            Certification certification = certificationRepository.findByEmail(email).orElse(null);
+            if (certification == null || !certification.isCertificated()) return JoinResponseDto.certificationFail();
+
+            // 새 유저 생성
+            User user = new User();
+            user.setUsername(username);
+            user.setPassword(bCryptPasswordEncoder.encode(password));
+            user.setEmail(email);
+            user.setRole("ROLE_USER");
+            user.setStreaming(StreamingType.NONE);
+            user.setImageUrl(DEFAULT_IMG_URL);
+
+            // 유저 저장
+            userRepository.save(user);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return JoinResponseDto.databaseError();
         }
 
-        User data = new User();
-
-        data.setUsername(username);
-        data.setPassword(bCryptPasswordEncoder.encode(password));
-        data.setRole("ROLE_USER");
-        data.setStreaming(StreamingType.NONE);
-        data.setImageUrl(DEFAULT_IMG_URL);
-
-        userRepository.save(data);
+        return JoinResponseDto.success();
     }
 
     /**
@@ -125,5 +142,63 @@ public class UserService {
             e.printStackTrace();
             return EmailCheckResponseDto.databaseError();
         }
+    }
+
+    // 이메일 인증 번호 요청
+    public ResponseEntity<EmailCertificationResponseDto> emailCertification(EmailCertificationRequestDto requestDto) {
+        try {
+            String email = requestDto.getEmail();
+            // 같은 이메일로 중복 회원 있는지 검증
+            boolean isExistEmail = userRepository.existsByEmail(email);
+            if (isExistEmail) return EmailCertificationResponseDto.duplicateId();
+
+            String certificationNumber = getCertificationNumber();
+
+            // 이메일 전송 과정 오류 검증
+            boolean isSucceed = emailProvider.sendCertificationMail(email, certificationNumber);
+            if (!isSucceed) return EmailCertificationResponseDto.mailSendFail();
+
+            // 해당 이메일에 대해 인증 번호 DB 저장
+            Certification certification = new Certification(email, certificationNumber, false);
+            certificationRepository.save(certification);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return EmailCertificationResponseDto.mailSendFail();
+        }
+
+        return EmailCertificationResponseDto.success();
+    }
+
+    // 랜덤 네 자리 숫자 문자열 반환
+    private static String getCertificationNumber () {
+        StringBuilder certificationNumber = new StringBuilder();
+        for (int count = 0; count < 4; count++) certificationNumber.append((int) (Math.random() * 10));
+        return certificationNumber.toString();
+    }
+
+    // 이메일 인증 번호 확인
+    public ResponseEntity<CheckCertificationResponseDto> checkCertification(CheckCertificationRequestDto requestDto) {
+        try {
+            String email = requestDto.getEmail();
+            String certificationNumber = requestDto.getCertificationNumber();
+
+            // DB 에서 인증 객체 조회
+            Certification certification = certificationRepository.findByEmail(email).orElse(null);
+            if (certification == null) return CheckCertificationResponseDto.certificationFail();
+
+            // 이메일과 인증 번호 유효 여부 조회
+            boolean isMatched = certification.getEmail().equals(email) && certification.getCertificationNumber().equals(certificationNumber);
+            if (!isMatched) return CheckCertificationResponseDto.certificationFail();
+
+            // 유효한 이메일 인증 처리 -> 추후 회원가입에서 이메일 인증 여부 검사
+            // memo: 유저네임 및 이메일 중복 여부 확인 -> 이메일 인증 번호 요청 -> 이메일 인증 번호 확인 -> 회원가입 요청 순서
+            certification.setCertificated(true);
+            certificationRepository.save(certification);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return CheckCertificationResponseDto.databaseError();
+        }
+
+        return CheckCertificationResponseDto.success();
     }
 }
