@@ -1,17 +1,20 @@
 package com.groovith.groovith.controller;
 
 import com.groovith.groovith.domain.ChatRoom;
+import com.groovith.groovith.domain.Notification;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.ChatRoomService;
+import com.groovith.groovith.service.NotificationService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +27,8 @@ import java.util.List;
 public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
+    private final NotificationService notificationService;
+    private final SimpMessageSendingOperations template;
 
     /**
      *  채팅방 생성
@@ -109,6 +114,16 @@ public class ChatRoomController {
     public ResponseEntity<?> inviteChatRoom(
             @PathVariable(name="chatRoomId") Long chatRoomId, @PathVariable(name = "userId")Long userId, @AuthenticationPrincipal CustomUserDetails userDetails){
         chatRoomService.invite(userDetails.getUserId(), userId, chatRoomId);
+
+        // 초대 알림 전송
+        InviteResponseDto inviteResponseDto = new InviteResponseDto();
+
+        // 알림 메세지 생성 및 저장 - (초대받은사람Id, 초대한사람Id, 채팅방Id)
+        String notification = notificationService.createInviteNotification(userId, userDetails.getUserId(), chatRoomId);
+
+        inviteResponseDto.setMessage(notification);
+        template.convertAndSend("/sub/api/notification/" + userId, inviteResponseDto);
+
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
