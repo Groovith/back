@@ -3,6 +3,7 @@ package com.groovith.groovith.service;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.groovith.groovith.domain.Certification;
 import com.groovith.groovith.domain.StreamingType;
+import com.groovith.groovith.domain.UserStatus;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.provider.EmailProvider;
@@ -10,12 +11,14 @@ import com.groovith.groovith.repository.CertificationRepository;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.security.JwtUtil;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -59,6 +62,7 @@ public class UserService {
             user.setRole("ROLE_USER");
             user.setStreaming(StreamingType.NONE);
             user.setImageUrl(DEFAULT_IMG_URL);
+            user.setStatus(UserStatus.PUBLIC);
 
             // 유저 저장
             userRepository.save(user);
@@ -127,6 +131,15 @@ public class UserService {
         responseDto.setSpotifyAccessToken(user.getSpotifyRefreshToken());
 
         return responseDto;
+    }
+
+    /**
+     * 유저 status 변경
+     * */
+    @Transactional
+    public void updateStatus(Long userId){
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        user.updateStatus(user.getStatus());
     }
 
     // 이메일 중복 검사

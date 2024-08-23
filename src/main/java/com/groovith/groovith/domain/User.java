@@ -42,12 +42,21 @@ public class User {
     private List<UserChatRoom> userChatRoom = new ArrayList<>();
 
     @Column(name = "image_url")
-    String imageUrl;
+    private String imageUrl;
+
+    @Enumerated(EnumType.STRING)
+    private UserStatus status;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
     private List<Notification> notifications = new ArrayList<>();
 
     public UserChatRoomDto toUserChatRoomDto(User user){
         return new UserChatRoomDto(user);
+    }
+
+    public void updateStatus(UserStatus userStatus){
+        System.out.println("USERSTATE : "+userStatus + " " + this.getStatus());
+        this.status = (userStatus==UserStatus.PUBLIC) ? UserStatus.PRIVATE : UserStatus.PUBLIC;
+        System.out.println("USERSTATE : "+userStatus + " " + this.getStatus());
     }
 }

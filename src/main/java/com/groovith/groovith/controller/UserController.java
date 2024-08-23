@@ -1,6 +1,8 @@
 package com.groovith.groovith.controller;
 
+import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.*;
+import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.UserService;
 import jakarta.validation.Valid;
@@ -49,9 +51,13 @@ public class UserController {
         return userService.emailCertification(requestDto);
     }
 
-    // 이메일 인증 확인 요청
-    @PostMapping("/auth/check-certification")
-    public ResponseEntity<CheckCertificationResponseDto> checkCertification(@RequestBody @Valid CheckCertificationRequestDto requestDto) {
-        return userService.checkCertification(requestDto);
+    /**
+     * 현재 User 상태 변경 : PUBLIC -> PRIVATE or PRIVATE -> PUBLIC
+     * */
+    @PutMapping("/users/me/update/status")
+    public ResponseEntity<?> updateStatus(@AuthenticationPrincipal CustomUserDetails userDetails){
+        userService.updateStatus(userDetails.getUserId());
+        return new ResponseEntity<>(HttpStatus.OK);
     }
+
 }
