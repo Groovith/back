@@ -2,6 +2,7 @@ package com.groovith.groovith.service;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.groovith.groovith.domain.StreamingType;
+import com.groovith.groovith.domain.UserStatus;
 import com.groovith.groovith.dto.SpotifyTokenResponseDto;
 import com.groovith.groovith.dto.UserDetailsResponseDto;
 import com.groovith.groovith.exception.UserNotFoundException;
@@ -47,6 +48,7 @@ public class UserService {
         data.setRole("ROLE_USER");
         data.setStreaming(StreamingType.NONE);
         data.setImageUrl(DEFAULT_IMG_URL);
+        data.setStatus(UserStatus.PUBLIC); // 일단 공개로 생성
 
         userRepository.save(data);
     }
@@ -108,5 +110,11 @@ public class UserService {
         responseDto.setSpotifyAccessToken(user.getSpotifyRefreshToken());
 
         return responseDto;
+    }
+
+    @Transactional
+    public void updateStatue(Long userId){
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        user.updateStatus(user.getStatus());
     }
 }

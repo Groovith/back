@@ -43,4 +43,14 @@ public class UserController {
     public ResponseEntity<UserDetailsResponseDto> getUserByUsername(@PathVariable String username) {
         return new ResponseEntity<>(userService.getUserByUsername(username), HttpStatus.OK);
     }
+
+    /**
+     * 현재 User 상태 변경 : PUBLIC -> PRIVATE or PRIVATE -> PUBLIC
+     * */
+    @PutMapping("/users/me/update/status")
+    public ResponseEntity<?> updateStatus(@AuthenticationPrincipal CustomUserDetails userDetails){
+        userService.updateStatue(userDetails.getUserId());
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
 }
