@@ -20,14 +20,10 @@ public class UserController {
 
     private final UserService userService;
 
+    // 회원가입 요청
     @PostMapping("/join")
-    public ResponseEntity<?> join(@RequestBody JoinDto joinDto) {
-        try {
-            userService.join(joinDto);
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);
-        }
+    public ResponseEntity<JoinResponseDto> join(@RequestBody JoinRequestDto joinRequestDto) {
+        return userService.join(joinRequestDto);
     }
 
     /**
@@ -42,6 +38,24 @@ public class UserController {
     @GetMapping("/users/{username}")
     public ResponseEntity<UserDetailsResponseDto> getUserByUsername(@PathVariable String username) {
         return new ResponseEntity<>(userService.getUserByUsername(username), HttpStatus.OK);
+    }
+
+    // 이메일 중복 체크, 중복이 없을 시 200 SU, 중복이 존재하면 400 DI, 데이터베이스 오류 500 DBE
+    @PostMapping("/auth/email-check")
+    public ResponseEntity<EmailCheckResponseDto> checkEmail(@RequestBody EmailCheckRequestDto emailCheckRequestDto) {
+        return userService.checkEmail(emailCheckRequestDto.getEmail());
+    }
+
+    // 이메일 인증 번호 요청
+    @PostMapping("/auth/email-certification")
+    public ResponseEntity<EmailCertificationResponseDto> emailCertification(@RequestBody @Valid EmailCertificationRequestDto requestDto) {
+        return userService.emailCertification(requestDto);
+    }
+
+    // 이메일 인증 확인 요청
+    @PostMapping("/auth/check-certification")
+    public ResponseEntity<CheckCertificationResponseDto> checkCertification(@RequestBody @Valid CheckCertificationRequestDto requestDto) {
+        return userService.checkCertification(requestDto);
     }
 
     /**

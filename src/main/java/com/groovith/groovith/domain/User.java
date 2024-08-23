@@ -2,6 +2,7 @@ package com.groovith.groovith.domain;
 
 import com.groovith.groovith.dto.UserChatRoomDto;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,6 +23,7 @@ public class User {
     private String username;
     private String password;
     private String role;
+    private String email;
 
     @Column(name = "streaming", nullable = false)
     @Enumerated(EnumType.STRING)

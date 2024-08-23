@@ -3,7 +3,7 @@ package com.groovith.groovith.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groovith.groovith.domain.StreamingType;
 import com.groovith.groovith.domain.User;
-import com.groovith.groovith.dto.JoinDto;
+import com.groovith.groovith.dto.JoinRequestDto;
 import com.groovith.groovith.dto.UserDetailsResponseDto;
 import com.groovith.groovith.service.UserService;
 import org.junit.jupiter.api.Test;
@@ -40,17 +40,17 @@ class UserControllerTest {
         String username = "user";
         String password = "1234";
 
-        JoinDto joinDto = new JoinDto();
-        joinDto.setUsername(username);
-        joinDto.setPassword(password);
+        JoinRequestDto joinRequestDto = new JoinRequestDto();
+        joinRequestDto.setUsername(username);
+        joinRequestDto.setPassword(password);
 
-        doNothing().when(userService).join(any(JoinDto.class));
+        doNothing().when(userService).join(any(JoinRequestDto.class));
 
         //when
         ResultActions actions = mockMvc.perform(
                 post("/api/join")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(joinDto))
+                        .content(objectMapper.writeValueAsString(joinRequestDto))
                         .with(csrf())   // csrf 토큰생성,
         );
 
