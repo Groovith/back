@@ -35,8 +35,8 @@ public class UserController {
     }
 
     @GetMapping("/users/{username}")
-    public ResponseEntity<UserDetailsResponseDto> getUserByUsername(@PathVariable String username) {
-        return new ResponseEntity<>(userService.getUserByUsername(username), HttpStatus.OK);
+    public ResponseEntity<UserDetailsResponseDto> getUserByUsername(@PathVariable String username, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return new ResponseEntity<>(userService.getUserByUsername(username, userDetails.getUserId()), HttpStatus.OK);
     }
 
     // 이메일 중복 체크, 중복이 없을 시 200 SU, 중복이 존재하면 400 DI, 데이터베이스 오류 500 DBE
