@@ -16,7 +16,7 @@ import java.util.Optional;
 public class UserDetailsResponseDto {
     private Long id;
     private String username;
-    boolean isFollowing;    // 현재 로그인 중인 유저가 팔로우 중인 유저인지
+    private boolean isFollowing;    // 현재 로그인 중인 유저가 팔로우 중인 유저인지
 
     public UserDetailsResponseDto(User user) {
         this.id = user.getId();
