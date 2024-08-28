@@ -1,15 +1,13 @@
 package com.groovith.groovith.service;
 
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.groovith.groovith.domain.Certification;
-import com.groovith.groovith.domain.StreamingType;
-import com.groovith.groovith.domain.UserStatus;
+import com.groovith.groovith.domain.*;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.provider.EmailProvider;
 import com.groovith.groovith.repository.CertificationRepository;
+import com.groovith.groovith.repository.FollowRepository;
 import com.groovith.groovith.repository.UserRepository;
-import com.groovith.groovith.domain.User;
 import com.groovith.groovith.security.JwtUtil;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -31,6 +31,7 @@ public class UserService {
     private final JwtUtil jwtUtil;
     private final EmailProvider emailProvider;
     private final AmazonS3Client amazonS3Client;
+    private final FollowRepository followRepository;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
@@ -88,9 +89,21 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
-    public UserDetailsResponseDto getUserByUsername(String username) {
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
-        return new UserDetailsResponseDto(user);
+    public UserDetailsResponseDto getUserByUsername(String username, Long userId) {
+        // 현재 로그인중인 유저
+        User user = userRepository.findById(userId).orElseThrow(()-> new UserNotFoundException(userId));
+        // 조회하려는 유저
+        User findUser = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
+        UserDetailsResponseDto userDetailsResponseDto = new UserDetailsResponseDto(findUser);
+
+        Optional<Follow> follow = followRepository.findByFollowerIdAndFollowingId(userId, findUser.getId());
+        if(follow.isPresent()){
+            if(follow.get().getStatus()==FollowStatus.ACCEPTED || follow.get().getStatus()==FollowStatus.PENDING){
+            // 현재 로그인중인 유저가 조회하려는 유저를 팔로우 중이라면
+                userDetailsResponseDto.setFollowing(true);
+            }
+        }
+        return userDetailsResponseDto;
     }
 
     /**

@@ -25,7 +25,7 @@ public class SearchService {
         List<User> users = userRepository.findByUsernameContaining(name);
         List<UserDetailsResponseDto> userResponsDtos = new ArrayList<>();
         for (User user : users) {
-            UserDetailsResponseDto dto = new UserDetailsResponseDto(user.getId(), user.getUsername());
+            UserDetailsResponseDto dto = new UserDetailsResponseDto(user.getId(), user.getUsername(), false);
             userResponsDtos.add(dto);
         }
         return new SearchUsersResponseDto(userResponsDtos);
