@@ -54,15 +54,15 @@ public class FollowService {
             throw new IllegalArgumentException("Already following");
         }
 
-        Follow follow = new Follow();
-        follow.setFollowing(following);
-        follow.setFollower(follower);
+        Follow data = new Follow();
+        data.setFollowing(following);
+        data.setFollower(follower);
         if(following.getStatus() == UserStatus.PRIVATE) {
-            follow.setStatus(FollowStatus.PENDING); // 비공개일 경우에는 요청 보류
+            data.setStatus(FollowStatus.PENDING); // 비공개일 경우에는 요청 보류
         } else if (following.getStatus() == UserStatus.PUBLIC) {
-            follow.setStatus(FollowStatus.ACCEPTED); // 공개일 경우에는 바로 ACCEPTED
+            data.setStatus(FollowStatus.ACCEPTED); // 공개일 경우에는 바로 ACCEPTED
         }
-        followRepository.save(follow);
+        Follow follow = followRepository.save(data);
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -114,10 +114,12 @@ public class FollowService {
 
         Follow follow = followRepository.findByFollowerIdAndFollowingId(follower.getId(), following.getId())
                 .orElseThrow(()-> new IllegalArgumentException("팔로우 요청이 존재하지 않습니다."));
-        if(follow.getStatus()==FollowStatus.REJECTED){
+        if(follow.getStatus() == FollowStatus.REJECTED){
             throw new IllegalArgumentException("이미 거부당한 팔로우 요청입니다.");
-        } else if(follow.getStatus()==FollowStatus.ACCEPTED){
+        } else if(follow.getStatus() == FollowStatus.ACCEPTED){
             throw new IllegalArgumentException("이미 승인한 팔로우 요청입니다.");
+        } else if(follow.getStatus() == FollowStatus.NOFOLLOW){
+            throw new IllegalArgumentException("팔로우 요청이 없습니다.");
         }
         follow.updateStatus(FollowStatus.ACCEPTED); // 팔로우 요청을 승인
     }
@@ -134,10 +136,12 @@ public class FollowService {
 
         Follow follow = followRepository.findByFollowerIdAndFollowingId(follower.getId(), following.getId())
                 .orElseThrow(()-> new IllegalArgumentException("팔로우 요청이 존재하지 않습니다."));
-        if(follow.getStatus()==FollowStatus.REJECTED){
+        if(follow.getStatus() == FollowStatus.REJECTED){
             throw new IllegalArgumentException("이미 거부당한 팔로우 요청입니다.");
-        } else if(follow.getStatus()==FollowStatus.ACCEPTED){
+        } else if(follow.getStatus() == FollowStatus.ACCEPTED){
             throw new IllegalArgumentException("이미 승인한 팔로우 요청입니다.");
+        } else if(follow.getStatus() == FollowStatus.NOFOLLOW){
+            throw new IllegalArgumentException("팔로우 요청이 없습니다.");
         }
         follow.updateStatus(FollowStatus.REJECTED); // 팔로우 요청을 승인
     }
@@ -146,10 +150,11 @@ public class FollowService {
      * 팔로잉 목록 조회
      * */
     public FollowResponse getFollowing(Long userId) {
-        User user = userRepository.findById(userId).orElse(null);
-        if (user == null) {
-            return null; // 예외 추가 필요
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(()->new UserNotFoundException(userId));
+//        if (user == null) {
+//            return null; // 예외 추가 필요
+//        }
 
         List<UserDetailsResponseDto> followingList = new ArrayList<>();
 
@@ -166,20 +171,21 @@ public class FollowService {
     }
 
     /**
-     * 팔로우 목록 조회
+     * 팔로워 목록 조회
      */
     public FollowResponse getFollowers(Long userId) {
-        User user = userRepository.findById(userId).orElse(null);
-        if (user == null) {
-            return null; // 예외 추가 필요
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(()-> new UserNotFoundException(userId));
+//        if (user == null) {
+//            return null; // 예외 추가 필요
+//        }
 
         List<UserDetailsResponseDto> followerList = new ArrayList<>();
 
         for(Follow follow : user.getFollowers()) {
             if(follow.getStatus()==FollowStatus.ACCEPTED){
                 UserDetailsResponseDto response = new UserDetailsResponseDto();
-                response.setUsername(follow.getFollowing().getUsername());
+                response.setUsername(follow.getFollower().getUsername());
                 followerList.add(response);
             }
         }
