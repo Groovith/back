@@ -31,7 +31,7 @@ public class Follow {
     private LocalDateTime followedAt;
 
     @Enumerated(EnumType.STRING)
-    private FollowStatus status;    // ACCEPTED, PENDING, REJECTED
+    private FollowStatus status;    // NOFOLLOW, ACCEPTED, PENDING, REJECTED
 
     public void updateStatus(FollowStatus status){
         this.status = status;

@@ -16,11 +16,18 @@ import java.util.Optional;
 public class UserDetailsResponseDto {
     private Long id;
     private String username;
-    private boolean isFollowing;    // 현재 로그인 중인 유저가 팔로우 중인 유저인지
+    private FollowStatus status;    // NOFOLLOW | ACCEPTED | PENDING | REJECTED
+    private String imageUrl;
+    private Integer following;
+    private Integer follower;
+
 
     public UserDetailsResponseDto(User user) {
         this.id = user.getId();
         this.username = user.getUsername();
-        this.isFollowing = false;   // 기본 상태는 팔로우 x
+        this.status = FollowStatus.NOFOLLOW;   // 기본 상태는 팔로우 x
+        this.imageUrl = user.getImageUrl();
+        this.follower = user.getFollowers().size();
+        this.following = user.getFollowing().size();
     }
 }
