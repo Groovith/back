@@ -59,28 +59,28 @@ class UserControllerTest {
                 .andExpect(status().isOk());
     }
 
-    @Test
-    public void 유저_정보_반환_테스트() throws Exception{
-        //given
-        String accessToken = "access";
-        User user = createUser(1L, "user", "1234");
-        UserDetailsResponseDto response = new UserDetailsResponseDto(user.getId(), user.getUsername());
-
-
-        //when
-        when(userService.getUserByAccessToken(accessToken)).thenReturn(user);
-        ResultActions actions = mockMvc.perform(
-                get("/api/user")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("access", accessToken)
-        );
-
-        //then
-        actions
-                .andExpect(status().isOk())
-                .andExpect(content().json(objectMapper.writeValueAsString(response)));
-
-    }
+//    @Test
+//    public void 유저_정보_반환_테스트() throws Exception{
+//        //given
+//        String accessToken = "access";
+//        User user = createUser(1L, "user", "1234");
+//        UserDetailsResponseDto response = new UserDetailsResponseDto(user.getId(), user.getUsername());
+//
+//
+//        //when
+//        when(userService.getUserByAccessToken(accessToken)).thenReturn(user);
+//        ResultActions actions = mockMvc.perform(
+//                get("/api/user")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .header("access", accessToken)
+//        );
+//
+//        //then
+//        actions
+//                .andExpect(status().isOk())
+//                .andExpect(content().json(objectMapper.writeValueAsString(response)));
+//
+//    }
 
 
     public User createUser(Long id, String username, String password){

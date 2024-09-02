@@ -1,32 +1,36 @@
-//package com.groovith.groovith.service;
-//
-//import com.groovith.groovith.domain.StreamingType;
-//import com.groovith.groovith.domain.User;
-//import com.groovith.groovith.dto.JoinDto;
-//import com.groovith.groovith.repository.UserRepository;
-//import com.groovith.groovith.security.JwtUtil;
-//import org.assertj.core.api.Assertions;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.extension.ExtendWith;
-//import org.mockito.InjectMocks;
-//import org.mockito.Mock;
-//import org.mockito.junit.jupiter.MockitoExtension;
-//import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-//
-//import java.util.Optional;
-//
-//import static org.mockito.ArgumentMatchers.any;
-//import static org.mockito.Mockito.*;
-//
-//@ExtendWith(MockitoExtension.class)
-//class UserServiceTest {
-//
-//    @InjectMocks private UserService userService;
-//    @Mock private UserRepository userRepository;
-//    @Mock private BCryptPasswordEncoder bCryptPasswordEncoder;
-//    @Mock private JwtUtil jwtUtil;
-//
-//
+package com.groovith.groovith.service;
+
+import com.groovith.groovith.domain.Follow;
+import com.groovith.groovith.domain.FollowStatus;
+import com.groovith.groovith.domain.StreamingType;
+import com.groovith.groovith.domain.User;
+import com.groovith.groovith.dto.UserDetailsResponseDto;
+import com.groovith.groovith.repository.FollowRepository;
+import com.groovith.groovith.repository.UserRepository;
+import com.groovith.groovith.security.JwtUtil;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+
+    @InjectMocks private UserService userService;
+    @Mock private UserRepository userRepository;
+    @Mock private FollowRepository followRepository;
+    @Mock private BCryptPasswordEncoder bCryptPasswordEncoder;
+    @Mock private JwtUtil jwtUtil;
+
+
 //    @Test
 //    public void join(){
 //
@@ -56,7 +60,7 @@
 //                        data.getStreaming() == StreamingType.NONE
 //        ));
 //    }
-//
+
 //    @Test
 //    public void getUser(){
 //        //given
@@ -74,7 +78,7 @@
 //        Assertions.assertThat(findUser).isEqualTo(user);
 //        Assertions.assertThat(findUser.getUsername()).isEqualTo(user.getUsername());
 //    }
-//
+
 //    @Test
 //    public void saveSpotifyToken(){
 //        //given
@@ -96,7 +100,7 @@
 //        Assertions.assertThat(user.getSpotifyRefreshToken()).isEqualTo(refreshToken);
 //        Assertions.assertThat(user.getStreaming()).isEqualTo(StreamingType.SPOTIFY);
 //    }
-//
+
 //    @Test
 //    public void removeSpotifyTokens(){
 //
@@ -120,14 +124,70 @@
 //        Assertions.assertThat(user.getStreaming()).isEqualTo(StreamingType.NONE);
 //
 //    }
-//
-//    public User createUser(Long id, String username, String password){
-//        User data = new User();
-//        data.setId(id);
-//        data.setUsername(username);
-//        data.setPassword(password);
-//        data.setRole("ROLE_USER");
-//        data.setStreaming(StreamingType.NONE);
-//        return data;
-//    }
-//}
+@Test
+public void getUserByUsername_팔로우_관계아닐경우(){
+    //given
+    Long userId = 1L;
+    Long findUserId = 2L;
+    // 현재 로그인 중인 유저
+    User user = createUser(userId, "user", "1234");
+    // 조회하려는 유저
+    User findUser = createUser(findUserId, "findUser", "1234");
+
+    //when
+    when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
+    when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(findUser));
+    // 팔로우 요청 없음
+    when(followRepository.findByFollowerIdAndFollowingId(anyLong(), anyLong())).thenReturn(Optional.empty());
+
+    UserDetailsResponseDto result = userService.getUserByUsername(findUser.getUsername(), userId);
+
+    //then
+    Assertions.assertThat(result.getUsername()).isEqualTo(findUser.getUsername());
+    Assertions.assertThat(result.getStatus()).isEqualTo(FollowStatus.NOFOLLOW);
+}
+
+    @Test
+    public void getUserByUsername_팔로우_관계인경우(){
+        //given
+        Long userId = 1L;
+        Long findUserId = 2L;
+        // 현재 로그인 중인 유저
+        User user = createUser(userId, "user", "1234");
+        // 조회하려는 유저
+        User findUser = createUser(findUserId, "findUser", "1234");
+
+        Follow follow = createFollow(user, findUser, FollowStatus.ACCEPTED);
+
+        //when
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(findUser));
+        when(followRepository.findByFollowerIdAndFollowingId(anyLong(), anyLong())).thenReturn(Optional.of(follow));
+
+        UserDetailsResponseDto result = userService.getUserByUsername(findUser.getUsername(), userId);
+
+        //then
+        Assertions.assertThat(result.getUsername()).isEqualTo(findUser.getUsername());
+        Assertions.assertThat(result.getStatus()).isEqualTo(FollowStatus.ACCEPTED);
+    }
+
+
+    public User createUser(Long id, String username, String password){
+        User data = new User();
+        data.setId(id);
+        data.setUsername(username);
+        data.setPassword(password);
+        data.setRole("ROLE_USER");
+        data.setStreaming(StreamingType.NONE);
+        return data;
+    }
+
+    public Follow createFollow(User following, User follower, FollowStatus status){
+        Follow follow = new Follow();
+        follow.setFollowing(following);
+        follow.setFollower(follower);
+        follow.setStatus(status);
+
+        return follow;
+    }
+}
