@@ -24,6 +24,7 @@ public class User {
     private String password;
     private String role;
     private String email;
+    private String nickname;
 
     @Column(name = "streaming", nullable = false)
     @Enumerated(EnumType.STRING)
