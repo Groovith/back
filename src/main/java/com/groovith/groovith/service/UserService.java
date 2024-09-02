@@ -98,10 +98,9 @@ public class UserService {
 
         Optional<Follow> follow = followRepository.findByFollowerIdAndFollowingId(userId, findUser.getId());
         if(follow.isPresent()){
-            if(follow.get().getStatus()==FollowStatus.ACCEPTED || follow.get().getStatus()==FollowStatus.PENDING){
-            // 현재 로그인중인 유저가 조회하려는 유저를 팔로우 중이라면
-                userDetailsResponseDto.setFollowing(true);
-            }
+            userDetailsResponseDto.setStatus(follow.get().getStatus());
+        } else{
+            userDetailsResponseDto.setStatus(FollowStatus.NOFOLLOW);    // 팔로우 하지않음
         }
         return userDetailsResponseDto;
     }
