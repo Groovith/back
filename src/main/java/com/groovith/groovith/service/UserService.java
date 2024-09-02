@@ -58,6 +58,7 @@ public class UserService {
             // 새 유저 생성
             User user = new User();
             user.setUsername(username);
+            user.setNickname(username);
             user.setPassword(bCryptPasswordEncoder.encode(password));
             user.setEmail(email);
             user.setRole("ROLE_USER");
