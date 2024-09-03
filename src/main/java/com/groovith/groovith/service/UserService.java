@@ -224,4 +224,7 @@ public class UserService {
 
         return CheckCertificationResponseDto.success();
     }
+
+    // 비밀번호 변경
+
 }
