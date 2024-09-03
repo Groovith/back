@@ -8,12 +8,14 @@ import com.groovith.groovith.provider.EmailProvider;
 import com.groovith.groovith.repository.CertificationRepository;
 import com.groovith.groovith.repository.FollowRepository;
 import com.groovith.groovith.repository.UserRepository;
+import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.security.JwtUtil;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -226,5 +228,20 @@ public class UserService {
     }
 
     // 비밀번호 변경
+    public ResponseEntity<? super ChangePasswordResponseDto> changePassword(ChangePasswordRequestDto requestDto, Long userId) {
+        try {
+            User user = userRepository.findById(userId).orElseThrow();
+            // 제공된 비밀번호가 기존 비밀번호와 같지 않으면 오류 메시지 반환
+            if (!bCryptPasswordEncoder.matches(requestDto.getCurrentPassword(), user.getPassword())) {
+                return ChangePasswordResponseDto.wrongPassword();
+            }
 
+            user.setPassword(bCryptPasswordEncoder.encode(requestDto.getNewPassword()));
+            userRepository.save(user);
+        } catch (Exception e) {
+            return ResponseDto.databaseError();
+        }
+
+        return ChangePasswordResponseDto.success();
+    }
 }

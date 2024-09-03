@@ -7,4 +7,5 @@ public interface ResponseMessage {
     String DUPLICATE_ID = "Duplicate ID.";
     String DATABASE_ERROR = "Database error.";
     String MAIL_FAIL = "Mail send fail.";
+    String WRONG_PASSWORD = "Wrong password.";
 }

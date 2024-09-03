@@ -7,4 +7,5 @@ public interface ResponseCode {
     String DUPLICATE_ID = "DI";
     String DATABASE_ERROR = "DBE";
     String MAIL_FAIL = "MF";
+    String WRONG_PASSWORD = "WP";
 }

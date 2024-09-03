@@ -60,4 +60,8 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @PatchMapping("/users/me/update/password")
+    public ResponseEntity<? super ChangePasswordResponseDto> changePassword(@RequestBody ChangePasswordRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return userService.changePassword(requestDto, userDetails.getUserId());
+    }
 }
