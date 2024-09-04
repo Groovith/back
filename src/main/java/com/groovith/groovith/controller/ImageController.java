@@ -1,11 +1,12 @@
 package com.groovith.groovith.controller;
 
-import com.groovith.groovith.domain.Image;
-import com.groovith.groovith.service.ChatRoomService;
+import com.groovith.groovith.dto.DeleteProfilePictureResponseDto;
+import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,6 +24,11 @@ public class ImageController {
     public ResponseEntity<?> userUploadFile(@RequestParam("file") MultipartFile file, @PathVariable("userId")Long userId) {
         imageService.userUpLoadFile(file, userId);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/users/me/update/profile-picture")
+    public ResponseEntity<? super DeleteProfilePictureResponseDto> deleteProfilePicture(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return imageService.deleteProfilePicture(userDetails.getUserId());
     }
 
     /**
