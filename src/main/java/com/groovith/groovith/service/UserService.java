@@ -270,4 +270,16 @@ public class UserService {
             return CheckUsernameResponseDto.databaseError();
         }
     }
+
+    // 닉네임 변경
+    public ResponseEntity<? super UpdateNicknameResponseDto> updateNickname(String nickname, Long userId) {
+        try {
+            User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+            user.setNickname(nickname);
+            userRepository.save(user);
+        } catch (Exception e) {
+            return UpdateNicknameResponseDto.databaseError();
+        }
+        return UpdateNicknameResponseDto.success();
+    }
 }

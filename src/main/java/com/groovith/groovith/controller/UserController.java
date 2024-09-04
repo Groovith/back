@@ -75,4 +75,10 @@ public class UserController {
     public ResponseEntity<? super CheckUsernameResponseDto> usernameCheck(@RequestBody @Valid CheckUsernameRequestDto requestDto) {
         return userService.checkUsername(requestDto.getUsername());
     }
+
+    // 닉네임 변경
+    @PatchMapping("/users/me/update/nickname")
+    public ResponseEntity<? super UpdateNicknameResponseDto> updateNickname(@RequestBody @Valid UpdateNicknameRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return userService.updateNickname(requestDto.getNickname(), userDetails.getUserId());
+    }
 }
