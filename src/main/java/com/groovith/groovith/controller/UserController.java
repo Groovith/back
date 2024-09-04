@@ -1,8 +1,6 @@
 package com.groovith.groovith.controller;
 
-import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.*;
-import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.UserService;
 import jakarta.validation.Valid;
@@ -60,8 +58,15 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    // 비밀번호 변경
     @PatchMapping("/users/me/update/password")
-    public ResponseEntity<? super ChangePasswordResponseDto> changePassword(@RequestBody ChangePasswordRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return userService.changePassword(requestDto, userDetails.getUserId());
+    public ResponseEntity<? super UpdatePasswordResponseDto> updatePassword(@RequestBody UpdatePasswordRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return userService.updatePassword(requestDto, userDetails.getUserId());
+    }
+
+    // 유저네임 변경
+    @PatchMapping("/users/me/update/username")
+    public ResponseEntity<? super UpdateUsernameResponseDto> updateUsername(@RequestBody UpdateUsernameRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return userService.updateUsername(requestDto, userDetails.getUserId());
     }
 }

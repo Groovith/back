@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class ChangePasswordRequestDto {
+public class UpdatePasswordRequestDto {
     @NotBlank
     private String currentPassword;
     @NotBlank

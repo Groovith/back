@@ -5,13 +5,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 @Getter
-public class ChangePasswordResponseDto extends ResponseDto{
-    private ChangePasswordResponseDto() {
+public class UpdatePasswordResponseDto extends ResponseDto{
+    private UpdatePasswordResponseDto() {
         super();
     }
 
-    public static ResponseEntity<ChangePasswordResponseDto> success() {
-        ChangePasswordResponseDto responseDto = new ChangePasswordResponseDto();
+    public static ResponseEntity<UpdatePasswordResponseDto> success() {
+        UpdatePasswordResponseDto responseDto = new UpdatePasswordResponseDto();
         return ResponseEntity.ok(responseDto);
     }
 
