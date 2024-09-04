@@ -230,11 +230,9 @@ public class UserService {
     // 비밀번호 변경
     public ResponseEntity<? super ChangePasswordResponseDto> changePassword(ChangePasswordRequestDto requestDto, Long userId) {
         try {
-            User user = userRepository.findById(userId).orElseThrow();
+            User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
             // 제공된 비밀번호가 기존 비밀번호와 같지 않으면 오류 메시지 반환
-            if (!bCryptPasswordEncoder.matches(requestDto.getCurrentPassword(), user.getPassword())) {
-                return ChangePasswordResponseDto.wrongPassword();
-            }
+            if (!bCryptPasswordEncoder.matches(requestDto.getCurrentPassword(), user.getPassword())) return ChangePasswordResponseDto.wrongPassword();
 
             user.setPassword(bCryptPasswordEncoder.encode(requestDto.getNewPassword()));
             userRepository.save(user);
@@ -243,5 +241,21 @@ public class UserService {
         }
 
         return ChangePasswordResponseDto.success();
+    }
+
+    // 유저네임 변경
+    public ResponseEntity<? super UpdateUsernameResponseDto> updateUsername(UpdateUsernameRequestDto requestDto, Long userId) {
+        try {
+            // 이미 있는 유저네임인 경우 오류 메시지 반환
+            if (userRepository.existsByUsername(requestDto.getUsername())) return UpdateUsernameResponseDto.duplicateId();
+
+            User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+            user.setUsername(requestDto.getUsername());
+            userRepository.save(user);
+        } catch (Exception e) {
+            return UpdateUsernameResponseDto.databaseError();
+        }
+
+        return UpdateUsernameResponseDto.success();
     }
 }

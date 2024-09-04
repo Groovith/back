@@ -1,9 +1,11 @@
 package com.groovith.groovith.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class ChangePasswordRequestDto {
     @NotBlank
     private String currentPassword;

@@ -4,7 +4,7 @@ import com.groovith.groovith.domain.Follow;
 import com.groovith.groovith.domain.FollowStatus;
 import com.groovith.groovith.domain.StreamingType;
 import com.groovith.groovith.domain.User;
-import com.groovith.groovith.dto.UserDetailsResponseDto;
+import com.groovith.groovith.dto.*;
 import com.groovith.groovith.repository.FollowRepository;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.security.JwtUtil;
@@ -14,8 +14,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -27,7 +29,6 @@ class UserServiceTest {
     @InjectMocks private UserService userService;
     @Mock private UserRepository userRepository;
     @Mock private FollowRepository followRepository;
-    @Mock private BCryptPasswordEncoder bCryptPasswordEncoder;
     @Mock private JwtUtil jwtUtil;
 
 
@@ -170,7 +171,6 @@ public void getUserByUsername_팔로우_관계아닐경우(){
         Assertions.assertThat(result.getUsername()).isEqualTo(findUser.getUsername());
         Assertions.assertThat(result.getStatus()).isEqualTo(FollowStatus.ACCEPTED);
     }
-
 
     public User createUser(Long id, String username, String password){
         User data = new User();
