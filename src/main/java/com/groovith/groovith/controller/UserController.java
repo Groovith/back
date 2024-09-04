@@ -60,13 +60,19 @@ public class UserController {
 
     // 비밀번호 변경
     @PatchMapping("/users/me/update/password")
-    public ResponseEntity<? super UpdatePasswordResponseDto> updatePassword(@RequestBody UpdatePasswordRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<? super UpdatePasswordResponseDto> updatePassword(@RequestBody @Valid UpdatePasswordRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
         return userService.updatePassword(requestDto, userDetails.getUserId());
     }
 
     // 유저네임 변경
     @PatchMapping("/users/me/update/username")
-    public ResponseEntity<? super UpdateUsernameResponseDto> updateUsername(@RequestBody UpdateUsernameRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<? super UpdateUsernameResponseDto> updateUsername(@RequestBody @Valid UpdateUsernameRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
         return userService.updateUsername(requestDto, userDetails.getUserId());
+    }
+
+    // 유저네임 중복 확인
+    @GetMapping("/users/username-check")
+    public ResponseEntity<? super UsernameCheckResponseDto> usernameCheck(@RequestBody @Valid UsernameCheckRequestDto requestDto) {
+        return userService.checkUsername(requestDto.getUsername());
     }
 }

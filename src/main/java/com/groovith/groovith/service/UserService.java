@@ -255,4 +255,19 @@ public class UserService {
 
         return UpdateUsernameResponseDto.success();
     }
+
+    // 유저네임 중복 검사
+    public ResponseEntity<? super UsernameCheckResponseDto> checkUsername(String username) {
+        try {
+            boolean existsByEmail = userRepository.existsByUsername(username);
+            if (!existsByEmail) {
+                return UsernameCheckResponseDto.success();
+            } else {
+                return UsernameCheckResponseDto.duplicateId();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return UsernameCheckResponseDto.databaseError();
+        }
+    }
 }
