@@ -3,6 +3,6 @@ package com.groovith.groovith.dto;
 import lombok.Data;
 
 @Data
-public class EmailCheckRequestDto {
+public class CheckEmailRequestDto {
     private String email;
 }

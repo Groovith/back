@@ -5,13 +5,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 @Getter
-public class UsernameCheckResponseDto extends ResponseDto {
-    private UsernameCheckResponseDto() {
+public class CheckUsernameResponseDto extends ResponseDto {
+    private CheckUsernameResponseDto() {
         super();
     }
 
-    public static ResponseEntity<UsernameCheckResponseDto> success() {
-        UsernameCheckResponseDto responseDto = new UsernameCheckResponseDto();
+    public static ResponseEntity<CheckUsernameResponseDto> success() {
+        CheckUsernameResponseDto responseDto = new CheckUsernameResponseDto();
         return ResponseEntity.ok(responseDto);
     }
 

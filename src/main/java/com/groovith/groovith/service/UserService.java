@@ -152,17 +152,17 @@ public class UserService {
     }
 
     // 이메일 중복 검사
-    public ResponseEntity<EmailCheckResponseDto> checkEmail(String email) {
+    public ResponseEntity<CheckEmailResponseDto> checkEmail(String email) {
         try {
             boolean existsByEmail = userRepository.existsByEmail(email);
             if (!existsByEmail) {
-                return EmailCheckResponseDto.success();
+                return CheckEmailResponseDto.success();
             } else {
-                return EmailCheckResponseDto.duplicateId();
+                return CheckEmailResponseDto.duplicateId();
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return EmailCheckResponseDto.databaseError();
+            return CheckEmailResponseDto.databaseError();
         }
     }
 
@@ -257,17 +257,17 @@ public class UserService {
     }
 
     // 유저네임 중복 검사
-    public ResponseEntity<? super UsernameCheckResponseDto> checkUsername(String username) {
+    public ResponseEntity<? super CheckUsernameResponseDto> checkUsername(String username) {
         try {
             boolean existsByEmail = userRepository.existsByUsername(username);
             if (!existsByEmail) {
-                return UsernameCheckResponseDto.success();
+                return CheckUsernameResponseDto.success();
             } else {
-                return UsernameCheckResponseDto.duplicateId();
+                return CheckUsernameResponseDto.duplicateId();
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return UsernameCheckResponseDto.databaseError();
+            return CheckUsernameResponseDto.databaseError();
         }
     }
 }

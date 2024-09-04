@@ -38,9 +38,9 @@ public class UserController {
     }
 
     // 이메일 중복 체크, 중복이 없을 시 200 SU, 중복이 존재하면 400 DI, 데이터베이스 오류 500 DBE
-    @PostMapping("/auth/email-check")
-    public ResponseEntity<EmailCheckResponseDto> checkEmail(@RequestBody EmailCheckRequestDto emailCheckRequestDto) {
-        return userService.checkEmail(emailCheckRequestDto.getEmail());
+    @PostMapping("/auth/check-email")
+    public ResponseEntity<CheckEmailResponseDto> checkEmail(@RequestBody CheckEmailRequestDto checkEmailRequestDto) {
+        return userService.checkEmail(checkEmailRequestDto.getEmail());
     }
 
     // 이메일 인증 번호 요청
@@ -71,8 +71,8 @@ public class UserController {
     }
 
     // 유저네임 중복 확인
-    @GetMapping("/users/username-check")
-    public ResponseEntity<? super UsernameCheckResponseDto> usernameCheck(@RequestBody @Valid UsernameCheckRequestDto requestDto) {
+    @GetMapping("/users/check-username")
+    public ResponseEntity<? super CheckUsernameResponseDto> usernameCheck(@RequestBody @Valid CheckUsernameRequestDto requestDto) {
         return userService.checkUsername(requestDto.getUsername());
     }
 }
