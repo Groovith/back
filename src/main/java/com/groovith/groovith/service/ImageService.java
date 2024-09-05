@@ -24,6 +24,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -116,7 +118,8 @@ public class ImageService {
     private void deleteFileFromS3Bucket(String fileUrl) {
         // 파일 경로 추출
         String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-        amazonS3Client.deleteObject(new DeleteObjectRequest(bucket, USER_DIR + fileName));
+        fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
+        amazonS3Client.deleteObject(bucket, USER_DIR + fileName);
     }
 
     /**
