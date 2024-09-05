@@ -9,7 +9,6 @@ import com.groovith.groovith.repository.CertificationRepository;
 import com.groovith.groovith.repository.FollowRepository;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.security.JwtUtil;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -153,17 +152,17 @@ public class UserService {
     }
 
     // 이메일 중복 검사
-    public ResponseEntity<EmailCheckResponseDto> checkEmail(String email) {
+    public ResponseEntity<CheckEmailResponseDto> checkEmail(String email) {
         try {
             boolean existsByEmail = userRepository.existsByEmail(email);
             if (!existsByEmail) {
-                return EmailCheckResponseDto.success();
+                return CheckEmailResponseDto.success();
             } else {
-                return EmailCheckResponseDto.duplicateId();
+                return CheckEmailResponseDto.duplicateId();
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return EmailCheckResponseDto.databaseError();
+            return CheckEmailResponseDto.databaseError();
         }
     }
 
@@ -223,5 +222,64 @@ public class UserService {
         }
 
         return CheckCertificationResponseDto.success();
+    }
+
+    // 비밀번호 변경
+    public ResponseEntity<? super UpdatePasswordResponseDto> updatePassword(UpdatePasswordRequestDto requestDto, Long userId) {
+        try {
+            User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+            // 제공된 비밀번호가 기존 비밀번호와 같지 않으면 오류 메시지 반환
+            if (!bCryptPasswordEncoder.matches(requestDto.getCurrentPassword(), user.getPassword())) return UpdatePasswordResponseDto.wrongPassword();
+
+            user.setPassword(bCryptPasswordEncoder.encode(requestDto.getNewPassword()));
+            userRepository.save(user);
+        } catch (Exception e) {
+            return ResponseDto.databaseError();
+        }
+
+        return UpdatePasswordResponseDto.success();
+    }
+
+    // 유저네임 변경
+    public ResponseEntity<? super UpdateUsernameResponseDto> updateUsername(UpdateUsernameRequestDto requestDto, Long userId) {
+        try {
+            // 이미 있는 유저네임인 경우 오류 메시지 반환
+            if (userRepository.existsByUsername(requestDto.getUsername())) return UpdateUsernameResponseDto.duplicateId();
+
+            User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+            user.setUsername(requestDto.getUsername());
+            userRepository.save(user);
+        } catch (Exception e) {
+            return UpdateUsernameResponseDto.databaseError();
+        }
+
+        return UpdateUsernameResponseDto.success();
+    }
+
+    // 유저네임 중복 검사
+    public ResponseEntity<? super CheckUsernameResponseDto> checkUsername(String username) {
+        try {
+            boolean existsByEmail = userRepository.existsByUsername(username);
+            if (!existsByEmail) {
+                return CheckUsernameResponseDto.success();
+            } else {
+                return CheckUsernameResponseDto.duplicateId();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return CheckUsernameResponseDto.databaseError();
+        }
+    }
+
+    // 닉네임 변경
+    public ResponseEntity<? super UpdateNicknameResponseDto> updateNickname(String nickname, Long userId) {
+        try {
+            User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+            user.setNickname(nickname);
+            userRepository.save(user);
+        } catch (Exception e) {
+            return UpdateNicknameResponseDto.databaseError();
+        }
+        return UpdateNicknameResponseDto.success();
     }
 }

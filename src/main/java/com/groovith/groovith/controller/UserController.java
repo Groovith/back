@@ -1,8 +1,6 @@
 package com.groovith.groovith.controller;
 
-import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.*;
-import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.UserService;
 import jakarta.validation.Valid;
@@ -40,9 +38,9 @@ public class UserController {
     }
 
     // 이메일 중복 체크, 중복이 없을 시 200 SU, 중복이 존재하면 400 DI, 데이터베이스 오류 500 DBE
-    @PostMapping("/auth/email-check")
-    public ResponseEntity<EmailCheckResponseDto> checkEmail(@RequestBody EmailCheckRequestDto emailCheckRequestDto) {
-        return userService.checkEmail(emailCheckRequestDto.getEmail());
+    @PostMapping("/auth/check-email")
+    public ResponseEntity<CheckEmailResponseDto> checkEmail(@RequestBody CheckEmailRequestDto checkEmailRequestDto) {
+        return userService.checkEmail(checkEmailRequestDto.getEmail());
     }
 
     // 이메일 인증 번호 요청
@@ -60,4 +58,27 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    // 비밀번호 변경
+    @PatchMapping("/users/me/update/password")
+    public ResponseEntity<? super UpdatePasswordResponseDto> updatePassword(@RequestBody @Valid UpdatePasswordRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return userService.updatePassword(requestDto, userDetails.getUserId());
+    }
+
+    // 유저네임 변경
+    @PatchMapping("/users/me/update/username")
+    public ResponseEntity<? super UpdateUsernameResponseDto> updateUsername(@RequestBody @Valid UpdateUsernameRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return userService.updateUsername(requestDto, userDetails.getUserId());
+    }
+
+    // 유저네임 중복 확인
+    @GetMapping("/users/check-username")
+    public ResponseEntity<? super CheckUsernameResponseDto> usernameCheck(@RequestBody @Valid CheckUsernameRequestDto requestDto) {
+        return userService.checkUsername(requestDto.getUsername());
+    }
+
+    // 닉네임 변경
+    @PatchMapping("/users/me/update/nickname")
+    public ResponseEntity<? super UpdateNicknameResponseDto> updateNickname(@RequestBody @Valid UpdateNicknameRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return userService.updateNickname(requestDto.getNickname(), userDetails.getUserId());
+    }
 }
