@@ -23,6 +23,12 @@ public class UserController {
         return userService.join(joinRequestDto);
     }
 
+    // 회원탈퇴
+    @DeleteMapping("/users/me")
+    public ResponseEntity<? super DeleteAccountResponseDto> deleteAccount(@RequestBody DeleteAccountRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return userService.deleteAccount(requestDto.getPassword(), userDetails.getUserId());
+    }
+
     /**
      * 현재 User 의 정보를 반환하는 API.
      * @return 성공 시 200(Ok) + CurrentUserDetailsDto | 유저가 존재하지 않는 경우 404(Not Found) + message

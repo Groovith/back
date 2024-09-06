@@ -26,6 +26,12 @@ public class User {
     private String email;
     private String nickname;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Enumerated(EnumType.STRING)
+    private UserStatus status;
+
     @Column(name = "streaming", nullable = false)
     @Enumerated(EnumType.STRING)
     private StreamingType streaming;
@@ -33,20 +39,17 @@ public class User {
     @Column(name = "spotify_refresh_token")
     private String spotifyRefreshToken;
 
-    @OneToMany(mappedBy = "follower")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
+    private List<Refresh> refreshTokens = new ArrayList<>();
+
+    @OneToMany(mappedBy = "follower", cascade = CascadeType.REMOVE)
     private Set<Follow> following = new HashSet<>();
 
-    @OneToMany(mappedBy = "following")
+    @OneToMany(mappedBy = "following", cascade = CascadeType.REMOVE)
     private Set<Follow> followers = new HashSet<>();
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
     private List<UserChatRoom> userChatRoom = new ArrayList<>();
-
-    @Column(name = "image_url")
-    private String imageUrl;
-
-    @Enumerated(EnumType.STRING)
-    private UserStatus status;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
     private List<Notification> notifications = new ArrayList<>();

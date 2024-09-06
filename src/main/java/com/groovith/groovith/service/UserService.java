@@ -7,6 +7,7 @@ import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.provider.EmailProvider;
 import com.groovith.groovith.repository.CertificationRepository;
 import com.groovith.groovith.repository.FollowRepository;
+import com.groovith.groovith.repository.RefreshRepository;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -25,12 +26,14 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final RefreshRepository refreshRepository;
     private final CertificationRepository certificationRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailProvider emailProvider;
     private final AmazonS3Client amazonS3Client;
     private final FollowRepository followRepository;
+    private final ImageService imageService;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
@@ -73,6 +76,28 @@ public class UserService {
         }
 
         return JoinResponseDto.success();
+    }
+
+    // 회원탈퇴
+    @Transactional
+    public ResponseEntity<? super DeleteAccountResponseDto> deleteAccount(String password, Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+
+        // 비밀번호 확인
+        if (!bCryptPasswordEncoder.matches(password, user.getPassword())) return UpdatePasswordResponseDto.wrongPassword();
+
+        try {
+            // 유저 프로필 이미지 있는 경우 삭제
+            if (!user.getImageUrl().equals(DEFAULT_IMG_URL)) {
+                imageService.deleteFileFromS3Bucket(user.getImageUrl());
+            }
+
+            userRepository.delete(user);
+        } catch (Exception e) {
+            return DeleteAccountResponseDto.databaseError();
+        }
+
+        return DeleteAccountResponseDto.success();
     }
 
     /**

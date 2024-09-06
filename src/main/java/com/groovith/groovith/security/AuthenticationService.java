@@ -1,7 +1,10 @@
 package com.groovith.groovith.security;
 
+import com.groovith.groovith.domain.User;
+import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.RefreshRepository;
 import com.groovith.groovith.domain.Refresh;
+import com.groovith.groovith.repository.UserRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +21,7 @@ public class AuthenticationService {
 
     private final JwtUtil jwtUtil;
     private final RefreshRepository refreshRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public void handleReissue(HttpServletRequest request, HttpServletResponse response) {
@@ -77,10 +81,11 @@ public class AuthenticationService {
     }
 
     public void addRefresh(Long userId, String refresh, Long expiredMs) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         Date date = new Date(System.currentTimeMillis() + expiredMs);
 
         Refresh newRefresh = new Refresh();
-        newRefresh.setUserId(userId);
+        newRefresh.setUser(user);
         newRefresh.setRefresh(refresh);
         newRefresh.setExpiration(date.toString());
 

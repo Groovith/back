@@ -115,7 +115,7 @@ public class ImageService {
     }
 
     // S3에서 파일 삭제
-    private void deleteFileFromS3Bucket(String fileUrl) {
+    public void deleteFileFromS3Bucket(String fileUrl) {
         // 파일 경로 추출
         String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
         fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
