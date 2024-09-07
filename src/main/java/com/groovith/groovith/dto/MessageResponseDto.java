@@ -14,6 +14,7 @@ public class MessageResponseDto {
     private String username;
     private String content;
     private MessageType type;
+    private String imageUrl;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime createdAt;
