@@ -137,12 +137,14 @@ public class ImageService {
         amazonS3Client.deleteObject(bucket, USER_DIR + fileName);
     }
 
+    // 채팅방 이미지 삭제
     public void deleteChatRoomFileFromS3Bucket(String fileUrl){
         String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
         fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
         amazonS3Client.deleteObject(bucket, CHATROOM_DIR + fileName);
     }
 
+    // 채팅방 id 로 채팅방 이미지 삭제
     public void deleteChatRoomImageById(Long chatRoomId){
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()-> new ChatRoomNotFoundException(chatRoomId));

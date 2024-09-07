@@ -1,6 +1,8 @@
 package com.groovith.groovith.controller;
 
 import com.groovith.groovith.domain.ChatRoom;
+import com.groovith.groovith.domain.ChatRoomMemberStatus;
+import com.groovith.groovith.domain.ChatRoomStatus;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.security.CustomUserDetails;
@@ -83,7 +85,12 @@ public class ChatRoomController {
      * */
     @PutMapping("/chatrooms/{chatRoomId}/leave")
     public ResponseEntity<?> leaveChatRoom(@PathVariable(name = "chatRoomId") Long chatRoomId, @AuthenticationPrincipal CustomUserDetails userDetails){
-        chatRoomService.leaveChatRoom(userDetails.getUserId(), chatRoomId);
+        ChatRoomMemberStatus memberStatus = chatRoomService.leaveChatRoom(userDetails.getUserId(), chatRoomId);
+        // 채팅방에 사람이 없을 시 채팅방 삭제, 채팅방 이미지 삭제
+        if(memberStatus == ChatRoomMemberStatus.EMPTY){
+            imageService.deleteChatRoomImageById(chatRoomId);
+            chatRoomService.deleteChatRoom(chatRoomId);
+        }
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -114,8 +121,6 @@ public class ChatRoomController {
     public ResponseEntity<?> inviteChatRoom(
             @PathVariable(name="chatRoomId") Long chatRoomId, @PathVariable(name = "userId")Long userId, @AuthenticationPrincipal CustomUserDetails userDetails){
         chatRoomService.invite(userDetails.getUserId(), userId, chatRoomId);
-
-
 
         // 알림 메세지 생성 및 저장 - (초대받은사람Id, 초대한사람Id, 채팅방Id)
         String notification = notificationService.createInviteNotification(userId, userDetails.getUserId(), chatRoomId);
