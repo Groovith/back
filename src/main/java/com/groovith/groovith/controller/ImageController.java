@@ -20,9 +20,9 @@ public class ImageController {
     /**
      * 유저 이미지 업로드(프로필 사진 수정, 교체)
      * */
-    @PutMapping("/upload/user/{userId}")
-    public ResponseEntity<?> userUploadFile(@RequestParam("file") MultipartFile file, @PathVariable("userId")Long userId) {
-        imageService.userUpLoadFile(file, userId);
+    @PutMapping("/upload/user")
+    public ResponseEntity<?> userUploadFile(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestParam("file") MultipartFile file) {
+        imageService.userUpLoadFile(file, userDetails.getUserId());
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
