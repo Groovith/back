@@ -53,7 +53,7 @@
 //        CreateChatRoomRequestDto requestDto = new CreateChatRoomRequestDto();
 //        requestDto.setName("room");
 //
-//        ChatRoom chatRoom = createChatRoom("room");
+//        ChatRoom chatRoom = createChatRoom("room", ChatRoomStatus.PUBLIC);
 //
 //        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
 //
@@ -63,7 +63,7 @@
 //
 //
 //        ResultActions actions = mockMvc.perform(
-//                post("/api/chatroom")
+//                post("/api/chatrooms")
 //                        .contentType(MediaType.APPLICATION_JSON)
 //                        .content(objectMapper.writeValueAsString(requestDto))
 //                        .with(csrf())
@@ -75,45 +75,45 @@
 //                .andExpect(jsonPath("$.chatRoomId").value(chatRoom.getId()));
 //    }
 //
-//    @Test
-//    public void 채팅방_목록_조회() throws Exception{
-//        //given
-//        // chatRoomService.findAllDesc() 의 결과로 반환할 List<ChatRoomListResponseDto> 만들기
-//        ChatRoom chatRoom1 = createChatRoom("room1");
-//        ChatRoom chatRoom2 = createChatRoom("room2");
-//        ChatRoom chatRoom3 = createChatRoom("room3");
-//
-//        List<ChatRoom> chatRoomList = new ArrayList<>();
-//        chatRoomList.add(chatRoom1);
-//        chatRoomList.add(chatRoom2);
-//        chatRoomList.add(chatRoom3);
-//
-//        List<ChatRoomListResponseDto> dto = new ArrayList<>();
-//        dto = chatRoomList.stream().map(ChatRoomListResponseDto::new)
-//                .collect(Collectors.toList());;
-//
-//        //when
-//        when(chatRoomService.findAllDesc()).thenReturn(dto);
-//
-//        ResultActions actions = mockMvc.perform(
-//                get("/api/chatroom")
-//                        .with(csrf())
-//        );
-//
-//        //then
-//        actions
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$.data[0].chatRoomName").value("room1"))
-//                .andExpect(jsonPath("$.data[1].chatRoomName").value("room2"))
-//                .andExpect(jsonPath("$.data[2].chatRoomName").value("room3"));
-//    }
+////    @Test
+////    public void 채팅방_목록_조회() throws Exception{
+////        //given
+////        // chatRoomService.findAllDesc() 의 결과로 반환할 List<ChatRoomListResponseDto> 만들기
+////        ChatRoom chatRoom1 = createChatRoom("room1", ChatRoomStatus.PUBLIC);
+////        ChatRoom chatRoom2 = createChatRoom("room2", ChatRoomStatus.PUBLIC);
+////        ChatRoom chatRoom3 = createChatRoom("room3", ChatRoomStatus.PUBLIC);
+////
+////        List<ChatRoom> chatRoomList = new ArrayList<>();
+////        chatRoomList.add(chatRoom1);
+////        chatRoomList.add(chatRoom2);
+////        chatRoomList.add(chatRoom3);
+////
+////        List<ChatRoomListResponseDto> dto = new ArrayList<>();
+////        dto = chatRoomList.stream().map(ChatRoomListResponseDto::new)
+////                .collect(Collectors.toList());;
+////
+////        //when
+////        when(chatRoomService.findAllDesc()).thenReturn(dto);
+////
+////        ResultActions actions = mockMvc.perform(
+////                get("/api/chatrooms")
+////                        .with(csrf())
+////        );
+////
+////        //then
+////        actions
+////                .andExpect(status().isOk())
+////                .andExpect(jsonPath("$.data[0].chatRoomName").value("room1"))
+////                .andExpect(jsonPath("$.data[1].chatRoomName").value("room2"))
+////                .andExpect(jsonPath("$.data[2].chatRoomName").value("room3"));
+////    }
 //
 //    @Test
 //    public void 채팅방_상세_조회() throws Exception{
 //        //given
 //        // chatRoomService.findChatRoomDetail 가 반환할 dto 생성
 //        Long chatRoomId = 1L;
-//        ChatRoom chatRoom = createChatRoom("room");
+//        ChatRoom chatRoom = createChatRoom("room", ChatRoomStatus.PUBLIC);
 //        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
 //        ChatRoomDetailsDto detailDto = new ChatRoomDetailsDto(chatRoom);
 //        //when
@@ -121,7 +121,7 @@
 //                .thenReturn(detailDto);
 //
 //        ResultActions actions = mockMvc.perform(
-//                get("/api/chatroom/{chatRoomId}", chatRoomId)
+//                get("/api/chatrooms/{chatRoomId}", chatRoomId)
 //                        .with(csrf())
 //        );
 //
@@ -198,9 +198,10 @@
 //        //then
 //        actions.andExpect(status().isOk());
 //    }
-//    ChatRoom createChatRoom(String name){
+//    ChatRoom createChatRoom(String name, ChatRoomStatus chatRoomStatus){
 //        return ChatRoom.builder()
 //                .name(name)
+//                .chatRoomStatus(chatRoomStatus)
 //                .build();
 //    }
 //}
