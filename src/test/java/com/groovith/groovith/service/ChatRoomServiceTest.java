@@ -1,5 +1,6 @@
 package com.groovith.groovith.service;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.dto.ChatRoomDetailsDto;
 import com.groovith.groovith.dto.ChatRoomListResponseDto;
@@ -213,9 +214,10 @@ class ChatRoomServiceTest {
         when(userChatRoomRepository.findByUserIdAndChatRoomId(anyLong(), anyLong()))
                 .thenReturn(Optional.of(userChatRoom));
 
-        chatRoomService.leaveChatRoom(userId, chatRoomId);
+        ChatRoomMemberStatus result = chatRoomService.leaveChatRoom(userId, chatRoomId);
 
         //then
+        Assertions.assertThat(result).isEqualTo(ChatRoomMemberStatus.ACTIVE);
         Assertions.assertThat(chatRoom.getCurrentMemberCount()).isEqualTo(now-1);
         // 연관관계 없어졌는지 테스트
         Assertions.assertThat(chatRoom.getUserChatRooms().size()).isEqualTo(0);
@@ -248,14 +250,16 @@ class ChatRoomServiceTest {
                 .thenReturn(Optional.of(chatRoom));
         when(userChatRoomRepository.findByUserIdAndChatRoomId(anyLong(), anyLong()))
                 .thenReturn(Optional.of(userChatRoom));
-        doNothing().when(chatRoomRepository).deleteById(anyLong());
         doNothing().when(currentPlaylistRepository).deleteByChatRoomId(anyLong());
 
-        chatRoomService.leaveChatRoom(userId, chatRoomId);
+        ChatRoomMemberStatus result = chatRoomService.leaveChatRoom(userId, chatRoomId);
 
         //then
-        verify(chatRoomRepository).deleteById(chatRoomId);
         verify(currentPlaylistRepository).deleteByChatRoomId(chatRoomId);
+
+        // EMPTY 상태인지
+        Assertions.assertThat(result).isEqualTo(ChatRoomMemberStatus.EMPTY);
+
         // 연관관계 없어졌는지 테스트
         Assertions.assertThat(chatRoom.getUserChatRooms().size()).isEqualTo(0);
         Assertions.assertThat(user.getUserChatRoom().size()).isEqualTo(0);
