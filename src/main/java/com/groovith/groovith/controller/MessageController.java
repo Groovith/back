@@ -66,7 +66,6 @@ public class MessageController {
             template.convertAndSend("/sub/api/chat/" + messageDto.getChatRoomId(), messageDto);
         }*/
 
-        // 메세지 저장 테스트
 
         // Stomp 헤더 토큰으로 송신 유저 찾기
         Long userId = (Long) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("userId");
@@ -95,6 +94,7 @@ public class MessageController {
         messageResponseDto.setContent(message.getContent());
         messageResponseDto.setType(message.getMessageType());
         messageResponseDto.setCreatedAt(message.getCreatedAt());
+        messageResponseDto.setImageUrl(user.get().getImageUrl());
 
 
         template.convertAndSend("/sub/api/chat/" + messageDto.getChatRoomId(), messageResponseDto);
