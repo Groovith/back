@@ -124,7 +124,7 @@ public class ChatRoomService {
     /**
      *  채팅방 퇴장
      * */
-    public void leaveChatRoom(Long userId, Long chatRoomId) {
+    public ChatRoomMemberStatus leaveChatRoom(Long userId, Long chatRoomId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(()-> new UserNotFoundException(userId));
@@ -144,10 +144,12 @@ public class ChatRoomService {
         chatRoom.subUser();
 
         // 유저 퇴장시, 채팅방이 비어있다면 현재 채팅방 삭제
-        if(chatRoom.getCurrentMemberCount()==0){
-            chatRoomRepository.deleteById(chatRoomId);
+        if(chatRoom.getCurrentMemberCount()<=0){
             // 채팅방 플레이리스트 함께 삭제
             currentPlaylistRepository.deleteByChatRoomId(chatRoomId);
+            return ChatRoomMemberStatus.EMPTY;
+        }else{
+            return ChatRoomMemberStatus.ACTIVE;
         }
     }
 

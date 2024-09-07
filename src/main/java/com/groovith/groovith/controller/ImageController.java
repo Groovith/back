@@ -37,7 +37,6 @@ public class ImageController {
     @PutMapping("/upload/chatroom/{chatRoomId}")
     public ResponseEntity<?> chatRoomUploadFile(@RequestParam("file") MultipartFile file, @PathVariable("chatRoomId")Long chatRoomId) {
         imageService.chatRoomUpLoadFile(file, chatRoomId);
-
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
