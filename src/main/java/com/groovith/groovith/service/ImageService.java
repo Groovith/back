@@ -49,7 +49,9 @@ public class ImageService {
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
     @Value("${cloud.aws.s3.defaultUserImageUrl}")
-    private String DEFAULT_IMG_URL;
+    private String DEFAULT_USER_IMG_URL;
+    @Value("${cloud.aws.s3.defaultChatRoomImageUrl}")
+    private String DEFAULT_CHATROOM_IMG_URL;
 
     /**
      *  파일 업로드, url db에 저장
@@ -71,8 +73,14 @@ public class ImageService {
         // 유저 이미지 url 변경
         User user = userRepository.findById(userId)
                 .orElseThrow(()-> new UserNotFoundException(userId));
-        user.setImageUrl(image.getImageUrl());
 
+        //이전의 이미지가 기본이미지가 아니라면 삭제
+        String nowImage = user.getImageUrl();
+        if(!nowImage.equals(DEFAULT_USER_IMG_URL)){
+            deleteFileFromS3Bucket(nowImage);
+        }
+
+        user.setImageUrl(image.getImageUrl());
         imageRepository.save(image);
     }
 
@@ -88,6 +96,13 @@ public class ImageService {
         // 채팅방 이미지 변경
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()-> new ChatRoomNotFoundException(chatRoomId));
+
+        // 이전의 이미지가 기본 이미지가 아니라면 삭제
+        String nowImage = chatRoom.getImageUrl();
+        if(!nowImage.equals(DEFAULT_CHATROOM_IMG_URL)){
+            deleteChatRoomFileFromS3Bucket(nowImage);
+        }
+
         chatRoom.setImageUrl(url);
         imageRepository.save(image);
     }
@@ -101,12 +116,12 @@ public class ImageService {
             String currentImageUrl = user.getImageUrl();
 
             // 현재 이미지가 기본 이미지가 아닐 때 삭제
-            if (!currentImageUrl.equals(DEFAULT_IMG_URL)) {
+            if (!currentImageUrl.equals(DEFAULT_USER_IMG_URL)) {
                 deleteFileFromS3Bucket(currentImageUrl);
             }
 
             // 유저 이미지 URL을 기본 이미지로 설정
-            user.setImageUrl(DEFAULT_IMG_URL);
+            user.setImageUrl(DEFAULT_USER_IMG_URL);
             userRepository.save(user); // User 정보를 업데이트
         } catch (Exception e) {
             return DeleteProfilePictureResponseDto.databaseError();
@@ -120,6 +135,22 @@ public class ImageService {
         String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
         fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
         amazonS3Client.deleteObject(bucket, USER_DIR + fileName);
+    }
+
+    public void deleteChatRoomFileFromS3Bucket(String fileUrl){
+        String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+        fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
+        amazonS3Client.deleteObject(bucket, CHATROOM_DIR + fileName);
+    }
+
+    public void deleteChatRoomImageById(Long chatRoomId){
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(()-> new ChatRoomNotFoundException(chatRoomId));
+        String nowImage = chatRoom.getImageUrl();
+        // 현재 채팅방 이미지가 기본이 아닐때
+        if(!nowImage.equals(DEFAULT_CHATROOM_IMG_URL)){
+            deleteChatRoomFileFromS3Bucket(nowImage);
+        }
     }
 
     /**

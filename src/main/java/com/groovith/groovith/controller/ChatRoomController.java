@@ -5,6 +5,7 @@ import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.ChatRoomService;
+import com.groovith.groovith.service.ImageService;
 import com.groovith.groovith.service.NotificationService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
     private final NotificationService notificationService;
+    private final ImageService imageService;
     private final SimpMessageSendingOperations template;
 
     /**
@@ -90,6 +92,8 @@ public class ChatRoomController {
      */
     @DeleteMapping("/chatrooms/{chatRoomId}")
     public ResponseEntity<?> deleteChatRoom(@PathVariable(name = "chatRoomId")Long chatRoomId){
+        // 기존 채팅방 이미지 삭제
+        imageService.deleteChatRoomImageById(chatRoomId);
         chatRoomService.deleteChatRoom(chatRoomId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
