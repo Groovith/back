@@ -187,5 +187,8 @@ public class ChatRoomService {
         chatRoom.addUser();
     }
 
-
+    @Transactional(readOnly = true)
+    public ChatRoom findById(Long chatRoomId){
+        return chatRoomRepository.findById(chatRoomId).orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+    }
 }

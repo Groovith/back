@@ -2,6 +2,7 @@ package com.groovith.groovith.service;
 
 
 import com.groovith.groovith.domain.ChatRoom;
+import com.groovith.groovith.domain.ChatRoomStatus;
 import com.groovith.groovith.domain.Message;
 import com.groovith.groovith.dto.MessageRequestDto;
 import com.groovith.groovith.dto.MessageResponseDto;
@@ -31,16 +32,35 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final ChatRoomRepository chatRoomRepository;
 
-    public Message save(MessageDto messageDto){
+    // 메세지 생성 후 PRIVATE 이면 save, PUBLIC 이면 저장 x
+    public MessageResponseDto createMessage(MessageDto messageDto){
 
         Long chatRoomId = messageDto.getChatRoomId();
         ChatRoom chatRoom = chatRoomRepository.findById(messageDto.getChatRoomId())
                 .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
 
+        // 메세지 생성
         Message message = Message.setMessage(
-                messageDto.getContent(),chatRoom, messageDto.getUserId(), messageDto.getType(), messageDto.getUsername());
+                messageDto.getContent(),chatRoom, messageDto.getUserId(), messageDto.getType(), messageDto.getUsername()
+        );
 
-        return messageRepository.save(message);
+        // chatRoomStatus == PRIVATE 일 경우에만 메세지 저장
+        if(chatRoom.getStatus() == ChatRoomStatus.PRIVATE){
+            messageRepository.save(message);
+        }
+
+        // 메시지 반환 Dto
+        MessageResponseDto messageResponseDto = new MessageResponseDto();
+        messageResponseDto.setMessageId(message.getId());
+        messageResponseDto.setChatRoomId(message.getChatRoom().getId());
+        messageResponseDto.setUserId(message.getUserId());
+        messageResponseDto.setUsername(messageDto.getUsername());
+        messageResponseDto.setContent(message.getContent());
+        messageResponseDto.setType(message.getMessageType());
+        messageResponseDto.setCreatedAt(message.getCreatedAt());
+        messageResponseDto.setImageUrl(messageDto.getImageUrl());
+
+        return messageResponseDto;
     }
 
     /**

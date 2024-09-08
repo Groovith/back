@@ -1,6 +1,8 @@
 package com.groovith.groovith.controller;
 
 
+import com.groovith.groovith.domain.ChatRoom;
+import com.groovith.groovith.domain.ChatRoomStatus;
 import com.groovith.groovith.domain.Message;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.MessageRequestDto;
@@ -49,33 +51,15 @@ public class MessageController {
     @MessageMapping("/api/chat/{chatRoomId}")
     public void send(@Payload MessageRequestDto messageRequestDto, @DestinationVariable Long chatRoomId, SimpMessageHeaderAccessor headerAccessor)
     {
-        /*log.info(String.format("roomid: %s, chatRoomId: %s, userId: %s", messageDto, messageDto.getChatRoomId(), messageDto.getUserId()));
-        // 입장시
-        if(messageDto.getType() == MessageType.JOIN){
-           ChatRoomDetailDto detail = chatRoomService.findChatRoomDetail(messageDto.getChatRoomId());
-           // 입장시 추가 로직 필요 + 예외처리 필요
-        }
-//        // 퇴장시
-//        else if (messageDto.getType() == MessageType.LEAVE) {
-//            chatRoomService.leaveChatRoom(messageDto.getUserId(), messageDto.getChatRoomId());
-//        }
-        //채팅시
-        else if (messageDto.getType()== MessageType.CHAT) {
-            log.info("Message sent to /sub/api/chat/" + messageDto.getChatRoomId());
-            messageService.save(messageDto);
-            template.convertAndSend("/sub/api/chat/" + messageDto.getChatRoomId(), messageDto);
-        }*/
-
-
         // Stomp 헤더 토큰으로 송신 유저 찾기
         Long userId = (Long) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("userId");
         if (userId == null) {
             throw new RuntimeException("User ID is missing in the session.");
         }
-
         Optional<User> user = userRepository.findById(userId);
 
-        // 메시지 저장 Dto
+
+        //메시지 저장 Dto
         MessageDto messageDto = new MessageDto();
         System.out.println("chatRoomId: " + chatRoomId);
         messageDto.setChatRoomId(chatRoomId);
@@ -83,21 +67,22 @@ public class MessageController {
         messageDto.setContent(messageRequestDto.getContent());
         messageDto.setType(messageRequestDto.getType());
         messageDto.setUsername(user.get().getUsername());
-        Message message = messageService.save(messageDto);
+        messageDto.setImageUrl(user.get().getImageUrl());
 
-        // 메시지 반환 Dto
-        MessageResponseDto messageResponseDto = new MessageResponseDto();
-        messageResponseDto.setMessageId(message.getId());
-        messageResponseDto.setChatRoomId(message.getChatRoom().getId());
-        messageResponseDto.setUserId(message.getUserId());
-        messageResponseDto.setUsername(user.get().getUsername());
-        messageResponseDto.setContent(message.getContent());
-        messageResponseDto.setType(message.getMessageType());
-        messageResponseDto.setCreatedAt(message.getCreatedAt());
-        messageResponseDto.setImageUrl(user.get().getImageUrl());
+        // PRIVATE 일 경우에만 채팅 저장
+        MessageResponseDto  messageResponseDto = messageService.createMessage(messageDto);
+//        // 메시지 반환 Dto
+//        MessageResponseDto messageResponseDto = new MessageResponseDto();
+//        messageResponseDto.setMessageId(message.getId());
+//        messageResponseDto.setChatRoomId(message.getChatRoom().getId());
+//        messageResponseDto.setUserId(message.getUserId());
+//        messageResponseDto.setUsername(user.get().getUsername());
+//        messageResponseDto.setContent(message.getContent());
+//        messageResponseDto.setType(message.getMessageType());
+//        messageResponseDto.setCreatedAt(message.getCreatedAt());
+//        messageResponseDto.setImageUrl(user.get().getImageUrl());
 
-
-        template.convertAndSend("/sub/api/chat/" + messageDto.getChatRoomId(), messageResponseDto);
+        template.convertAndSend("/sub/api/chat/" + chatRoomId, messageResponseDto);
     }
 
     /**
