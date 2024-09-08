@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 통신에 사용할 메세지
+ * 메세지 저장에 사용될 dto
  * */
 @Data
 public class MessageDto {
@@ -31,6 +31,7 @@ public class MessageDto {
 
     private String track;
 
+    private String imageUrl;
 //    public Message toEntity(UserChatRoom userChatRoom){
 //        return Message.builder()
 //                .content(content)
