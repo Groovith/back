@@ -25,4 +25,9 @@ public class ResponseDto {
         ResponseDto responseDto = new ResponseDto(ResponseCode.VALIDATION_FAIL, ResponseMessage.VALIDATION_FAIL);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseDto);
     }
+
+    public static ResponseEntity<ResponseDto> noSuchUser() {
+        ResponseDto responseDto = new ResponseDto(ResponseCode.NO_SUCH_USER, ResponseMessage.NO_SUCH_USER);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseDto);
+    }
 }
