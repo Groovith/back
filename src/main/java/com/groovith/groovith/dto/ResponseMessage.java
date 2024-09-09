@@ -8,4 +8,5 @@ public interface ResponseMessage {
     String DATABASE_ERROR = "Database error.";
     String MAIL_FAIL = "Mail send fail.";
     String WRONG_PASSWORD = "Wrong password.";
+    String NO_SUCH_USER = "No such user.";
 }

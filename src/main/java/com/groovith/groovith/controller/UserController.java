@@ -55,6 +55,12 @@ public class UserController {
         return userService.emailCertification(requestDto);
     }
 
+    // 이메인 인증 번호 확인
+    @PostMapping("/auth/check-certification")
+    public ResponseEntity<CheckCertificationResponseDto> checkCertification(@RequestBody @Valid CheckCertificationRequestDto requestDto) {
+        return userService.checkCertification(requestDto);
+    }
+
     /**
      * 현재 User 상태 변경 : PUBLIC -> PRIVATE or PRIVATE -> PUBLIC
      * */
@@ -86,5 +92,17 @@ public class UserController {
     @PatchMapping("/users/me/update/nickname")
     public ResponseEntity<? super UpdateNicknameResponseDto> updateNickname(@RequestBody @Valid UpdateNicknameRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
         return userService.updateNickname(requestDto.getNickname(), userDetails.getUserId());
+    }
+
+    // 비밀번호 재설정 이메일 요청
+    @PostMapping("/auth/request-password-reset")
+    public ResponseEntity<? super PasswordResetEmailResponseDto> requestPasswordReset(@RequestBody @Valid PasswordResetEmailRequestDto requestDto) {
+        return userService.requestPasswordResetCertification(requestDto);
+    }
+
+    // 이메일을 통한 비밀번호 재설정
+    @PatchMapping("/auth/reset-password")
+    public ResponseEntity<? super PasswordResetResponseDto> resetPassword(@RequestBody @Valid PasswordResetRequestDto requestDto) {
+        return userService.resetPassword(requestDto);
     }
 }

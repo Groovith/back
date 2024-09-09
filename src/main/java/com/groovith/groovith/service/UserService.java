@@ -5,10 +5,7 @@ import com.groovith.groovith.domain.*;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.provider.EmailProvider;
-import com.groovith.groovith.repository.CertificationRepository;
-import com.groovith.groovith.repository.FollowRepository;
-import com.groovith.groovith.repository.RefreshRepository;
-import com.groovith.groovith.repository.UserRepository;
+import com.groovith.groovith.repository.*;
 import com.groovith.groovith.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -28,6 +26,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final RefreshRepository refreshRepository;
     private final CertificationRepository certificationRepository;
+    private final PasswordResetCertificationRepository passwordResetCertificationRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailProvider emailProvider;
@@ -306,5 +305,44 @@ public class UserService {
             return UpdateNicknameResponseDto.databaseError();
         }
         return UpdateNicknameResponseDto.success();
+    }
+
+    // 비밀번호 재설정 이메일 요청
+    public ResponseEntity<? super PasswordResetEmailResponseDto> requestPasswordResetCertification(PasswordResetEmailRequestDto requestDto) {
+        try {
+            String email = requestDto.getEmail();
+            // 해당 이메일로 가입된 회원이 있는지 확인
+            if (!userRepository.existsByEmail(email)) return ResponseDto.noSuchUser();
+            // 인증 코드 생성
+            String code = UUID.randomUUID().toString();
+            // 이메일 전송
+            boolean isSuccess = emailProvider.sendPasswordResetMail(email, code);
+            if (!isSuccess) return PasswordResetEmailResponseDto.mailSendFail();
+
+            // 이메일과 인증 코드 DB 저장
+            PasswordResetCertification passwordResetCertification = new PasswordResetCertification(email, code);
+            passwordResetCertificationRepository.save(passwordResetCertification);
+        } catch (Exception e) {
+            return ResponseDto.databaseError();
+        }
+        return PasswordResetEmailResponseDto.success();
+    }
+
+    // 이메일 비밀번호 재설정
+    @Transactional
+    public ResponseEntity<? super PasswordResetResponseDto> resetPassword(PasswordResetRequestDto requestDto) {
+        try {
+            PasswordResetCertification certification = passwordResetCertificationRepository.findById(requestDto.getEmail()).orElseThrow();
+            // 코드가 일치 하지 않는 경우 오류 메시지 반환
+            if (!certification.getCode().equals(requestDto.getCode())) return PasswordResetResponseDto.certificationFail();
+            // 코드가 일치 하는 경우 비밀번호 변경 + 인증 객체 삭제
+            passwordResetCertificationRepository.delete(certification);
+            User user = userRepository.findByEmail(requestDto.getEmail()).orElseThrow();
+            user.setPassword(bCryptPasswordEncoder.encode(requestDto.getPassword()));
+            userRepository.save(user);
+        } catch (Exception e) {
+            return ResponseDto.databaseError();
+        }
+        return PasswordResetResponseDto.success();
     }
 }

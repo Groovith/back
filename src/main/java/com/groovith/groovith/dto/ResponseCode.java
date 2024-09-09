@@ -8,4 +8,5 @@ public interface ResponseCode {
     String DATABASE_ERROR = "DBE";
     String MAIL_FAIL = "MF";
     String WRONG_PASSWORD = "WP";
+    String NO_SUCH_USER = "NU";
 }
