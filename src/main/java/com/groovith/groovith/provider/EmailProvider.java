@@ -90,7 +90,7 @@ public class EmailProvider {
         message.append("<p>이 요청을 하지 않으셨다면, 이 이메일을 무시하셔도 됩니다.</p>");
         message.append("</div>");
         message.append("<div class='footer'>");
-        message.append("<p>&copy; 2024 Your Company. All rights reserved.</p>");
+        message.append("<p>&copy; 2024 Groovith. All rights reserved.</p>");
         message.append("</div>");
         message.append("</div>");
         message.append("</body>");
