@@ -99,4 +99,10 @@ public class UserController {
     public ResponseEntity<? super PasswordResetEmailResponseDto> requestPasswordReset(@RequestBody @Valid PasswordResetEmailRequestDto requestDto) {
         return userService.requestPasswordResetCertification(requestDto);
     }
+
+    // 이메일을 통한 비밀번호 재설정
+    @PatchMapping("/auth/reset-password")
+    public ResponseEntity<? super PasswordResetResponseDto> resetPassword(@RequestBody @Valid PasswordResetRequestDto requestDto) {
+        return userService.resetPassword(requestDto);
+    }
 }
