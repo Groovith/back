@@ -55,6 +55,12 @@ public class UserController {
         return userService.emailCertification(requestDto);
     }
 
+    // 이메인 인증 번호 확인
+    @PostMapping("/auth/check-certification")
+    public ResponseEntity<CheckCertificationResponseDto> checkCertification(@RequestBody @Valid CheckCertificationRequestDto requestDto) {
+        return userService.checkCertification(requestDto);
+    }
+
     /**
      * 현재 User 상태 변경 : PUBLIC -> PRIVATE or PRIVATE -> PUBLIC
      * */
