@@ -91,7 +91,8 @@ public class SecurityConfig {
                                 "/api/join",
                                 "/api/auth/email-check",
                                 "/api/auth/email-certification",
-                                "/api/auth/check-certification"
+                                "/api/auth/check-certification",
+                                "/api/auth/request-password-reset"
                         ).permitAll()
 //                        .requestMatchers("/admin").hasRole("ADMIN") // 어드민 경로 인가 설정
                         .requestMatchers("/api/reissue").permitAll() // 토큰 재발행

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -306,5 +307,25 @@ public class UserService {
             return UpdateNicknameResponseDto.databaseError();
         }
         return UpdateNicknameResponseDto.success();
+    }
+
+    // 비밀번호 재설정 이메일 요청
+    public ResponseEntity<? super PasswordResetEmailResponseDto> requestPasswordResetCertification(PasswordResetEmailRequestDto requestDto) {
+        try {
+            String email = requestDto.getEmail();
+            // 해당 이메일로 가입된 회원이 있는지 확인
+            if (!userRepository.existsByEmail(email)) return ResponseDto.noSuchUser();
+            // 인증 코드 생성
+            String code = UUID.randomUUID().toString();
+            // 이메일 전송
+            boolean isSuccess = emailProvider.sendPasswordResetMail(email, code);
+            if (!isSuccess) return PasswordResetEmailResponseDto.mailSendFail();
+
+            // 이메일과 인증 코드 DB 저장
+
+        } catch (Exception e) {
+            return ResponseDto.databaseError();
+        }
+        return PasswordResetEmailResponseDto.success();
     }
 }

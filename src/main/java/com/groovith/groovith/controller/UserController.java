@@ -93,4 +93,10 @@ public class UserController {
     public ResponseEntity<? super UpdateNicknameResponseDto> updateNickname(@RequestBody @Valid UpdateNicknameRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
         return userService.updateNickname(requestDto.getNickname(), userDetails.getUserId());
     }
+
+    // 비밀번호 재설정 이메일 요청
+    @PostMapping("/auth/request-password-reset")
+    public ResponseEntity<? super PasswordResetEmailResponseDto> requestPasswordReset(@RequestBody @Valid PasswordResetEmailRequestDto requestDto) {
+        return userService.requestPasswordResetCertification(requestDto);
+    }
 }
