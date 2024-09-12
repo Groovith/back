@@ -1,6 +1,7 @@
 package com.groovith.groovith.repository;
 
 import com.groovith.groovith.domain.*;
+import jakarta.persistence.EntityManager;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,12 +9,16 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import java.util.List;
+
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 class UserRepositoryTest {
-
+    // 실제 데이터베이스와 연결되있어서 수정 필요
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private EntityManager em;
 
     @Test
     public void save(){
@@ -35,7 +40,7 @@ class UserRepositoryTest {
     }
 
     @Test
-    public void existsByUsername() throws Exception{
+    public void existsByUsername(){
         //given
         String username = "user";
         String username1 = "ksy";
@@ -79,6 +84,25 @@ class UserRepositoryTest {
         Assertions.assertThat(findUser).isEqualTo(user);
     }
 
+//    @Test
+//    public void findByUsernameContaining(){
+//        //given
+//        User user1 = createUser("test1", "1234");
+//        User user2 = createUser("test2", "1234");
+//        User user3 = createUser("test3", "1234");
+//
+//        userRepository.save(user1);
+//        userRepository.save(user2);
+//        userRepository.save(user3);
+//        em.flush();
+//        em.clear();
+//        //when
+//        List<User> users = userRepository.findByUsernameContaining("test");
+//
+//        //then
+//        Assertions.assertThat(users.stream().map(User::getUsername))
+//                .containsExactly("test1", "test2", "test3");
+//    }
 
     public User createUser(String username, String password){
         User data = new User();

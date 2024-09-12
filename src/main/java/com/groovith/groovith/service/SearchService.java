@@ -10,6 +10,9 @@ import com.groovith.groovith.dto.UserDetailsResponseDto;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -21,8 +24,8 @@ public class SearchService {
     private final UserRepository userRepository;
     private final ChatRoomRepository chatRoomRepository;
 
-    public SearchUsersResponseDto searchUsersByName(String name) {
-        List<User> users = userRepository.findByUsernameContaining(name);
+    public SearchUsersResponseDto searchUsersByName(String name, Pageable pageable, Long lastUserId) {
+        Slice<User> users = userRepository.findByUsernameContaining(name, pageable, lastUserId);
         List<UserDetailsResponseDto> userResponsDtos = new ArrayList<>();
         for (User user : users) {
             UserDetailsResponseDto dto = new UserDetailsResponseDto(user);
