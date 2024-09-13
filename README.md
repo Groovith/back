@@ -18,6 +18,7 @@ spring.data.mongodb.uri={MONGODB_URI}
 # JPA 설정
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+spring.jpa.properties.hibernate.default_batch_fetch_size=100
 
 # Spotify API
 spotify.client-id={SPOTIFY APP CLIENT_ID}
