@@ -30,6 +30,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u FROM User u " +
             "WHERE u.username LIKE %:username% " +
-            "AND u.id> :lastUserId")
-    Slice<User> findByUsernameContaining(@Param("username") String username, Pageable pageable, @Param("lastUserId") Long lastUserId);
+            "AND u.id> :lastUserId"
+    )
+    Slice<User> findByUsernameContaining(
+            @Param("username") String username,
+            Pageable pageable,
+            @Param("lastUserId") Long lastUserId
+    );
 }
