@@ -54,7 +54,7 @@ public class NotificationService {
         User following = userRepository.findByUsername(followingName)
                 .orElseThrow(()-> new UserNotFoundException(followingName));
 
-        String alarm = follower.getUsername() + "님이" + following.getUsername() + "님에게 팔로우 요청을 보냈습니다";
+        String alarm = follower.getUsername() + " 님이 " + following.getUsername() + " 님에게 팔로우 요청을 보냈습니다.";
 
         CreateFollowNotificationResponseDto responseDto = new CreateFollowNotificationResponseDto();
         responseDto.setFollowingId(following.getId());

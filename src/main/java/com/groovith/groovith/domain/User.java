@@ -53,14 +53,11 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
     private List<Notification> notifications = new ArrayList<>();
-
     public UserChatRoomDto toUserChatRoomDto(User user){
         return new UserChatRoomDto(user);
     }
 
     public void updateStatus(UserStatus userStatus){
-        System.out.println("USERSTATE : "+userStatus + " " + this.getStatus());
         this.status = (userStatus==UserStatus.PUBLIC) ? UserStatus.PRIVATE : UserStatus.PUBLIC;
-        System.out.println("USERSTATE : "+userStatus + " " + this.getStatus());
     }
 }
