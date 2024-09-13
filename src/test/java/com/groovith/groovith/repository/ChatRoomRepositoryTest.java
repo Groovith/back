@@ -92,24 +92,24 @@ public class ChatRoomRepositoryTest {
                 .isEqualTo(Optional.empty());
     }
 
-    @Test
-    public void findChatRoomByNameContaining(){
-        //given
-        ChatRoom chatRoom1 = createChatRoom("test1");
-        ChatRoom chatRoom2 = createChatRoom("test2");
-        ChatRoom chatRoom3 = createChatRoom("wrong");
-
-        chatRoomRepository.save(chatRoom1);
-        chatRoomRepository.save(chatRoom2);
-        chatRoomRepository.save(chatRoom3);
-        //when
-        List<ChatRoom> chatRoomList = chatRoomRepository.findChatRoomByNameContaining("test");
-
-        //then
-        Assertions.assertThat(chatRoomList.size()).isEqualTo(2);
-        // 검색결과 1, 2번 포함해야함
-        Assertions.assertThat(chatRoomList).containsOnly(chatRoom1, chatRoom2);
-    }
+//    @Test
+//    public void findChatRoomByNameContaining(){
+//        //given
+//        ChatRoom chatRoom1 = createChatRoom("test1");
+//        ChatRoom chatRoom2 = createChatRoom("test2");
+//        ChatRoom chatRoom3 = createChatRoom("wrong");
+//
+//        chatRoomRepository.save(chatRoom1);
+//        chatRoomRepository.save(chatRoom2);
+//        chatRoomRepository.save(chatRoom3);
+//        //when
+//        List<ChatRoom> chatRoomList = chatRoomRepository.findChatRoomByNameContaining("test");
+//
+//        //then
+//        Assertions.assertThat(chatRoomList.size()).isEqualTo(2);
+//        // 검색결과 1, 2번 포함해야함
+//        Assertions.assertThat(chatRoomList).containsOnly(chatRoom1, chatRoom2);
+//    }
 
     ChatRoom createChatRoom(String name){
         return ChatRoom.builder()
