@@ -39,8 +39,8 @@ public class User {
     @Column(name = "spotify_refresh_token")
     private String spotifyRefreshToken;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
-    private List<Refresh> refreshTokens = new ArrayList<>();
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
+//    private List<Refresh> refreshTokens = new ArrayList<>();
 
     @OneToMany(mappedBy = "follower", cascade = CascadeType.REMOVE)
     private Set<Follow> following = new HashSet<>();
