@@ -15,6 +15,10 @@ spring.datasource.password={비밀번호}
 # MongoDB
 spring.data.mongodb.uri={MONGODB_URI}
 
+# Redis
+spring.data.redis.host=localhost
+spring.data.redis.port=6379
+
 # JPA 설정
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl

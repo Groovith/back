@@ -46,7 +46,7 @@ public class AuthenticationService {
         }
 
         //DB에 저장되어 있는지 확인
-        Boolean isExist = refreshRepository.existsByRefresh(refresh);
+        Boolean isExist = refreshRepository.existsById(refresh);
         if (!isExist) {
             throw new IllegalArgumentException("refresh Token doesn't exist");
         }
@@ -60,8 +60,8 @@ public class AuthenticationService {
         String newRefresh = jwtUtil.createJwt("refresh", userId, username, role, 604800000L);   // 7일 유효
 
         //Refresh 토큰 저장 DB에 기존의 Refresh 토큰 삭제 후 새 Refresh 토큰 저장
-        refreshRepository.deleteByRefresh(refresh);
-        addRefresh(userId, newRefresh, 86400000L);
+        refreshRepository.deleteById(refresh);
+        addRefresh(userId, newRefresh);
 
         //response
         response.setHeader("Authorization", "Bearer " + newAccess);
@@ -80,15 +80,14 @@ public class AuthenticationService {
         return null;
     }
 
-    public void addRefresh(Long userId, String refresh, Long expiredMs) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-        Date date = new Date(System.currentTimeMillis() + expiredMs);
+    public void addRefresh(Long userId, String refresh) {
+        // User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        // Date date = new Date(System.currentTimeMillis() + expiredMs);
 
-        Refresh newRefresh = new Refresh();
-        newRefresh.setUser(user);
-        newRefresh.setRefresh(refresh);
-        newRefresh.setExpiration(date.toString());
-
+        Refresh newRefresh = new Refresh(refresh, userId);
+//        newRefresh.setUserId(user.getId());
+//        newRefresh.setRefresh(refresh);
+//        newRefresh.setExpiration(date.toString());
         refreshRepository.save(newRefresh);
     }
 
@@ -108,7 +107,7 @@ public class AuthenticationService {
      */
     @Transactional
     public void deleteRefresh(String refresh) {
-        refreshRepository.deleteByRefresh(refresh);
+        refreshRepository.deleteById(refresh);
     }
 
     /**
@@ -119,6 +118,6 @@ public class AuthenticationService {
      */
     @Transactional(readOnly = true)
     public boolean isRefreshTokenValid(String refresh) {
-        return refreshRepository.existsByRefresh(refresh);
+        return refreshRepository.existsById(refresh);
     }
 }
