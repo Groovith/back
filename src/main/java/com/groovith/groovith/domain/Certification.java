@@ -1,18 +1,20 @@
 package com.groovith.groovith.domain;
 
+import com.fasterxml.jackson.databind.ser.Serializers;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import org.springframework.data.annotation.Id;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.redis.core.RedisHash;
 
-@Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Certification {
+@RedisHash(value = "certification", timeToLive = 300)    // 5분
+public class Certification{
     @Id
     private String email;
     private String certificationNumber;

@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,7 +54,7 @@ public class UserService {
             if (isUsernameExist || isEmailExist) return JoinResponseDto.duplicateId();
 
             // 이메일 인증 여부 확인
-            Certification certification = certificationRepository.findByEmail(email).orElse(null);
+            Certification certification = certificationRepository.findById(email).orElse(null);
             if (certification == null || !certification.isCertificated()) return JoinResponseDto.certificationFail();
 
             // 새 유저 생성
@@ -228,8 +229,8 @@ public class UserService {
             String email = requestDto.getEmail();
             String certificationNumber = requestDto.getCertificationNumber();
 
-            // DB 에서 인증 객체 조회
-            Certification certification = certificationRepository.findByEmail(email).orElse(null);
+            // DB 에서 인증 객체 조회(findById = findByEmail)
+            Certification certification = certificationRepository.findById(email).orElse(null);
             if (certification == null) return CheckCertificationResponseDto.certificationFail();
 
             // 이메일과 인증 번호 유효 여부 조회
