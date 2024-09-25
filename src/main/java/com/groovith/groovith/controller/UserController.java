@@ -83,7 +83,7 @@ public class UserController {
     }
 
     // 유저네임 중복 확인
-    @GetMapping("/users/check-username")
+    @PostMapping("/auth/check-username")
     public ResponseEntity<? super CheckUsernameResponseDto> usernameCheck(@RequestBody @Valid CheckUsernameRequestDto requestDto) {
         return userService.checkUsername(requestDto.getUsername());
     }
