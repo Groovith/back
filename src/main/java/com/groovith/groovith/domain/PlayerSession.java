@@ -1,7 +1,5 @@
 package com.groovith.groovith.domain;
 
-import com.groovith.groovith.dto.SpotifyTrackDto;
-import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;

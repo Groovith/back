@@ -1,23 +1,24 @@
 package com.groovith.groovith.dto;
 
+import jakarta.persistence.Embeddable;
 import lombok.Data;
 
 import java.util.List;
-
+@Embeddable
 @Data
 public class SpotifyTrackDto {
-    private Object album;
-    private List<Object> artists;
+    private String album;
+    private List<String> artists;
     private int disc_number;
     private Long duration_ms;
     private boolean explicit;
-    private Object external_ids;
-    private Object external_urls;
+    private String external_ids;
+    private String external_urls;
     private String href;
     private String id;
     private boolean is_playable;
-    private Object linked_from;
-    private Object restrictions;
+    private String linked_from;
+    private String restrictions;
     private String name;
     private int popularity;
     private String preview_url;

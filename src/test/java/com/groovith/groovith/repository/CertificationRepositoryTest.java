@@ -2,6 +2,7 @@ package com.groovith.groovith.repository;
 
 import com.groovith.groovith.domain.Certification;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,10 +17,11 @@ public class CertificationRepositoryTest {
 
     @Autowired CertificationRepository certificationRepository;
 
-    @BeforeEach
+    @AfterEach
     void deleteAll(){
         certificationRepository.deleteAll();
     }
+
 
     @Test
     @DisplayName("redis 저장 테스트")

@@ -1,20 +1,29 @@
 package com.groovith.groovith.domain;
 
 import com.groovith.groovith.dto.SpotifyTrackDto;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.NoArgsConstructor;
+
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Document(collection = "currentPlaylist")
+
+
 @Data
+@NoArgsConstructor
+@Entity
 public class CurrentPlaylist {
     @Id
-    private String _id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "current_playlist_id")
+    private Long id;
+
     private Long chatRoomId;
+
+    @ElementCollection(fetch = FetchType.LAZY)
     private List<SpotifyTrackDto> tracks;
 
     @Builder
