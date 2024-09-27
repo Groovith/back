@@ -5,4 +5,8 @@ public class CurrentPlayListFullException extends RuntimeException{
         super("PlayList with id: " + id + " is full.");
     }
 
+    public CurrentPlayListFullException(Long id) {
+        super("PlayList with id: " + id + " is full.");
+    }
+
 }

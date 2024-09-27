@@ -537,7 +537,7 @@ public class PlayerService {
 
         // 플레이리스트가 다 찼을 경우(100곡)
         if(currentPlaylist.getTracks().size() >= 100){
-            throw new CurrentPlayListFullException(currentPlaylist.get_id());
+            throw new CurrentPlayListFullException(currentPlaylist.getId());
         }
 
         updatedTracks.add(track);
