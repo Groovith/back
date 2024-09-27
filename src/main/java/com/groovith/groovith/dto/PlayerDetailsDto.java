@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class PlayerDetailsDto {
-    private String _id;
+    private Long id;
     private Long chatRoomId;
     private Integer userCount;
     private Integer currentPlaylistIndex;
