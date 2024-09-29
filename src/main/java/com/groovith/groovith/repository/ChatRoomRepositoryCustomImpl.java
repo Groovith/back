@@ -41,13 +41,9 @@ public class ChatRoomRepositoryCustomImpl implements ChatRoomRepositoryCustom{
 
     // 첫 페이지 일경우(lastChatRoomId == null) 검색 조건 무시
     private BooleanExpression isLastChatRoomId(Long lastChatRoomId){
-        System.out.println("lastChatRoomId : "+lastChatRoomId);
         if(lastChatRoomId == null){
             return null;
         }
         return chatRoom.id.gt(lastChatRoomId);
     }
-
-    //
-
 }
