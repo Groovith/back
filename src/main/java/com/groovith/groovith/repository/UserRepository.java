@@ -1,5 +1,6 @@
 package com.groovith.groovith.repository;
 
+import com.groovith.groovith.domain.QUser;
 import com.groovith.groovith.domain.User;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Long>, UserRepositoryCustom{
 
     Boolean existsByUsername(String username);
 
@@ -37,4 +38,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
             Pageable pageable,
             @Param("lastUserId") Long lastUserId
     );
+
 }
