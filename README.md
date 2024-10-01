@@ -4,7 +4,7 @@
 
 ```properties
 # JWT 토큰 비밀키
-spring.jwt.secret=vmfhaltmskdlstkfkdgodyroqkfwkdbalroqkfwkdbalaaaaaaaaaaaaaaaabbbbb
+spring.jwt.secret={SECRET_KEY}
 
 # MySQL 데이터베이스 설정
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
