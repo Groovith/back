@@ -1,9 +1,6 @@
 package com.groovith.groovith.repository;
 
 import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.SearchChatRoomCategory;
-import com.querydsl.jpa.impl.JPAQueryFactory;
-import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;

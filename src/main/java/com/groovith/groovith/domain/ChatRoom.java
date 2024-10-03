@@ -45,7 +45,7 @@ public class ChatRoom {
 //    @Enumerated(EnumType.STRING)
 //    private ChatRoomType type;
 
-
+    private String masterUserName;
 
     @Builder
     public ChatRoom(String name, ChatRoomStatus chatRoomStatus) {
@@ -83,5 +83,9 @@ public class ChatRoom {
     // 채팅방 이미지 변경
     public void setImageUrl(String url){
         this.imageUrl = url;
+    }
+
+    public void setMasterUserName(String name){
+        this.masterUserName = name;
     }
 }
