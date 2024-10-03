@@ -31,11 +31,13 @@ public class ChatRoomService {
      * 채팅방 생성
      * */
     public ChatRoom create(Long userId, CreateChatRoomRequestDto request){
-        // 생성 실패해도 id 늘어남
         ChatRoom chatRoom = chatRoomRepository.save(request.toEntity());
 
         User user = userRepository.findById(userId)
                 .orElseThrow(()->new UserNotFoundException(userId));
+
+        //masterUserName 설정
+        chatRoom.setMasterUserName(user.getUsername());
 
         // 유저 - 채팅방 연관관계 생성
         UserChatRoom.setUserChatRoom(user, chatRoom);

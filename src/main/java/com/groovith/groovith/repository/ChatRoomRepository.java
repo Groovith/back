@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
+public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long>, ChatRoomRepositoryCustom {
     @Query("Select c FROM ChatRoom c ORDER BY c.id DESC ")
     List<ChatRoom> findAllDesc();
 

@@ -29,6 +29,7 @@ public class ChatRoomDetailsDto {
     private Long chatRoomId;
     private String name;
     private String imageUrl;
+    private String masterUserName;
     /*private int totalUsers;
     private int currentUsers;
     private Long masterId;
@@ -44,6 +45,7 @@ public class ChatRoomDetailsDto {
         this.chatRoomId = chatRoom.getId();
         this.name = chatRoom.getName();
         this.imageUrl = chatRoom.getImageUrl();
+        this.masterUserName = chatRoom.getMasterUserName();
         /*this.totalUsers = chatRoom.getTotalMember();
         this.currentUsers = chatRoom.getCurrentMember();
         this.status = chatRoom.getStatus();

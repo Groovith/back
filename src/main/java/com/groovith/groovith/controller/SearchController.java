@@ -4,7 +4,6 @@ import com.groovith.groovith.dto.SearchChatRoomsResponseDto;
 import com.groovith.groovith.dto.SearchUsersResponseDto;
 import com.groovith.groovith.service.SearchService;
 import lombok.AllArgsConstructor;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,17 +22,17 @@ public class SearchController {
     public ResponseEntity<SearchUsersResponseDto> searchUsers(
             @RequestParam String query,
             Pageable pageable,
-            @RequestParam(defaultValue = "0") Long lastUserId   // 0 -> 첫번째 페이지일 경우
+            @RequestParam(required = false) Long lastUserId   // 첫번째 페이지일 경우 null 값
     ) {
-        return new ResponseEntity<>(searchService.searchUsersByName(query, pageable, lastUserId), HttpStatus.OK);
+        return new ResponseEntity<>(searchService.searchUsers(query, pageable, lastUserId), HttpStatus.OK);
     }
 
     @GetMapping("/chatrooms")
     public ResponseEntity<SearchChatRoomsResponseDto> searchChatRooms(
             @RequestParam String query,
             Pageable pageable,
-            @RequestParam(defaultValue = "0") Long lastChatRoomId
+            @RequestParam(required = false)Long lastChatRoomId // 첫번째 페이지일 경우 null 값
     ) {
-        return new ResponseEntity<>(searchService.searchChatRoomsByName(query, pageable, lastChatRoomId), HttpStatus.OK);
+        return new ResponseEntity<>(searchService.searchChatRooms(query, pageable, lastChatRoomId), HttpStatus.OK);
     }
 }
