@@ -82,7 +82,10 @@ public class MessageController {
     }
 
     /**
-     * 채팅방 채팅 조회(마지막 조회한 메세지 id 기준으로 size 만큼 불러오기)
+     * 채팅방 메시지 무한 스크롤 조회(마지막 조회한 메세지 id 기준으로 20 만큼 불러오기)
+     * 첫 채팅일 경우 lastMessageId = null, 자동으로 제일 최신 메시지로부터 20개 가져오기(message-id 내림차순)
+     * 불러온 메시지 리스트의 메시지 중 제일 작은 id 값 메시지 -> lastMessageId
+     * lastMessageId 기준으로 또 내림차순 20개 가져오기
      * */
     @GetMapping("/api/chat/{chatRoomId}")
     public ResponseEntity<MessageListResponseDto> messages(
