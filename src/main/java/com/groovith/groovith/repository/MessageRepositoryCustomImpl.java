@@ -18,7 +18,7 @@ import static com.groovith.groovith.domain.QMessage.message;
 @Repository
 public class MessageRepositoryCustomImpl implements MessageRepositoryCustom{
     private final JPAQueryFactory jpaQueryFactory;
-    private static final int MESSAGE_LIST_LIMIT_SIZE = 3;  // 한페이지에 불러올 메세지 양
+    private static final int MESSAGE_LIST_LIMIT_SIZE = 20;  // 한페이지에 불러올 메세지 양
 
     @Override
     public Slice<Message> findMessages(Long chatRoomId, Long lastMessageId) {
