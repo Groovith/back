@@ -1,21 +1,19 @@
 package com.groovith.groovith.controller;
 
 
-import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.ChatRoomStatus;
-import com.groovith.groovith.domain.Message;
+
 import com.groovith.groovith.domain.User;
+import com.groovith.groovith.dto.MessageListResponseDto;
 import com.groovith.groovith.dto.MessageRequestDto;
 import com.groovith.groovith.dto.MessageResponseDto;
 import com.groovith.groovith.repository.UserRepository;
-import com.groovith.groovith.service.ChatRoomService;
 import com.groovith.groovith.service.MessageService;
 import com.groovith.groovith.dto.MessageDto;
-import com.groovith.groovith.service.UserService;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -23,9 +21,9 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -38,8 +36,6 @@ import java.util.Optional;
 @RestController
 public class MessageController {
 
-    private final UserService userService;
-    private final ChatRoomService chatRoomService;
     private final MessageService messageService;
     private final SimpMessageSendingOperations template;
     private final UserRepository userRepository;
@@ -86,18 +82,15 @@ public class MessageController {
     }
 
     /**
-     * 채팅방의 모든 채팅 조회
+     * 채팅방 메시지 무한 스크롤 조회(마지막 조회한 메세지 id 기준으로 20 만큼 불러오기)
+     * 첫 채팅일 경우 lastMessageId = null, 자동으로 제일 최신 메시지로부터 20개 가져오기(message-id 내림차순)
+     * 불러온 메시지 리스트의 메시지 중 제일 작은 id 값 메시지 -> lastMessageId
+     * lastMessageId 기준으로 또 내림차순 20개 가져오기
      * */
     @GetMapping("/api/chat/{chatRoomId}")
-    public Result messages(@PathVariable(name = "chatRoomId")Long chatRoomId ){
-        return new Result(messageService.findAllDesc(chatRoomId));
+    public ResponseEntity<MessageListResponseDto> messages(
+            @PathVariable(name = "chatRoomId")Long chatRoomId,
+            @RequestParam(required = false) Long lastMessageId) {
+        return new ResponseEntity<>(messageService.findMessages(chatRoomId, lastMessageId), HttpStatus.OK);
     }
-
-
-    @Data
-    @AllArgsConstructor
-    static class Result<T>{
-        private T data;
-    }
-
 }

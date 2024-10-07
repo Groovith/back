@@ -4,23 +4,19 @@ package com.groovith.groovith.service;
 import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.ChatRoomStatus;
 import com.groovith.groovith.domain.Message;
-import com.groovith.groovith.dto.MessageRequestDto;
+import com.groovith.groovith.dto.MessageListResponseDto;
 import com.groovith.groovith.dto.MessageResponseDto;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.repository.ChatRoomRepository;
-import com.groovith.groovith.repository.UserChatRoomRepository;
-import com.groovith.groovith.domain.UserChatRoom;
 import com.groovith.groovith.repository.MessageRepository;
 import com.groovith.groovith.dto.MessageDto;
-import com.groovith.groovith.dto.MessageListDto;
-import com.groovith.groovith.repository.UserRepository;
+import com.groovith.groovith.dto.MessageDetailsResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -67,11 +63,10 @@ public class MessageService {
      * 채팅방 채팅 조회
      * */
     @Transactional(readOnly = true)
-    public List<MessageListDto> findAllDesc(Long chatRoomId){
-
-        return messageRepository.findAllByChatRoomId(chatRoomId).stream()
-                .map(MessageListDto::new)
-                .collect(Collectors.toList());
+    public MessageListResponseDto findMessages(Long chatRoomId, Long lastMessageId){
+        Slice<Message> messages = messageRepository.findMessages(chatRoomId, lastMessageId);
+        return new MessageListResponseDto(messages.stream().map(MessageDetailsResponseDto::new).toList());
     }
+
 
 }

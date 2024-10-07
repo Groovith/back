@@ -2,7 +2,6 @@ package com.groovith.groovith.dto;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.groovith.groovith.domain.PlayerCall;
 import com.groovith.groovith.domain.Message;
 import com.groovith.groovith.domain.MessageType;
 import lombok.Data;
@@ -29,7 +28,7 @@ import java.time.LocalDateTime;
  *   ],
  *   */
 @Data
-public class MessageListDto {
+public class MessageDetailsResponseDto {
     private Long messageId;
     private Long chatRoomId;
     private Long userId;
@@ -49,7 +48,7 @@ public class MessageListDto {
 //    private Long senderId;
 
     //sentAt: "0000-00-00T00:00:00Z",
-    public MessageListDto(Message message){
+    public MessageDetailsResponseDto(Message message){
         this.messageId = message.getId();
         this.chatRoomId = message.getChatRoom().getId();
         this.userId = message.getUserId();
