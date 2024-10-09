@@ -93,7 +93,8 @@ public class UserService {
         List<UserChatRoom> userChatRooms = userChatRoomRepository.findByUserId(user.getId());
         for(UserChatRoom userChatRoom : userChatRooms){
             ChatRoom chatRoom = userChatRoom.getChatRoom();
-            if(chatRoom.getMasterUserName().equals(user.getUsername())){
+            // 채팅방 만든사람이 탈퇴 회원 or 채팅방에 탈퇴회원만 있었을 경우 채팅방 삭제
+            if(chatRoom.getMasterUserName().equals(user.getUsername()) || chatRoom.getCurrentMemberCount() <= 1){
                 chatRoomRepository.delete(chatRoom);
             }else{
                 // 채팅방 인원 -1
