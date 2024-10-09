@@ -45,6 +45,7 @@ public class ChatRoom {
 //    @Enumerated(EnumType.STRING)
 //    private ChatRoomType type;
 
+    @Column(name = "master_user_name")
     private String masterUserName;
 
     @Builder
@@ -59,16 +60,6 @@ public class ChatRoom {
     /**
      * 비즈니스 메서드
      **/
-    // 채팅방의 제일 먼저 들어온 유저 아이디 가져가기(아무거나 가져가도 상관은없음. 일단은 제일앞에거)
-//    public Long getMasterId(){
-//        List<UserChatRoom> userChatRoom = this.getUserChatRooms();
-//        if (userChatRoom.isEmpty()){
-//            throw new NoUserInChatRoomException(this.getId());
-//        }
-//        else{
-//            return userChatRoom.get(0).getUser().getId();
-//        }
-//    }
 
     //채팅방에 유저 입장
     public void addUser(){

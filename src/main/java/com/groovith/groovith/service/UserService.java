@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,6 +35,8 @@ public class UserService {
     private final AmazonS3Client amazonS3Client;
     private final FollowRepository followRepository;
     private final ImageService imageService;
+    private final UserChatRoomRepository userChatRoomRepository;
+    private final ChatRoomRepository chatRoomRepository;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
@@ -86,17 +89,27 @@ public class UserService {
         // 비밀번호 확인
         if (!bCryptPasswordEncoder.matches(password, user.getPassword())) return UpdatePasswordResponseDto.wrongPassword();
 
+        // 탈퇴 회원이 만든 채팅방이면 채팅방 삭제, 아니면 탈퇴 회원이 속해 있던 채팅방 인원 -1
+        List<UserChatRoom> userChatRooms = userChatRoomRepository.findByUserId(user.getId());
+        for(UserChatRoom userChatRoom : userChatRooms){
+            ChatRoom chatRoom = userChatRoom.getChatRoom();
+            if(chatRoom.getMasterUserName().equals(user.getUsername())){
+                chatRoomRepository.delete(chatRoom);
+            }else{
+                // 채팅방 인원 -1
+                chatRoom.subUser();
+            }
+        }
+
         try {
             // 유저 프로필 이미지 있는 경우 삭제
             if (!user.getImageUrl().equals(DEFAULT_IMG_URL)) {
                 imageService.deleteFileFromS3Bucket(user.getImageUrl());
             }
-
             userRepository.delete(user);
         } catch (Exception e) {
             return DeleteAccountResponseDto.databaseError();
         }
-
         return DeleteAccountResponseDto.success();
     }
 
