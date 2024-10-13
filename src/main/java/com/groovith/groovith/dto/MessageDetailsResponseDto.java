@@ -4,6 +4,7 @@ package com.groovith.groovith.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.groovith.groovith.domain.Message;
 import com.groovith.groovith.domain.MessageType;
+import com.groovith.groovith.domain.User;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -48,13 +49,22 @@ public class MessageDetailsResponseDto {
 //    private Long senderId;
 
     //sentAt: "0000-00-00T00:00:00Z",
-    public MessageDetailsResponseDto(Message message){
-        this.messageId = message.getId();
-        this.chatRoomId = message.getChatRoom().getId();
-        this.userId = message.getUserId();
-        this.content = message.getContent();
-        this.type = message.getMessageType();
-        this.username = message.getUsername();
-        this.createdAt = message.getCreatedAt();
-    }
+//    public MessageDetailsResponseDto(Message message){
+//        this.messageId = message.getId();
+//        this.chatRoomId = message.getUserChatRoom().getChatRoom().getId();
+//        this.content = message.getContent();
+//        this.type = message.getMessageType();
+//        this.createdAt = message.getCreatedAt();
+//
+//        // 유저가 탈퇴했을 경우
+//        if(message.getIsUserDeleted()){
+//            this.userId = null;
+//            this.username = "알수없음";
+//        }
+//        else {
+//            this.userId = message.getUserChatRoom().getUser().getId();
+//            this.username = message.getUserChatRoom().getUser().getUsername();
+//        }
+//
+//    }
 }

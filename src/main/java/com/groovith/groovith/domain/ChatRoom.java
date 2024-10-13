@@ -29,8 +29,8 @@ public class ChatRoom {
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL)
     private final List<UserChatRoom> userChatRooms = new ArrayList<>();
 
-    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE)
-    private final List<Message> messages = new ArrayList<>();
+//    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE)
+//    private final List<Message> messages = new ArrayList<>();
 
     // 현재 방에 있는 사람 수
     @Column(name = "current_member_count")
@@ -45,7 +45,8 @@ public class ChatRoom {
 //    @Enumerated(EnumType.STRING)
 //    private ChatRoomType type;
 
-    private String masterUserName;
+    @Column(name = "master_user_id")
+    private Long masterUserId;
 
     @Builder
     public ChatRoom(String name, ChatRoomStatus chatRoomStatus) {
@@ -59,16 +60,6 @@ public class ChatRoom {
     /**
      * 비즈니스 메서드
      **/
-    // 채팅방의 제일 먼저 들어온 유저 아이디 가져가기(아무거나 가져가도 상관은없음. 일단은 제일앞에거)
-//    public Long getMasterId(){
-//        List<UserChatRoom> userChatRoom = this.getUserChatRooms();
-//        if (userChatRoom.isEmpty()){
-//            throw new NoUserInChatRoomException(this.getId());
-//        }
-//        else{
-//            return userChatRoom.get(0).getUser().getId();
-//        }
-//    }
 
     //채팅방에 유저 입장
     public void addUser(){
@@ -85,7 +76,7 @@ public class ChatRoom {
         this.imageUrl = url;
     }
 
-    public void setMasterUserName(String name){
-        this.masterUserName = name;
+    public void setMasterUserId(Long id){
+        this.masterUserId = id;
     }
 }

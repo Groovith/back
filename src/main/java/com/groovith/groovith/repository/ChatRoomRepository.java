@@ -15,13 +15,16 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long>, ChatR
     @Query("Select c FROM ChatRoom c ORDER BY c.id DESC ")
     List<ChatRoom> findAllDesc();
 
-    @Query("SELECT c FROM ChatRoom c " +
-            "WHERE c.name LIKE %:name% " +
-            "AND c.id> :lastChatRoomId"
-    )
-    Slice<ChatRoom> findChatRoomByNameContaining(
-            @Param("name") String name,
-            Pageable pageable,
-            @Param("lastChatRoomId") Long lastChatRoomId
-    );
+//    List<ChatRoom> findChatRoomByMasterUserName(String masterUserName);
+
+//    @Query("SELECT c FROM ChatRoom c " +
+//            "WHERE c.name LIKE %:name% " +
+//            "AND c.id> :lastChatRoomId"
+//    )
+//    Slice<ChatRoom> findChatRoomByNameContaining(
+//            @Param("name") String name,
+//            Pageable pageable,
+//            @Param("lastChatRoomId") Long lastChatRoomId
+//    );
+
 }

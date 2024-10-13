@@ -23,35 +23,63 @@ public class Message extends BaseTime{
     private MessageType messageType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="chatRoom_id")
-    private ChatRoom chatRoom;
+    @JoinColumn(name="userchatroom_id")
+    private UserChatRoom userChatRoom;
 
-    @Column(name = "user_id")
-    private Long userId;
+    @Column(name = "chatroom_id")
+    private Long chatRoomId;
+//
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name="chatroom_id")
+//    private ChatRoom chatRoom;
+//
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name="user_id")
+//    private User user;
 
-    private String username;
+    @Column(name = "is_user_deleted")
+    // 삭제된 유저의 메시지인지
+    private boolean isUserDeleted;
+
 
     @Builder
-    public Message(String content,ChatRoom chatRoom, Long userId, MessageType messageType, String username){
+    public Message(String content, UserChatRoom userChatRoom, MessageType messageType, Long chatRoomId){
         this.content = content;
+        this.userChatRoom = userChatRoom;
         this.messageType = messageType;
-        this.chatRoom = chatRoom;
-        this.userId = userId;
-        this.username = username;
+        this.isUserDeleted = false; // 메시지가 처음 생성될때는 당연히 유저 탈퇴 상태x
+        this.chatRoomId = chatRoomId;
+//        this.chatRoom = chatRoom;
+//        this.userId = userId;
+//        this.username = username;
     }
 
     /**
-     * 연관관계 편의 메서드, 메세지 생성은 setMessage()로 생성
+     * 연관관계 편의 메서드, 메시지 생성은 setMessage()로 생성
      * */
-    public static Message setMessage(String content,ChatRoom chatRoom, Long userId, MessageType messageType, String username){
+    public static Message setMessage(String content, MessageType messageType, UserChatRoom userChatRoom, Long chatRoomId){
         Message message = Message.builder()
                 .content(content)
                 .messageType(messageType)
-                .chatRoom(chatRoom)
-                .userId(userId)
-                .username(username)
+                .userChatRoom(userChatRoom)
+                .chatRoomId(chatRoomId)
+//                .chatRoom(chatRoom)
+//                .userId(userId)
+//                .username(username)
                 .build();
-        chatRoom.getMessages().add(message);
+        userChatRoom.getMessages().add(message);
         return message;
+    }
+
+    /**
+     * 비즈니스 메서드
+     * */
+    public void setIsUserDeleted(){
+        this.isUserDeleted = true;
+    }
+
+    // 유저가 탈퇴될때 메시지 연관관계 삭제
+    public void setUserChatRoomNull(){
+        this.userChatRoom = null;
     }
 }

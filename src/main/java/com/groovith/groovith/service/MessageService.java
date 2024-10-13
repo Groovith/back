@@ -1,19 +1,17 @@
 package com.groovith.groovith.service;
 
 
-import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.ChatRoomStatus;
 import com.groovith.groovith.domain.Message;
+import com.groovith.groovith.domain.UserChatRoom;
 import com.groovith.groovith.dto.MessageListResponseDto;
 import com.groovith.groovith.dto.MessageResponseDto;
-import com.groovith.groovith.exception.ChatRoomNotFoundException;
-import com.groovith.groovith.repository.ChatRoomRepository;
+import com.groovith.groovith.exception.UserChatRoomNotFoundException;
 import com.groovith.groovith.repository.MessageRepository;
 import com.groovith.groovith.dto.MessageDto;
 import com.groovith.groovith.dto.MessageDetailsResponseDto;
+import com.groovith.groovith.repository.UserChatRoomRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,19 +24,21 @@ import org.springframework.transaction.annotation.Transactional;
 public class MessageService {
 
     private final MessageRepository messageRepository;
-    private final ChatRoomRepository chatRoomRepository;
+    private final UserChatRoomRepository userChatRoomRepository;
 
     // 메세지 생성 후 PRIVATE 이면 save, PUBLIC 이면 저장 x
     public MessageResponseDto createMessage(MessageDto messageDto){
-
+        Long userId = messageDto.getUserId();
         Long chatRoomId = messageDto.getChatRoomId();
-        ChatRoom chatRoom = chatRoomRepository.findById(messageDto.getChatRoomId())
-                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+
+        UserChatRoom userChatRoom = userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId)
+                .orElseThrow(()->new UserChatRoomNotFoundException(userId, chatRoomId));
 
         // 메세지 생성
         Message message = Message.setMessage(
-                messageDto.getContent(),chatRoom, messageDto.getUserId(), messageDto.getType(), messageDto.getUsername()
+                messageDto.getContent(), messageDto.getType(),userChatRoom, chatRoomId
         );
+
 
 //        // chatRoomStatus == PRIVATE 일 경우에만 메세지 저장
 //        if(chatRoom.getStatus() == ChatRoomStatus.PRIVATE){
@@ -51,8 +51,8 @@ public class MessageService {
         // 메시지 반환 Dto
         MessageResponseDto messageResponseDto = new MessageResponseDto();
         messageResponseDto.setMessageId(message.getId());
-        messageResponseDto.setChatRoomId(message.getChatRoom().getId());
-        messageResponseDto.setUserId(message.getUserId());
+        messageResponseDto.setChatRoomId(messageDto.getChatRoomId());
+        messageResponseDto.setUserId(messageDto.getUserId());
         messageResponseDto.setUsername(messageDto.getUsername());
         messageResponseDto.setContent(message.getContent());
         messageResponseDto.setType(message.getMessageType());
@@ -68,7 +68,25 @@ public class MessageService {
     @Transactional(readOnly = true)
     public MessageListResponseDto findMessages(Long chatRoomId, Long lastMessageId){
         Slice<Message> messages = messageRepository.findMessages(chatRoomId, lastMessageId);
-        return new MessageListResponseDto(messages.stream().map(MessageDetailsResponseDto::new).toList());
+
+        return new MessageListResponseDto(messages.stream()
+                .map(message -> {
+                    MessageDetailsResponseDto dto = new MessageDetailsResponseDto();
+                    dto.setMessageId(message.getId());
+                    dto.setContent(message.getContent());
+                    dto.setType(message.getMessageType());
+                    dto.setChatRoomId(message.getChatRoomId());
+                    dto.setCreatedAt(message.getCreatedAt());
+                    // 탈퇴한 유저 메세지라면
+                    if(message.isUserDeleted()){
+                        dto.setUserId(null);
+                        dto.setUsername("알수없음");
+                    } else{
+                        dto.setUserId(message.getUserChatRoom().getUser().getId());
+                        dto.setUsername(message.getUserChatRoom().getUser().getUsername());
+                    }
+                    return dto;
+                }).toList());
     }
 
 
