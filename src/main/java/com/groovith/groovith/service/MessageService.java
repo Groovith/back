@@ -79,7 +79,6 @@ public class MessageService {
                     dto.setCreatedAt(message.getCreatedAt());
                     // 탈퇴한 유저 메세지라면
                     if(message.isUserDeleted()){
-                        System.out.println("-------------------------"+message.getContent());
                         dto.setUserId(null);
                         dto.setUsername("알수없음");
                     } else{
