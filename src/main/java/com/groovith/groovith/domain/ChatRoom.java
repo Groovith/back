@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.List;
  *  채팅방 엔티티
  *
  * */
+
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -48,27 +50,17 @@ public class ChatRoom {
     private String masterUserName;
 
     @Builder
-    public ChatRoom(String name, ChatRoomStatus chatRoomStatus) {
+    public ChatRoom(String name, ChatRoomStatus chatRoomStatus, String imageUrl) {
         this.name = name;
         this.status = chatRoomStatus;
         //this.type = chatRoomType;
         this.currentMemberCount = 1; // 채팅방이 생성될때 처음인원 1명
-        this.imageUrl = "https://groovith-bucket.s3.ap-northeast-2.amazonaws.com/chatroom/chatroom_default.png";
+        this.imageUrl = imageUrl;
     }
 
     /**
      * 비즈니스 메서드
      **/
-    // 채팅방의 제일 먼저 들어온 유저 아이디 가져가기(아무거나 가져가도 상관은없음. 일단은 제일앞에거)
-//    public Long getMasterId(){
-//        List<UserChatRoom> userChatRoom = this.getUserChatRooms();
-//        if (userChatRoom.isEmpty()){
-//            throw new NoUserInChatRoomException(this.getId());
-//        }
-//        else{
-//            return userChatRoom.get(0).getUser().getId();
-//        }
-//    }
 
     //채팅방에 유저 입장
     public void addUser(){

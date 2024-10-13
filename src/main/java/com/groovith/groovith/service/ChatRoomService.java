@@ -8,7 +8,7 @@ import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.parameters.P;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +21,9 @@ import java.util.stream.Collectors;
 @Service
 public class ChatRoomService {
 
+    @Value("${cloud.aws.s3.defaultChatRoomImageUrl}")
+    private String DEFAULT_IMG_URL;
+
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
     private final UserService userService;
@@ -31,7 +34,13 @@ public class ChatRoomService {
      * 채팅방 생성
      * */
     public ChatRoom create(Long userId, CreateChatRoomRequestDto request){
-        ChatRoom chatRoom = chatRoomRepository.save(request.toEntity());
+        ChatRoom data = ChatRoom.builder()
+                .name(request.getName())
+                .chatRoomStatus(request.getStatus())
+                .imageUrl(DEFAULT_IMG_URL)
+                .build();
+
+        ChatRoom chatRoom = chatRoomRepository.save(data);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(()->new UserNotFoundException(userId));
