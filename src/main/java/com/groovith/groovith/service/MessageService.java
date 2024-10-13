@@ -1,19 +1,17 @@
 package com.groovith.groovith.service;
 
 
-import com.groovith.groovith.domain.*;
+import com.groovith.groovith.domain.Message;
+import com.groovith.groovith.domain.UserChatRoom;
 import com.groovith.groovith.dto.MessageListResponseDto;
 import com.groovith.groovith.dto.MessageResponseDto;
-import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.UserChatRoomNotFoundException;
-import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.MessageRepository;
 import com.groovith.groovith.dto.MessageDto;
 import com.groovith.groovith.dto.MessageDetailsResponseDto;
 import com.groovith.groovith.repository.UserChatRoomRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,10 +39,14 @@ public class MessageService {
                 messageDto.getContent(), messageDto.getType(),userChatRoom, chatRoomId
         );
 
-        // chatRoomStatus == PRIVATE 일 경우에만 메세지 저장
-        if(userChatRoom.getChatRoom().getStatus() == ChatRoomStatus.PRIVATE){
-            messageRepository.save(message);
-        }
+
+//        // chatRoomStatus == PRIVATE 일 경우에만 메세지 저장
+//        if(chatRoom.getStatus() == ChatRoomStatus.PRIVATE){
+//            messageRepository.save(message);
+//        }
+
+        // 채팅방 종류 상관없이 메시지 전체 저장
+        messageRepository.save(message);
 
         // 메시지 반환 Dto
         MessageResponseDto messageResponseDto = new MessageResponseDto();
