@@ -32,7 +32,7 @@ public class MessageRepositoryCustomImpl implements MessageRepositoryCustom{
     }
 
     private BooleanExpression findCondition(Long chatRoomId, Long lastMessageId){
-        return message.chatRoom.id.eq(chatRoomId)
+        return message.chatRoomId.eq(chatRoomId)
                 .and(isLastMessageId(lastMessageId));
     }
 

@@ -94,11 +94,19 @@ public class UserService {
         for(UserChatRoom userChatRoom : userChatRooms){
             ChatRoom chatRoom = userChatRoom.getChatRoom();
             // 채팅방 만든사람이 탈퇴 회원 or 채팅방에 탈퇴회원만 있었을 경우 채팅방 삭제
-            if(chatRoom.getMasterUserName().equals(user.getUsername()) || chatRoom.getCurrentMemberCount() <= 1){
+            if(chatRoom.getMasterUserId().equals(user.getId()) || chatRoom.getCurrentMemberCount() <= 1){
                 chatRoomRepository.delete(chatRoom);
             }else{
                 // 채팅방 인원 -1
                 chatRoom.subUser();
+            }
+
+            // 탈퇴회원 메세지 처리 - isUserDeleted 된 메세지를 조회할때 username = 알수없음 으로 표시
+            userChatRoom.getMessages().forEach(Message::setIsUserDeleted);
+            for(Message message: userChatRoom.getMessages()){
+                message.setIsUserDeleted();
+                // 메시지와 userchatroom 연관관계 제거(user 탈퇴시에 userchatroom이 같이 삭제될때 메시지는 그대로 두기위함)
+                message.setUserChatRoomNull();
             }
         }
 
@@ -107,6 +115,7 @@ public class UserService {
             if (!user.getImageUrl().equals(DEFAULT_IMG_URL)) {
                 imageService.deleteFileFromS3Bucket(user.getImageUrl());
             }
+            // 유저 삭제
             userRepository.delete(user);
         } catch (Exception e) {
             return DeleteAccountResponseDto.databaseError();

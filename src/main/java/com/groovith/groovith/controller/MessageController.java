@@ -57,7 +57,6 @@ public class MessageController {
 
         //메시지 저장 Dto
         MessageDto messageDto = new MessageDto();
-        System.out.println("chatRoomId: " + chatRoomId);
         messageDto.setChatRoomId(chatRoomId);
         messageDto.setUserId(userId);
         messageDto.setContent(messageRequestDto.getContent());

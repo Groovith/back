@@ -62,7 +62,7 @@ public class UserChatRoomRepositoryTest {
                 .build();
         ChatRoom chatRoom = chatRoomRepository.save(data1);
 
-        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom);
+        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
 
         //when
         UserChatRoom.deleteUserChatRoom(userChatRoom, user, chatRoom);

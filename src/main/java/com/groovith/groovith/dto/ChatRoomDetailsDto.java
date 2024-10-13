@@ -45,7 +45,7 @@ public class ChatRoomDetailsDto {
         this.chatRoomId = chatRoom.getId();
         this.name = chatRoom.getName();
         this.imageUrl = chatRoom.getImageUrl();
-        this.masterUserName = chatRoom.getMasterUserName();
+        //this.masterUserName = chatRoom.getMasterUserId();
         /*this.totalUsers = chatRoom.getTotalMember();
         this.currentUsers = chatRoom.getCurrentMember();
         this.status = chatRoom.getStatus();

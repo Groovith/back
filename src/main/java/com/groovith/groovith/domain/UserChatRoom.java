@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
@@ -23,20 +26,30 @@ public class UserChatRoom{
     @JoinColumn(name="chatRoom_id")
     private ChatRoom chatRoom;
 
+    // 채팅방이 삭제될때 메시지들도 같이 삭제 / 유저가 삭제될때는 메시지 유지
+    @OneToMany(mappedBy = "userChatRoom", orphanRemoval = false)
+    private final List<Message> messages = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    // 현재 채팅방에 속해있는지
+    private UserChatRoomStatus status;
+
     // 빌더패턴 + 양방향
     @Builder
-    public UserChatRoom(User user, ChatRoom chatRoom){
+    public UserChatRoom(User user, ChatRoom chatRoom, UserChatRoomStatus status){
         this.user = user;
         this.chatRoom = chatRoom;
+        this.status = status;
     }
 
     /** 연관관계 편의 매서드 - UserChatRoom 에서 User, ChatRoom 양쪽 관리 **/
 
 
-    public static UserChatRoom setUserChatRoom(User user, ChatRoom chatRoom){
+    public static UserChatRoom setUserChatRoom(User user, ChatRoom chatRoom,  UserChatRoomStatus status){
         UserChatRoom userChatRoom = UserChatRoom.builder()
                 .user(user)
                 .chatRoom(chatRoom)
+                .status(status)
                 .build();
         user.getUserChatRoom().add(userChatRoom);
         chatRoom.getUserChatRooms().add(userChatRoom);
@@ -48,7 +61,7 @@ public class UserChatRoom{
         chatRoom.getUserChatRooms().remove(userChatRoom);
     }
 
-
-    /** 비즈니스 로직 **/
-
+    public void setStatus(UserChatRoomStatus status){
+        this.status = status;
+    }
 }

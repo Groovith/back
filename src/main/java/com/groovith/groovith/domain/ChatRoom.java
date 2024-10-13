@@ -29,8 +29,8 @@ public class ChatRoom {
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL)
     private final List<UserChatRoom> userChatRooms = new ArrayList<>();
 
-    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE)
-    private final List<Message> messages = new ArrayList<>();
+//    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE)
+//    private final List<Message> messages = new ArrayList<>();
 
     // 현재 방에 있는 사람 수
     @Column(name = "current_member_count")
@@ -45,8 +45,8 @@ public class ChatRoom {
 //    @Enumerated(EnumType.STRING)
 //    private ChatRoomType type;
 
-    @Column(name = "master_user_name")
-    private String masterUserName;
+    @Column(name = "master_user_id")
+    private Long masterUserId;
 
     @Builder
     public ChatRoom(String name, ChatRoomStatus chatRoomStatus) {
@@ -76,7 +76,7 @@ public class ChatRoom {
         this.imageUrl = url;
     }
 
-    public void setMasterUserName(String name){
-        this.masterUserName = name;
+    public void setMasterUserId(Long id){
+        this.masterUserId = id;
     }
 }
