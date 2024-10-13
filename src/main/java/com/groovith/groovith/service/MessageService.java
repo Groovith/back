@@ -40,10 +40,13 @@ public class MessageService {
                 messageDto.getContent(),chatRoom, messageDto.getUserId(), messageDto.getType(), messageDto.getUsername()
         );
 
-        // chatRoomStatus == PRIVATE 일 경우에만 메세지 저장
-        if(chatRoom.getStatus() == ChatRoomStatus.PRIVATE){
-            messageRepository.save(message);
-        }
+//        // chatRoomStatus == PRIVATE 일 경우에만 메세지 저장
+//        if(chatRoom.getStatus() == ChatRoomStatus.PRIVATE){
+//            messageRepository.save(message);
+//        }
+
+        // 채팅방 종류 상관없이 메시지 전체 저장
+        messageRepository.save(message);
 
         // 메시지 반환 Dto
         MessageResponseDto messageResponseDto = new MessageResponseDto();
