@@ -53,11 +53,20 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
     private List<Notification> notifications = new ArrayList<>();
+
+    @OneToMany(mappedBy = "fromUser", cascade = CascadeType.REMOVE)
+    private List<Friend> friends = new ArrayList<>();
+
+
     public UserChatRoomDto toUserChatRoomDto(User user){
         return new UserChatRoomDto(user);
     }
 
     public void updateStatus(UserStatus userStatus){
         this.status = (userStatus==UserStatus.PUBLIC) ? UserStatus.PRIVATE : UserStatus.PUBLIC;
+    }
+
+    public void addFriend(Friend friend){
+        this.friends.add(friend);
     }
 }
