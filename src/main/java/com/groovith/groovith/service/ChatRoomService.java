@@ -208,6 +208,30 @@ public class ChatRoomService {
         chatRoom.addUser();
     }
 
+    public void inviteFriends(Long userId, Long chatRoomId, List<Long> friendsIdList){
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(()-> new ChatRoomNotFoundException(chatRoomId));
+        // 초대된 인원이 정원 초과할 때
+        if(friendsIdList.size()+chatRoom.getCurrentMemberCount() > MAX_MEMBER){
+            throw new ChatRoomFullException(chatRoomId);
+        }
+
+        for(Long friendsId : friendsIdList){
+            User friend = userRepository.findById(friendsId)
+                    .orElseThrow(()->new UserNotFoundException(friendsId));
+            Optional<UserChatRoom> userChatRoom = userChatRoomRepository.findByUserIdAndChatRoomId(friendsId, chatRoomId);
+
+            // 채팅방에 들어온 적 없거나 현재 없는 경우, 이미 채팅방에 있는 경우는 무시
+            // 들어온 적 없으면 연관관계 새로 생성
+            if(userChatRoom.isEmpty()){
+                UserChatRoom.setUserChatRoom(friend, chatRoom, UserChatRoomStatus.ENTER);
+            } else if (userChatRoom.get().getStatus().equals(UserChatRoomStatus.LEAVE)) {
+                // 들어온적 있을 경우 상태만 변화
+                userChatRoom.get().setStatus(UserChatRoomStatus.ENTER);
+            }
+        }
+    }
+
     @Transactional(readOnly = true)
     public ChatRoom findById(Long chatRoomId){
         return chatRoomRepository.findById(chatRoomId).orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));

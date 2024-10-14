@@ -119,7 +119,9 @@ public class ChatRoomController {
      * */
     @PostMapping("/chatrooms/{chatRoomId}/members/{userId}")
     public ResponseEntity<?> inviteChatRoom(
-            @PathVariable(name="chatRoomId") Long chatRoomId, @PathVariable(name = "userId")Long userId, @AuthenticationPrincipal CustomUserDetails userDetails){
+            @PathVariable(name="chatRoomId") Long chatRoomId,
+            @PathVariable(name = "userId")Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails){
         chatRoomService.invite(userDetails.getUserId(), userId, chatRoomId);
 
         // 알림 메세지 생성 및 저장 - (초대받은사람Id, 초대한사람Id, 채팅방Id)
@@ -128,6 +130,20 @@ public class ChatRoomController {
         // 초대 알림 전송
         template.convertAndSend("/sub/api/notification/" + userId, notification);
 
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    /**
+     * 채팅방에 친구 초대
+     * */
+    @PostMapping("/chatrooms/{chatRoomId}/friends")
+    public ResponseEntity<?> inviteFriends(
+            @PathVariable Long chatRoomId,
+            @RequestBody InviteFriendsRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    )
+    {
+        chatRoomService.inviteFriends(userDetails.getUserId(), chatRoomId, requestDto.getFriends());
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
