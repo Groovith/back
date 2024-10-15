@@ -44,14 +44,14 @@ public class CreateChatRoomRequestDto {
 //                break;
 //        }
     }
-    // ChatRoom 엔티티로 변환
-    public ChatRoom toEntity(){
-        ChatRoom chatRoom =  ChatRoom.builder()
-                            .name(this.name)
-                            .chatRoomStatus(this.status)
-                            //.chatRoomType(this.chatRoomType)
-                            .build();
-        return chatRoom;
-    }
+//    // ChatRoom 엔티티로 변환
+//    public ChatRoom toEntity(){
+//        ChatRoom chatRoom =  ChatRoom.builder()
+//                            .name(this.name)
+//                            .chatRoomStatus(this.status)
+//                            //.chatRoomType(this.chatRoomType)
+//                            .build();
+//        return chatRoom;
+//    }
 
 }

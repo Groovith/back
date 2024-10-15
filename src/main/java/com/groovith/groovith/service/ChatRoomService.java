@@ -8,7 +8,7 @@ import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.parameters.P;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +22,9 @@ import java.util.stream.Collectors;
 @Service
 public class ChatRoomService {
 
+    @Value("${cloud.aws.s3.defaultChatRoomImageUrl}")
+    private String DEFAULT_IMG_URL;
+
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
     private final UserService userService;
@@ -32,7 +35,13 @@ public class ChatRoomService {
      * 채팅방 생성
      * */
     public ChatRoom create(Long userId, CreateChatRoomRequestDto request){
-        ChatRoom chatRoom = chatRoomRepository.save(request.toEntity());
+        ChatRoom data = ChatRoom.builder()
+                .name(request.getName())
+                .chatRoomStatus(request.getStatus())
+                .imageUrl(DEFAULT_IMG_URL)
+                .build();
+
+        ChatRoom chatRoom = chatRoomRepository.save(data);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(()->new UserNotFoundException(userId));
@@ -206,6 +215,30 @@ public class ChatRoomService {
             UserChatRoom.setUserChatRoom(invitee, chatRoom, UserChatRoomStatus.ENTER);
         }
         chatRoom.addUser();
+    }
+
+    public void inviteFriends(Long userId, Long chatRoomId, List<Long> friendsIdList){
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(()-> new ChatRoomNotFoundException(chatRoomId));
+        // 초대된 인원이 정원 초과할 때
+        if(friendsIdList.size()+chatRoom.getCurrentMemberCount() > MAX_MEMBER){
+            throw new ChatRoomFullException(chatRoomId);
+        }
+
+        for(Long friendsId : friendsIdList){
+            User friend = userRepository.findById(friendsId)
+                    .orElseThrow(()->new UserNotFoundException(friendsId));
+            Optional<UserChatRoom> userChatRoom = userChatRoomRepository.findByUserIdAndChatRoomId(friendsId, chatRoomId);
+
+            // 채팅방에 들어온 적 없거나 현재 없는 경우, 이미 채팅방에 있는 경우는 무시
+            // 들어온 적 없으면 연관관계 새로 생성
+            if(userChatRoom.isEmpty()){
+                UserChatRoom.setUserChatRoom(friend, chatRoom, UserChatRoomStatus.ENTER);
+            } else if (userChatRoom.get().getStatus().equals(UserChatRoomStatus.LEAVE)) {
+                // 들어온적 있을 경우 상태만 변화
+                userChatRoom.get().setStatus(UserChatRoomStatus.ENTER);
+            }
+        }
     }
 
     @Transactional(readOnly = true)
