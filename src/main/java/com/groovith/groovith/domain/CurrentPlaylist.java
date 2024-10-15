@@ -1,6 +1,5 @@
 package com.groovith.groovith.domain;
 
-import com.groovith.groovith.dto.SpotifyTrackDto;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
@@ -24,11 +23,11 @@ public class CurrentPlaylist {
     private Long chatRoomId;
 
     @ElementCollection(fetch = FetchType.LAZY)
-    private List<SpotifyTrackDto> tracks;
+    private List<String> videoList = new ArrayList<>();
 
     @Builder
     public CurrentPlaylist(Long chatRoomId) {
         this.chatRoomId = chatRoomId;
-        this.tracks = new ArrayList<>();
+        this.videoList = new ArrayList<>();
     }
 }

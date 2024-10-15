@@ -36,7 +36,7 @@ public class UserChatRoomRepositoryTest {
 
         ChatRoom chatRoom = chatRoomRepository.save(data1);
 
-        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom);
+        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
         //when
         UserChatRoom findUserChatRoom = userChatRoomRepository
                 .findByUserIdAndChatRoomId(user.getId(), chatRoom.getId())

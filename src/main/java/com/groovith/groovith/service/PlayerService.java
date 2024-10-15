@@ -1,5 +1,7 @@
 package com.groovith.groovith.service;
 
+import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.services.youtube.YouTube;
 import com.groovith.groovith.config.WebSocketEventListener;
 import com.groovith.groovith.domain.CurrentPlaylist;
 import com.groovith.groovith.domain.PlayerActionResponseType;
@@ -8,18 +10,19 @@ import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.CurrentPlayListFullException;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
 
 @Service
 @AllArgsConstructor
@@ -39,13 +42,13 @@ public class PlayerService {
             // 현재 세션이 없는 경우
             return PlayerDetailsDto.builder()
                     .chatRoomId(chatRoomId)
-                    .currentPlaylist(currentPlaylist.getTracks())
+                    .videoList(currentPlaylist.getVideoList())
                     .build();
         } else {
             // 현재 세션이 있는 경우
             return PlayerDetailsDto.builder()
                     .chatRoomId(chatRoomId)
-                    .currentPlaylist(currentPlaylist.getTracks())
+                    .videoList(currentPlaylist.getVideoList())
                     .currentPlaylistIndex(playerSession.getIndex())
                     .userCount(playerSession.getUserCount().get())
                     .lastPosition(playerSession.getLastPosition())
@@ -55,6 +58,8 @@ public class PlayerService {
                     .build();
         }
     }
+
+
 
     public PlayerDetailsDto joinPlayer(Long chatRoomId, Long userId) {
         // 유저의 sessionId를 받아온다.
@@ -80,7 +85,7 @@ public class PlayerService {
                     .repeat(playerSession.getRepeat())
                     .paused(playerSession.getPaused())
                     .userCount(playerSession.getUserCount().get())
-                    .currentPlaylist(currentPlaylist.getTracks())
+                    .videoList(currentPlaylist.getVideoList())
                     .build();
         }
 
@@ -94,7 +99,7 @@ public class PlayerService {
         if (playerSession == null) {
             PlayerSession newSession = new PlayerSession();
             // 현재 플레이리스트에 곡이 있다면 처음 곡으로 설정한다. 없다면 그대로 둔다.
-            if (currentPlaylist.getTracks().isEmpty()) {
+            if (currentPlaylist.getVideoList().isEmpty()) {
                 newSession.setPaused(true);
                 newSession.setRepeat(false);
                 newSession.setIndex(0);
@@ -103,7 +108,7 @@ public class PlayerService {
                 newSession.setPaused(false);
                 newSession.setLastPosition(0L);
                 newSession.setRepeat(false);
-                newSession.setDuration(currentPlaylist.getTracks().get(0).getDuration_ms());
+//                newSession.setDuration(currentPlaylist.getVideoList().get(0).getDuration_ms());
                 newSession.setStartedAt(LocalDateTime.now());
             }
             playerSessions.put(chatRoomId, newSession);
@@ -118,7 +123,7 @@ public class PlayerService {
                     .repeat(newSession.getRepeat())
                     .paused(newSession.getPaused())
                     .userCount(newSession.getUserCount().get())
-                    .currentPlaylist(currentPlaylist.getTracks())
+                    .videoList(currentPlaylist.getVideoList())
                     .build();
 
             // 채팅방에 알린다
@@ -138,7 +143,7 @@ public class PlayerService {
                 .repeat(playerSession.getRepeat())
                 .paused(playerSession.getPaused())
                 .userCount(playerSession.getUserCount().get())
-                .currentPlaylist(currentPlaylist.getTracks())
+                .videoList(currentPlaylist.getVideoList())
                 .build();
 
         // 채팅방에 알린다
@@ -169,7 +174,7 @@ public class PlayerService {
                 // 채팅방에 알린다
                 PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                         .chatRoomId(chatRoomId)
-                        .currentPlaylist(currentPlaylist.getTracks())
+                        .videoList(currentPlaylist.getVideoList())
                         .build();
 
                 template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
@@ -189,8 +194,8 @@ public class PlayerService {
             case PREVIOUS_TRACK -> previousTrack(chatRoomId);
             case PLAY_AT_INDEX -> playAtIndex(chatRoomId, playerRequestDto);
             case ADD_TO_CURRENT_PLAYLIST -> {
-                if (playerRequestDto.getTrack() != null) {
-                    addToCurrentPlaylist(chatRoomId, playerRequestDto.getTrack());
+                if (playerRequestDto.getVideoId() != null) {
+                    addToCurrentPlaylist(chatRoomId, playerRequestDto.getVideoId());
                 }
             }
             case REMOVE_FROM_CURRENT_PLAYLIST -> {
@@ -209,9 +214,9 @@ public class PlayerService {
         if (playerSession == null) return;
 
         // 플레이리스트 수정
-        List<SpotifyTrackDto> newTracks = new ArrayList<>();
-        newTracks.add(playerRequestDto.getTrack());
-        currentPlaylist.setTracks(newTracks);
+        List<String> newTracks = new ArrayList<>();
+        newTracks.add(playerRequestDto.getVideoId());
+        currentPlaylist.setVideoList(newTracks);
         currentPlaylistRepository.save(currentPlaylist);
 
         // 플레이어 세션 수정
@@ -219,12 +224,12 @@ public class PlayerService {
         playerSession.setPaused(false);
         playerSession.setLastPosition(0L);
         playerSession.setStartedAt(LocalDateTime.now());
-        playerSession.setDuration(playerRequestDto.getTrack().getDuration_ms());
+//        playerSession.setDuration(playerRequestDto.getVideoId().getDuration_ms());
         playerSessions.put(chatRoomId, playerSession);
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .videoList(currentPlaylist.getVideoList())
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -235,7 +240,7 @@ public class PlayerService {
 
         PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
                 .action(PlayerActionResponseType.PLAY_TRACK)
-                .track(playerRequestDto.getTrack())
+                .videoId(playerRequestDto.getVideoId())
                 .position(null)
                 .build();
 
@@ -259,7 +264,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .videoList(currentPlaylist.getVideoList())
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -270,7 +275,7 @@ public class PlayerService {
 
         PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
                 .action(PlayerActionResponseType.PAUSE)
-                .track(null)
+                .videoId(null)
                 .position(playerRequestDto.getPosition())
                 .build();
 
@@ -295,7 +300,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .videoList(currentPlaylist.getVideoList())
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -306,7 +311,7 @@ public class PlayerService {
 
         PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
                 .action(PlayerActionResponseType.RESUME)
-                .track(null)
+                .videoId(null)
                 .position(playerRequestDto.getPosition())
                 .build();
 
@@ -329,7 +334,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .videoList(currentPlaylist.getVideoList())
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -340,7 +345,7 @@ public class PlayerService {
 
         PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
                 .action(PlayerActionResponseType.SEEK)
-                .track(null)
+                .videoId(null)
                 .position(playerRequestDto.getPosition())
                 .build();
 
@@ -360,17 +365,17 @@ public class PlayerService {
         PlayerResponseDto playerResponseDto;
 
         int nextIndex = playerSession.getIndex() + 1;
-        if (nextIndex < currentPlaylist.getTracks().size()) {
+        if (nextIndex < currentPlaylist.getVideoList().size()) {
             // 다음 곡이 있는 경우
             playerSession.setIndex(nextIndex);
             playerSession.setLastPosition(0L);
             playerSession.setPaused(false);
             playerSession.setStartedAt(LocalDateTime.now());
-            playerSession.setDuration(currentPlaylist.getTracks().get(nextIndex).getDuration_ms());
+//            playerSession.setDuration(currentPlaylist.getVideoList().get(nextIndex).getDuration_ms());
 
             playerResponseDto = PlayerResponseDto.builder()
                     .action(PlayerActionResponseType.PLAY_TRACK)
-                    .track(currentPlaylist.getTracks().get(nextIndex))
+                    .videoId(currentPlaylist.getVideoList().get(nextIndex))
                     .index(nextIndex)
                     .build();
 
@@ -382,11 +387,11 @@ public class PlayerService {
                 playerSession.setLastPosition(0L);
                 playerSession.setPaused(false);
                 playerSession.setStartedAt(LocalDateTime.now());
-                playerSession.setDuration(currentPlaylist.getTracks().get(0).getDuration_ms());
+//                playerSession.setDuration(currentPlaylist.getVideoList().get(0).getDuration_ms());
 
                 playerResponseDto = PlayerResponseDto.builder()
                         .action(PlayerActionResponseType.PLAY_TRACK)
-                        .track(currentPlaylist.getTracks().get(0))
+                        .videoId(currentPlaylist.getVideoList().get(0))
                         .index(0)
                         .build();
             } else {
@@ -400,7 +405,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .videoList(currentPlaylist.getVideoList())
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -430,11 +435,11 @@ public class PlayerService {
             playerSession.setLastPosition(0L);
             playerSession.setPaused(false);
             playerSession.setStartedAt(LocalDateTime.now());
-            playerSession.setDuration(currentPlaylist.getTracks().get(prevIndex).getDuration_ms());
+//            playerSession.setDuration(currentPlaylist.getVideoList().get(prevIndex).getDuration_ms());
 
             playerResponseDto = PlayerResponseDto.builder()
                     .action(PlayerActionResponseType.PLAY_TRACK)
-                    .track(currentPlaylist.getTracks().get(prevIndex))
+                    .videoId(currentPlaylist.getVideoList().get(prevIndex))
                     .index(prevIndex)
                     .build();
 
@@ -442,16 +447,16 @@ public class PlayerService {
             // 이전 곡이 없는 경우
             if (playerSession.getRepeat()) {
                 // 반복 재생이 설정되어 있는 경우
-                int lastIndex = currentPlaylist.getTracks().size() - 1;
+                int lastIndex = currentPlaylist.getVideoList().size() - 1;
                 playerSession.setIndex(lastIndex);
                 playerSession.setLastPosition(0L);
                 playerSession.setPaused(false);
                 playerSession.setStartedAt(LocalDateTime.now());
-                playerSession.setDuration(currentPlaylist.getTracks().get(lastIndex).getDuration_ms());
+//                playerSession.setDuration(currentPlaylist.getVideoList().get(lastIndex).getDuration_ms());
 
                 playerResponseDto = PlayerResponseDto.builder()
                         .action(PlayerActionResponseType.PLAY_TRACK)
-                        .track(currentPlaylist.getTracks().get(lastIndex))
+                        .videoId(currentPlaylist.getVideoList().get(lastIndex))
                         .index(lastIndex)
                         .build();
             } else {
@@ -465,7 +470,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .videoList(currentPlaylist.getVideoList())
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -488,7 +493,7 @@ public class PlayerService {
 
         // 인덱스 범위 확인
         Integer requestedIndex = playerRequestDto.getIndex();
-        if (requestedIndex == null || requestedIndex < 0 || requestedIndex >= currentPlaylist.getTracks().size()) {
+        if (requestedIndex == null || requestedIndex < 0 || requestedIndex >= currentPlaylist.getVideoList().size()) {
             return;
         }
 
@@ -497,13 +502,13 @@ public class PlayerService {
         playerSession.setPaused(false);
         playerSession.setLastPosition(0L);
         playerSession.setStartedAt(LocalDateTime.now());
-        playerSession.setDuration(currentPlaylist.getTracks().get(requestedIndex).getDuration_ms());
+//        playerSession.setDuration(currentPlaylist.getVideoList().get(requestedIndex).getDuration_ms());
         playerSessions.put(chatRoomId, playerSession);
 
         // 현재 플레이리스트 정보 갱신
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .videoList(currentPlaylist.getVideoList())
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -515,7 +520,7 @@ public class PlayerService {
         // 플레이 트랙 액션 전송
         PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
                 .action(PlayerActionResponseType.PLAY_TRACK)
-                .track(currentPlaylist.getTracks().get(requestedIndex))
+                .videoId(currentPlaylist.getVideoList().get(requestedIndex))
                 .index(requestedIndex)
                 .position(0L) // 새로운 트랙 재생 시작이므로 위치는 0
                 .build();
@@ -527,27 +532,27 @@ public class PlayerService {
     }
 
     @Transactional
-    public void addToCurrentPlaylist(Long chatRoomId, SpotifyTrackDto track) {
+    public void addToCurrentPlaylist(Long chatRoomId, String videoId) {
         PlayerSession playerSession = playerSessions.get(chatRoomId);
         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
         if (playerSession == null) return;
 
         // 플레이리스트에 새로운 트랙 추가
-        List<SpotifyTrackDto> updatedTracks = new ArrayList<>(currentPlaylist.getTracks());
+        List<String> updatedTracks = new ArrayList<>(currentPlaylist.getVideoList());
 
         // 플레이리스트가 다 찼을 경우(100곡)
-        if(currentPlaylist.getTracks().size() >= 100){
+        if(currentPlaylist.getVideoList().size() >= 100){
             throw new CurrentPlayListFullException(currentPlaylist.getId());
         }
 
-        updatedTracks.add(track);
-        currentPlaylist.setTracks(updatedTracks);
+        updatedTracks.add(videoId);
+        currentPlaylist.setVideoList(updatedTracks);
         currentPlaylistRepository.save(currentPlaylist);
 
         // 채팅방 정보 갱신
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .videoList(currentPlaylist.getVideoList())
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -562,7 +567,7 @@ public class PlayerService {
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together",
                 PlayerResponseDto.builder()
                         .action(PlayerActionResponseType.UPDATE)
-                        .currentPlaylist(currentPlaylist.getTracks())
+                        .videoList(currentPlaylist.getVideoList())
                         .index(playerSession.getIndex())
                         .build());
     }
@@ -574,12 +579,12 @@ public class PlayerService {
         if (playerSession == null) return;
 
         // 인덱스 범위 확인
-        List<SpotifyTrackDto> tracks = currentPlaylist.getTracks();
+        List<String> tracks = currentPlaylist.getVideoList();
         if (index < 0 || index >= tracks.size()) return;
 
         // 플레이리스트에서 해당 인덱스의 트랙 삭제
         tracks.remove(index);
-        currentPlaylist.setTracks(tracks);
+        currentPlaylist.setVideoList(tracks);
         currentPlaylistRepository.save(currentPlaylist);
 
         // 만약 현재 재생 중인 트랙이 삭제된 트랙보다 뒤에 있다면 인덱스를 조정
@@ -591,7 +596,7 @@ public class PlayerService {
         // 채팅방 정보 갱신
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .videoList(currentPlaylist.getVideoList())
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -606,7 +611,7 @@ public class PlayerService {
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together",
                 PlayerResponseDto.builder()
                         .action(PlayerActionResponseType.UPDATE)
-                        .currentPlaylist(currentPlaylist.getTracks())
+                        .videoList(currentPlaylist.getVideoList())
                         .index(playerSession.getIndex())
                         .build());
     }

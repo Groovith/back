@@ -48,7 +48,7 @@ class ChatRoomServiceTest {
         user.setId(userId);
 
 
-        ChatRoom savedChatRoom = requestDto.toEntity();
+        ChatRoom savedChatRoom = createChatRoom("r1", ChatRoomStatus.PUBLIC);
         //when
         when(chatRoomRepository.save(any(ChatRoom.class))).thenReturn(savedChatRoom);
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
@@ -204,7 +204,7 @@ class ChatRoomServiceTest {
         ReflectionTestUtils.setField(chatRoom, "currentMemberCount", now);
 
         // 유저 - 채팅방의 연관관계 설정
-        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom);
+        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
 
         //when
         when(userRepository.findById(anyLong()))
@@ -241,7 +241,7 @@ class ChatRoomServiceTest {
         ReflectionTestUtils.setField(chatRoom, "currentMemberCount", now);
 
         // 유저 - 채팅방의 연관관계 설정
-        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom);
+        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
 
         //when
         when(userRepository.findById(anyLong()))

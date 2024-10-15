@@ -1,5 +1,6 @@
 package com.groovith.groovith.config;
 
+import com.google.api.client.googleapis.GoogleUtils;
 import com.groovith.groovith.domain.CurrentPlaylist;
 import com.groovith.groovith.dto.PlayerDetailsDto;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
@@ -27,7 +28,6 @@ public class WebSocketEventListener {
     private static final ConcurrentHashMap<Long, String> userIdSessionId = new ConcurrentHashMap<>();
     private final SimpMessageSendingOperations template;
     private final CurrentPlaylistRepository currentPlaylistRepository;
-
 
     @EventListener
     public void handleWebSocketConnectListener(SessionSubscribeEvent event) {
@@ -82,7 +82,7 @@ public class WebSocketEventListener {
                         // 채팅방에 알린다
                         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                                 .chatRoomId(chatRoomId)
-                                .currentPlaylist(currentPlaylist.getTracks())
+                                .videoList(currentPlaylist.getVideoList())
                                 .build();
 
                         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);

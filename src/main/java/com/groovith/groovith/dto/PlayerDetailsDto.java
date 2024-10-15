@@ -15,7 +15,7 @@ public class PlayerDetailsDto {
     private Long chatRoomId;
     private Integer userCount;
     private Integer currentPlaylistIndex;
-    private List<SpotifyTrackDto> currentPlaylist;
+    private List<String> videoList;
     private Boolean paused;
     private Boolean repeat;
     private Long position;
@@ -26,7 +26,7 @@ public class PlayerDetailsDto {
             Long chatRoomId,
             Integer userCount,
             Integer currentPlaylistIndex,
-            List<SpotifyTrackDto> currentPlaylist,
+            List<String> videoList,
             Boolean paused,
             Boolean repeat,
             Long lastPosition,
@@ -34,7 +34,7 @@ public class PlayerDetailsDto {
         this.chatRoomId = chatRoomId;
         this.userCount = userCount;
         this.currentPlaylistIndex = currentPlaylistIndex;
-        this.currentPlaylist = currentPlaylist;
+        this.videoList = videoList;
         this.paused = paused;
         this.repeat = repeat;
         this.position = lastPosition;

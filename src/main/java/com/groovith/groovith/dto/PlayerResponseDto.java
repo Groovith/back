@@ -9,22 +9,22 @@ import java.util.List;
 @Data
 public class PlayerResponseDto {
     private PlayerActionResponseType action;
-    private SpotifyTrackDto track;
+    private String videoId;
     private Long position;
-    private List<SpotifyTrackDto> currentPlaylist;
+    private List<String> videoList;
     private Integer index;
 
     @Builder
     public PlayerResponseDto(
             PlayerActionResponseType action,
-            SpotifyTrackDto track,
+            String videoId,
             Long position,
-            List<SpotifyTrackDto> currentPlaylist,
+            List<String> videoList,
             Integer index) {
         this.action = action;
-        this.track = track;
+        this.videoId = videoId;
         this.position = position;
-        this.currentPlaylist = currentPlaylist;
+        this.videoList = videoList;
         this.index = index;
     }
 }

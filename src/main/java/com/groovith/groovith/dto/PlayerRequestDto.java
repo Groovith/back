@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class PlayerRequestDto {
-    private SpotifyTrackDto track;
+    private String videoId;
     private Integer index;
     private Boolean repeat;
     private Long position;
