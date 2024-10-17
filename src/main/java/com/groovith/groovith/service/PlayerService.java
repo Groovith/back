@@ -71,8 +71,6 @@ public class PlayerService {
         String sessionId = webSocketEventListener.getSessionIdByUserId(userId).orElseThrow(() -> new RuntimeException("웹소켓 세션에 등록되지 않은 userId 입니다. userId: " + userId));
         // 유저가 이미 어떤 채팅방에 참가 중인지 확인
         Long existingChatRoomId = sessionIdChatRoomId.get(sessionId);
-        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
 
         // 이미 동일한 채팅방에 참가 중이라면 인원수를 증가시키지 않음
         if (chatRoomId.equals(existingChatRoomId)) {
@@ -159,7 +157,8 @@ public class PlayerService {
         // 유저의 sessionId를 받아온다.
         String sessionId = webSocketEventListener.getSessionIdByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("웹소켓 세션에 등록되지 않은 userId 입니다. userId: " + userId));
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow(() -> new RuntimeException(chatRoomId + "의 현재 플레이리스트가 없습니다."));
+        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId)
+                .orElseThrow(() -> new RuntimeException(chatRoomId + "의 현재 플레이리스트가 없습니다."));
 
         // sessionIdChatRoomId 에서 sessionId를 삭제한다.
         sessionIdChatRoomId.remove(sessionId);
