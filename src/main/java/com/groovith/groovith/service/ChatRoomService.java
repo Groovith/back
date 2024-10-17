@@ -245,9 +245,13 @@ public class ChatRoomService {
     /**
      * 채팅방 권한 변경
      * */
-    public void updatePermission(Long chatRoomId){
+    public void updatePermission(Long chatRoomId, Long userId){
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+        // mastUserId == userId 인 경우만 권한 변경 가능
+        if(!chatRoom.getMasterUserId().equals(userId)){
+            throw new IllegalArgumentException("권한 변경은 masterUser 만 가능합니다.");
+        }
         chatRoom.changePermission();
     }
 
