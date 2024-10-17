@@ -38,14 +38,13 @@ public class YoutubeService {
 //        List<Video> videoList = result.getItems();
 //        Video video = videoList.get(0);
         Video video = data.execute().getItems().get(0);
-        System.out.println("-------------------"+video.getContentDetails().getLicensedContent());
 
         VideoDto videoDto = new VideoDto();
         // 제목, 가수 명, 길이, 이미지 url 가져오기
         videoDto.setTitle(video.getSnippet().getTitle());
         videoDto.setArtist(video.getSnippet().getChannelTitle());   // 일단 채널 명
         videoDto.setImageUrl(video.getSnippet().getThumbnails().getDefault().getUrl());
-        videoDto.setDuration(Duration.parse(video.getContentDetails().getDuration()).getSeconds());
+        videoDto.setDuration(Duration.parse(video.getContentDetails().getDuration()).toMillis());
 
         // 비디오 리스트를 VideoDto로 변환
         return videoDto;

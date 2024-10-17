@@ -18,7 +18,6 @@ public class YoutubeController {
 
     @GetMapping("/video")
     public ResponseEntity<VideoDto> getVideo(@RequestBody VideoRequestDto requestDto) throws IOException {
-        System.out.println(requestDto.getVideoId());
         VideoDto videoDto = youtubeService.getVideo(requestDto.getVideoId());
 
         return new ResponseEntity<>(videoDto, HttpStatus.OK);

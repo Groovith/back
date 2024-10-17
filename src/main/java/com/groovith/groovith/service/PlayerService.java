@@ -372,7 +372,7 @@ public class PlayerService {
             playerSession.setLastPosition(0L);
             playerSession.setPaused(false);
             playerSession.setStartedAt(LocalDateTime.now());
-//            playerSession.setDuration(currentPlaylist.getVideoList().get(nextIndex).getDuration_ms());
+            //playerSession.setDuration(videoDto.getDuration());
 
             playerResponseDto = PlayerResponseDto.builder()
                     .action(PlayerActionResponseType.PLAY_TRACK)
