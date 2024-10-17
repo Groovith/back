@@ -30,6 +30,7 @@ public class PlayerService {
     private final SimpMessageSendingOperations template;
     private final WebSocketEventListener webSocketEventListener;
     private final CurrentPlaylistRepository currentPlaylistRepository;
+    private final YoutubeService youtubeService;
 
     public static final ConcurrentHashMap<Long, PlayerSession> playerSessions = new ConcurrentHashMap<>(); // 채팅방 플레이어 정보 (chatRoomId, PlayerSessionDto)
     public static final ConcurrentHashMap<String, Long> sessionIdChatRoomId = new ConcurrentHashMap<>(); // 각 유저 아이디의 플레이어 참가 여부
@@ -183,10 +184,10 @@ public class PlayerService {
     }
 
     @Transactional
-    public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto) {
+    public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto, VideoDto videoDto) {
         // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
         switch (playerRequestDto.getAction()) {
-            case PLAY_NEW_TRACK -> playNewTrack(chatRoomId, playerRequestDto);
+            case PLAY_NEW_TRACK -> playNewTrack(chatRoomId, playerRequestDto, videoDto);
             case PAUSE -> pause(chatRoomId, playerRequestDto);
             case RESUME -> resume(chatRoomId, playerRequestDto);
             case SEEK -> seek(chatRoomId, playerRequestDto);
@@ -208,7 +209,7 @@ public class PlayerService {
     }
 
     @Transactional
-    public void playNewTrack(Long chatRoomId, PlayerRequestDto playerRequestDto) {
+    public void playNewTrack(Long chatRoomId, PlayerRequestDto playerRequestDto, VideoDto videoDto) {
         PlayerSession playerSession = playerSessions.get(chatRoomId);
         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
         if (playerSession == null) return;
@@ -224,7 +225,7 @@ public class PlayerService {
         playerSession.setPaused(false);
         playerSession.setLastPosition(0L);
         playerSession.setStartedAt(LocalDateTime.now());
-//        playerSession.setDuration(playerRequestDto.getVideoId().getDuration_ms());
+        playerSession.setDuration(videoDto.getDuration());
         playerSessions.put(chatRoomId, playerSession);
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
