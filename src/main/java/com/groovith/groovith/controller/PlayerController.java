@@ -9,8 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/chatrooms/{chatRoomId}/player")
@@ -35,8 +38,16 @@ public class PlayerController {
         return ResponseEntity.ok(playerService.getPlayerDetails(chatRoomId));
     }
 
-    @MessageMapping("/api/chatrooms/{chatRoomId}/player/listen-together")
-    public void sendPlayerMessage(@Payload PlayerRequestDto playerRequestDto, @DestinationVariable Long chatRoomId) {
-        playerService.handleMessage(chatRoomId, playerRequestDto);
+    @MessageMapping({"/api/chatrooms/{chatRoomId}/player/listen-together"})
+    public void sendPlayerMessage(
+            @Payload PlayerRequestDto playerRequestDto,
+            @DestinationVariable Long chatRoomId,
+            SimpMessageHeaderAccessor headerAccessor) {
+        Long userId = (Long) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("userId");
+        if (userId == null) {
+            throw new RuntimeException("User ID is missing in the session.");
+        }
+
+        playerService.handleMessage(chatRoomId, playerRequestDto, userId);
     }
 }

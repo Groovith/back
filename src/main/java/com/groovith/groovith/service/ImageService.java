@@ -2,7 +2,6 @@ package com.groovith.groovith.service;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
-import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.Image;
@@ -103,7 +102,7 @@ public class ImageService {
             deleteChatRoomFileFromS3Bucket(nowImage);
         }
 
-        chatRoom.setImageUrl(url);
+        chatRoom.updateImageUrl(url);
         imageRepository.save(image);
     }
 
