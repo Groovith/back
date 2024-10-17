@@ -1,6 +1,6 @@
 package com.groovith.groovith.controller;
 
-import com.groovith.groovith.dto.VideoDto;
+import com.groovith.groovith.dto.TrackDto;
 import com.groovith.groovith.dto.VideoRequestDto;
 import com.groovith.groovith.service.YoutubeService;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +17,9 @@ public class YoutubeController {
     private final YoutubeService youtubeService;
 
     @GetMapping("/video")
-    public ResponseEntity<VideoDto> getVideo(@RequestBody VideoRequestDto requestDto) throws IOException {
-        VideoDto videoDto = youtubeService.getVideo(requestDto.getVideoId());
-
-        return new ResponseEntity<>(videoDto, HttpStatus.OK);
+    public ResponseEntity<TrackDto> getVideo(@RequestBody VideoRequestDto requestDto) throws IOException {
+        TrackDto trackDto = youtubeService.getVideo(requestDto.getVideoId());
+        return new ResponseEntity<>(trackDto, HttpStatus.OK);
     }
 
 }

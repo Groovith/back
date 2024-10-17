@@ -2,11 +2,11 @@ package com.groovith.groovith.controller;
 
 import com.groovith.groovith.dto.PlayerRequestDto;
 import com.groovith.groovith.dto.PlayerDetailsDto;
-import com.groovith.groovith.dto.VideoDto;
-import com.groovith.groovith.dto.VideoDto;
+import com.groovith.groovith.dto.TrackDto;
+import com.groovith.groovith.repository.TrackRepository;
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.PlayerService;
-import com.groovith.groovith.service.YoutubeService;
+import com.groovith.groovith.service.TrackService;
 import com.groovith.groovith.service.YoutubeService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +26,7 @@ import java.util.Objects;
 public class PlayerController {
     private final PlayerService playerService;
     private final YoutubeService youtubeService;
+    private final TrackService trackService;
 
     @PatchMapping("/join")
     public ResponseEntity<PlayerDetailsDto> joinPlayer(@PathVariable Long chatRoomId, @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -48,12 +49,14 @@ public class PlayerController {
     public void sendPlayerMessage(
             @Payload PlayerRequestDto playerRequestDto,
             @DestinationVariable Long chatRoomId,
-            SimpMessageHeaderAccessor headerAccessor) throws IOException {
+            SimpMessageHeaderAccessor headerAccessor) throws IOException
+    {
         Long userId = (Long) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("userId");
         if (userId == null) {
             throw new RuntimeException("User ID is missing in the session.");
         }
-        VideoDto videoDto = youtubeService.getVideo(playerRequestDto.getVideoId());
-        playerService.handleMessage(chatRoomId, playerRequestDto, userId, videoDto);
+        TrackDto trackDto = youtubeService.getVideo(playerRequestDto.getVideoId());
+        trackService.save(trackDto);
+        playerService.handleMessage(chatRoomId, playerRequestDto, userId, trackDto);
     }
 }

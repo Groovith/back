@@ -15,7 +15,7 @@ public class PlayerDetailsDto {
     private Long chatRoomId;
     private Integer userCount;
     private Integer currentPlaylistIndex;
-    private List<String> videoList;
+    private List<TrackDto> trackList;
     private Boolean paused;
     private Boolean repeat;
     private Long position;
@@ -26,7 +26,7 @@ public class PlayerDetailsDto {
             Long chatRoomId,
             Integer userCount,
             Integer currentPlaylistIndex,
-            List<String> videoList,
+            List<TrackDto> trackList,
             Boolean paused,
             Boolean repeat,
             Long lastPosition,
@@ -34,7 +34,7 @@ public class PlayerDetailsDto {
         this.chatRoomId = chatRoomId;
         this.userCount = userCount;
         this.currentPlaylistIndex = currentPlaylistIndex;
-        this.videoList = videoList;
+        this.trackList = trackList;
         this.paused = paused;
         this.repeat = repeat;
         this.position = lastPosition;

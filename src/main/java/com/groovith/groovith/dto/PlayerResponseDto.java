@@ -11,7 +11,7 @@ public class PlayerResponseDto {
     private PlayerActionResponseType action;
     private String videoId;
     private Long position;
-    private List<String> videoList;
+    private List<TrackDto> videoList;
     private Integer index;
 
     @Builder
@@ -19,7 +19,7 @@ public class PlayerResponseDto {
             PlayerActionResponseType action,
             String videoId,
             Long position,
-            List<String> videoList,
+            List<TrackDto> videoList,
             Integer index) {
         this.action = action;
         this.videoId = videoId;

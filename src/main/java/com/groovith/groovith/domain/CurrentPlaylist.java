@@ -1,5 +1,6 @@
 package com.groovith.groovith.domain;
 
+import com.groovith.groovith.dto.TrackDto;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
@@ -22,12 +23,12 @@ public class CurrentPlaylist {
 
     private Long chatRoomId;
 
-    @ElementCollection(fetch = FetchType.LAZY)
-    private List<String> videoList = new ArrayList<>();
+    @OneToMany(mappedBy = "currentPlaylist", cascade = CascadeType.ALL)
+    private List<CurrentPlaylistTrack> currentPlaylistTracks = new ArrayList<>();
 
     @Builder
     public CurrentPlaylist(Long chatRoomId) {
         this.chatRoomId = chatRoomId;
-        this.videoList = new ArrayList<>();
     }
+
 }
