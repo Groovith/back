@@ -101,7 +101,7 @@ public class PlayerService {
             // 세션 생성시에 반복재생 설정
             if (currentPlaylist.getTracks().isEmpty()) {
                 newSession.setPaused(true);
-                newSession.setRepeat(false);
+                newSession.setRepeat(true);
                 newSession.setIndex(0);
             } else {
                 newSession.setIndex(0);
