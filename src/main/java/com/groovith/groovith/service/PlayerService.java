@@ -1,11 +1,14 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.config.WebSocketEventListener;
+import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.CurrentPlaylist;
 import com.groovith.groovith.domain.PlayerActionResponseType;
 import com.groovith.groovith.domain.PlayerSession;
 import com.groovith.groovith.dto.*;
+import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.CurrentPlayListFullException;
+import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
@@ -27,6 +30,7 @@ public class PlayerService {
     private final SimpMessageSendingOperations template;
     private final WebSocketEventListener webSocketEventListener;
     private final CurrentPlaylistRepository currentPlaylistRepository;
+    private final ChatRoomRepository chatRoomRepository;
 
     public static final ConcurrentHashMap<Long, PlayerSession> playerSessions = new ConcurrentHashMap<>(); // 채팅방 플레이어 정보 (chatRoomId, PlayerSessionDto)
     public static final ConcurrentHashMap<String, Long> sessionIdChatRoomId = new ConcurrentHashMap<>(); // 각 유저 아이디의 플레이어 참가 여부
@@ -67,6 +71,8 @@ public class PlayerService {
         String sessionId = webSocketEventListener.getSessionIdByUserId(userId).orElseThrow(() -> new RuntimeException("웹소켓 세션에 등록되지 않은 userId 입니다. userId: " + userId));
         // 유저가 이미 어떤 채팅방에 참가 중인지 확인
         Long existingChatRoomId = sessionIdChatRoomId.get(sessionId);
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
 
         // 이미 동일한 채팅방에 참가 중이라면 인원수를 증가시키지 않음
         if (chatRoomId.equals(existingChatRoomId)) {
@@ -94,15 +100,16 @@ public class PlayerService {
         if (playerSession == null) {
             PlayerSession newSession = new PlayerSession();
             // 현재 플레이리스트에 곡이 있다면 처음 곡으로 설정한다. 없다면 그대로 둔다.
+            // 세션 생성시에 반복재생 설정
             if (currentPlaylist.getTracks().isEmpty()) {
                 newSession.setPaused(true);
-                newSession.setRepeat(false);
+                newSession.setRepeat(true);
                 newSession.setIndex(0);
             } else {
                 newSession.setIndex(0);
                 newSession.setPaused(false);
                 newSession.setLastPosition(0L);
-                newSession.setRepeat(false);
+                newSession.setRepeat(true);
                 newSession.setDuration(currentPlaylist.getTracks().get(0).getDuration_ms());
                 newSession.setStartedAt(LocalDateTime.now());
             }
@@ -178,27 +185,33 @@ public class PlayerService {
     }
 
     @Transactional
-    public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
-        switch (playerRequestDto.getAction()) {
-            case PLAY_NEW_TRACK -> playNewTrack(chatRoomId, playerRequestDto);
-            case PAUSE -> pause(chatRoomId, playerRequestDto);
-            case RESUME -> resume(chatRoomId, playerRequestDto);
-            case SEEK -> seek(chatRoomId, playerRequestDto);
-            case NEXT_TRACK -> nextTrack(chatRoomId);
-            case PREVIOUS_TRACK -> previousTrack(chatRoomId);
-            case PLAY_AT_INDEX -> playAtIndex(chatRoomId, playerRequestDto);
-            case ADD_TO_CURRENT_PLAYLIST -> {
-                if (playerRequestDto.getTrack() != null) {
-                    addToCurrentPlaylist(chatRoomId, playerRequestDto.getTrack());
+    public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto, Long userId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+        // masterUser 만 플레이어 조작 가능
+        if(chatRoom.getMasterUserId().equals(userId)) {
+            // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
+            switch (playerRequestDto.getAction()) {
+                case PLAY_NEW_TRACK -> playNewTrack(chatRoomId, playerRequestDto);
+                case PAUSE -> pause(chatRoomId, playerRequestDto);
+                case RESUME -> resume(chatRoomId, playerRequestDto);
+                case SEEK -> seek(chatRoomId, playerRequestDto);
+                case NEXT_TRACK -> nextTrack(chatRoomId);
+                case PREVIOUS_TRACK -> previousTrack(chatRoomId);
+                case PLAY_AT_INDEX -> playAtIndex(chatRoomId, playerRequestDto);
+                case ADD_TO_CURRENT_PLAYLIST -> {
+                    if (playerRequestDto.getTrack() != null) {
+                        addToCurrentPlaylist(chatRoomId, playerRequestDto.getTrack());
+                    }
+                }
+                case REMOVE_FROM_CURRENT_PLAYLIST -> {
+                    if (playerRequestDto.getIndex() != null) {
+                        removeFromCurrentPlaylist(chatRoomId, playerRequestDto.getIndex());
+                    }
+                }
+                case TRACK_ENDED -> {
                 }
             }
-            case REMOVE_FROM_CURRENT_PLAYLIST -> {
-                if (playerRequestDto.getIndex() != null) {
-                    removeFromCurrentPlaylist(chatRoomId, playerRequestDto.getIndex());
-                }
-            }
-            case TRACK_ENDED -> {}
         }
     }
 

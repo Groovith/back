@@ -44,6 +44,10 @@ public class PlayerController {
             @DestinationVariable Long chatRoomId,
             SimpMessageHeaderAccessor headerAccessor) {
         Long userId = (Long) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("userId");
-        playerService.handleMessage(chatRoomId, playerRequestDto);
+        if (userId == null) {
+            throw new RuntimeException("User ID is missing in the session.");
+        }
+
+        playerService.handleMessage(chatRoomId, playerRequestDto, userId);
     }
 }
