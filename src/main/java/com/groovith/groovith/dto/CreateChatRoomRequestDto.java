@@ -1,6 +1,7 @@
 package com.groovith.groovith.dto;
 
 import com.groovith.groovith.domain.ChatRoom;
+import com.groovith.groovith.domain.ChatRoomPermission;
 import com.groovith.groovith.domain.ChatRoomStatus;
 import com.groovith.groovith.domain.ChatRoomType;
 import lombok.Builder;
@@ -16,8 +17,9 @@ public class CreateChatRoomRequestDto {
     //private Long userId;
     private String name;
     private ChatRoomStatus status;  // "PRIVATE" | "PUBLIC"
+    private ChatRoomPermission permission; //
+
 //    private ChatRoomType chatRoomType;     // "song" | "album" | "artist" | "playlist"
-//
 //    private Long songId;
 //    private Long albumId;
 //    private Long artistId;

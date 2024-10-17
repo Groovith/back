@@ -39,6 +39,7 @@ public class ChatRoomService {
                 .name(request.getName())
                 .chatRoomStatus(request.getStatus())
                 .imageUrl(DEFAULT_IMG_URL)
+                .permission(request.getPermission())
                 .build();
 
         ChatRoom chatRoom = chatRoomRepository.save(data);
@@ -47,7 +48,7 @@ public class ChatRoomService {
                 .orElseThrow(()->new UserNotFoundException(userId));
 
         //masterUserName 설정
-        chatRoom.setMasterUserId(user.getId());
+        chatRoom.updateMasterUserId(user.getId());
 
         // 유저 - 채팅방 연관관계 생성
         UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
@@ -239,6 +240,19 @@ public class ChatRoomService {
                 userChatRoom.get().setStatus(UserChatRoomStatus.ENTER);
             }
         }
+    }
+
+    /**
+     * 채팅방 권한 변경
+     * */
+    public void updatePermission(Long chatRoomId, Long userId){
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+        // mastUserId == userId 인 경우만 권한 변경 가능
+        if(!chatRoom.getMasterUserId().equals(userId)){
+            throw new IllegalArgumentException("권한 변경은 masterUser 만 가능합니다.");
+        }
+        chatRoom.changePermission();
     }
 
     @Transactional(readOnly = true)
