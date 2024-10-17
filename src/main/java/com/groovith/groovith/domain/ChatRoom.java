@@ -50,13 +50,17 @@ public class ChatRoom {
     @Column(name = "master_user_id")
     private Long masterUserId;
 
+    @Enumerated(EnumType.STRING)
+    private ChatRoomPermission permission;
+
     @Builder
-    public ChatRoom(String name, ChatRoomStatus chatRoomStatus, String imageUrl) {
+    public ChatRoom(String name, ChatRoomStatus chatRoomStatus, String imageUrl, ChatRoomPermission permission) {
         this.name = name;
         this.status = chatRoomStatus;
         //this.type = chatRoomType;
         this.currentMemberCount = 1; // 채팅방이 생성될때 처음인원 1명
         this.imageUrl = imageUrl;
+        this.permission = permission;
     }
 
     /**

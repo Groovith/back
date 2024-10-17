@@ -39,6 +39,7 @@ public class ChatRoomService {
                 .name(request.getName())
                 .chatRoomStatus(request.getStatus())
                 .imageUrl(DEFAULT_IMG_URL)
+                .permission(request.getPermission())
                 .build();
 
         ChatRoom chatRoom = chatRoomRepository.save(data);
