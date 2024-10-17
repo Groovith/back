@@ -147,6 +147,16 @@ public class ChatRoomController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    /**
+     * 채팅방 권한 변경
+     * */
+    @PutMapping("/chatrooms/{chatRoomId}/permissions")
+    public ResponseEntity<?> changePermission(@PathVariable Long chatRoomId){
+        chatRoomService.updatePermission(chatRoomId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+
     @Data
     @AllArgsConstructor
     static class Result<T>{

@@ -48,7 +48,7 @@ public class ChatRoomService {
                 .orElseThrow(()->new UserNotFoundException(userId));
 
         //masterUserName 설정
-        chatRoom.setMasterUserId(user.getId());
+        chatRoom.updateMasterUserId(user.getId());
 
         // 유저 - 채팅방 연관관계 생성
         UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
@@ -240,6 +240,15 @@ public class ChatRoomService {
                 userChatRoom.get().setStatus(UserChatRoomStatus.ENTER);
             }
         }
+    }
+
+    /**
+     * 채팅방 권한 변경
+     * */
+    public void updatePermission(Long chatRoomId){
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+        chatRoom.changePermission();
     }
 
     @Transactional(readOnly = true)

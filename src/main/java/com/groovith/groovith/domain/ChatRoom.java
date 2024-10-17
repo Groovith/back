@@ -5,7 +5,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,11 +77,17 @@ public class ChatRoom {
     }
 
     // 채팅방 이미지 변경
-    public void setImageUrl(String url){
+    public void updateImageUrl(String url){
         this.imageUrl = url;
     }
 
-    public void setMasterUserId(Long id){
+    public void updateMasterUserId(Long id){
         this.masterUserId = id;
+    }
+
+    public void changePermission() {
+        this.permission = (this.permission == ChatRoomPermission.MASTER)
+                ? ChatRoomPermission.EVERYONE
+                : ChatRoomPermission.MASTER;
     }
 }
