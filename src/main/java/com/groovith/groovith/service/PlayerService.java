@@ -1,10 +1,7 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.config.WebSocketEventListener;
-import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.CurrentPlaylist;
-import com.groovith.groovith.domain.PlayerActionResponseType;
-import com.groovith.groovith.domain.PlayerSession;
+import com.groovith.groovith.domain.*;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.CurrentPlayListFullException;
@@ -187,8 +184,11 @@ public class PlayerService {
     public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto, Long userId) {
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
-        // masterUser 만 플레이어 조작 가능
-        if(chatRoom.getMasterUserId().equals(userId)) {
+        ChatRoomPermission permission = chatRoom.getPermission();
+        boolean isMasterUser = chatRoom.getMasterUserId().equals(userId);
+        // masterUser 만 플레이어 조작 가능 or 권한이 모두 인 경우
+        if((permission.equals(ChatRoomPermission.MASTER) && isMasterUser)
+                || permission.equals(ChatRoomPermission.EVERYONE)) {
             // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
             switch (playerRequestDto.getAction()) {
                 case PLAY_NEW_TRACK -> playNewTrack(chatRoomId, playerRequestDto);
