@@ -28,7 +28,6 @@ public class YoutubeService {
     /**
      * Youtube Video 정보 가져오기
      * */
-    @Transactional(readOnly = true)
     public TrackDto getVideo(String videoId) throws IOException {
         // snippet : 제목, 설명, 썸네일 이미지 등
         // contentDetails: duration(ISO 8601 형식)
@@ -44,11 +43,13 @@ public class YoutubeService {
 
         TrackDto trackDto = new TrackDto();
         // 제목, 가수 명, 길이, 이미지 url 가져오기
+        trackDto.setVideoId(videoId);
         trackDto.setTitle(video.getSnippet().getTitle());
         trackDto.setArtist(video.getSnippet().getChannelTitle());   // 일단 채널 명
         trackDto.setImageUrl(video.getSnippet().getThumbnails().getDefault().getUrl());
         trackDto.setDuration(Duration.parse(video.getContentDetails().getDuration()).toMillis());
 
+        System.out.println("---------------------"+trackDto);
         // 트랙 저장
         trackRepository.save(new Track(trackDto));
 

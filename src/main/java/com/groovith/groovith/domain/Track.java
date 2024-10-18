@@ -1,6 +1,7 @@
 package com.groovith.groovith.domain;
 
 import com.groovith.groovith.dto.TrackDto;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
@@ -14,6 +15,7 @@ import java.util.List;
 @Entity
 public class Track {
     @Id
+    @Column(nullable = false)
     private String videoId;
     private String title;
     private String artist;
