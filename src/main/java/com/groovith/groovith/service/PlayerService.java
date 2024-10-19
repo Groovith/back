@@ -45,13 +45,13 @@ public class PlayerService {
             // 현재 세션이 없는 경우
             return PlayerDetailsDto.builder()
                     .chatRoomId(chatRoomId)
-                    .trackList(trackDtoList)
+                    .currentPlaylist(trackDtoList)
                     .build();
         } else {
             // 현재 세션이 있는 경우
             return PlayerDetailsDto.builder()
                     .chatRoomId(chatRoomId)
-                    .trackList(trackDtoList)
+                    .currentPlaylist(trackDtoList)
                     .currentPlaylistIndex(playerSession.getIndex())
                     .userCount(playerSession.getUserCount().get())
                     .lastPosition(playerSession.getLastPosition())
@@ -91,7 +91,7 @@ public class PlayerService {
                     .repeat(playerSession.getRepeat())
                     .paused(playerSession.getPaused())
                     .userCount(playerSession.getUserCount().get())
-                    .trackList(trackDtoList)
+                    .currentPlaylist(trackDtoList)
                     .build();
         }
 
@@ -133,7 +133,7 @@ public class PlayerService {
                     .repeat(newSession.getRepeat())
                     .paused(newSession.getPaused())
                     .userCount(newSession.getUserCount().get())
-                    .trackList(trackDtoList)
+                    .currentPlaylist(trackDtoList)
                     .build();
 
             // 채팅방에 알린다
@@ -153,7 +153,7 @@ public class PlayerService {
                 .repeat(playerSession.getRepeat())
                 .paused(playerSession.getPaused())
                 .userCount(playerSession.getUserCount().get())
-                .trackList(trackDtoList)
+                .currentPlaylist(trackDtoList)
                 .build();
 
         // 채팅방에 알린다
@@ -187,7 +187,7 @@ public class PlayerService {
                 // 채팅방에 알린다
                 PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                         .chatRoomId(chatRoomId)
-                        .trackList(trackDtoList)
+                        .currentPlaylist(trackDtoList)
                         .build();
 
                 template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
@@ -258,7 +258,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .trackList(trackDtoList )
+                .currentPlaylist(trackDtoList )
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -293,7 +293,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .trackList(trackDtoList)
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -330,7 +330,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .trackList(trackDtoList)
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -364,7 +364,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .trackList(trackDtoList)
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -435,7 +435,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .trackList(trackDtoList)
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -500,7 +500,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .trackList(trackDtoList)
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -538,7 +538,7 @@ public class PlayerService {
         // 현재 플레이리스트 정보 갱신
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .trackList(trackDtoList)
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -589,7 +589,7 @@ public class PlayerService {
         // 채팅방 정보 갱신
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .trackList(trackDtoList)
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -640,7 +640,7 @@ public class PlayerService {
         // 채팅방 정보 갱신
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .trackList(trackDtoList)
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
