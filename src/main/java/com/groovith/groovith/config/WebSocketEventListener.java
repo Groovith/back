@@ -83,7 +83,7 @@ public class WebSocketEventListener {
                         // 채팅방에 알린다
                         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                                 .chatRoomId(chatRoomId)
-                                .trackList(trackDtoList)
+                                .currentPlaylist(trackDtoList)
                                 .build();
 
                         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
