@@ -48,3 +48,5 @@ spring.mail.password={구글 앱 키}
 spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 ```
+# Youtube api 설정
+youtube.apikey={youtube apikey}
