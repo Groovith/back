@@ -1,12 +1,15 @@
 package com.groovith.groovith.repository;
 
 import com.groovith.groovith.domain.Message;
+import com.groovith.groovith.domain.UserChatRoom;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
 public interface MessageRepository extends JpaRepository<Message, Long>, MessageRepositoryCustom {
 
+    void deleteByUserChatRoom(UserChatRoom userChatRoom);
+    void deleteByChatRoomId(Long chatRoomId);
 //    List<Message> findAllByChatRoomIdOrderById(Long chatRoomId);
 
 //

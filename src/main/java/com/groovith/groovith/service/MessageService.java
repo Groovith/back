@@ -6,6 +6,7 @@ import com.groovith.groovith.domain.UserChatRoom;
 import com.groovith.groovith.dto.MessageListResponseDto;
 import com.groovith.groovith.dto.MessageResponseDto;
 import com.groovith.groovith.exception.UserChatRoomNotFoundException;
+import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.MessageRepository;
 import com.groovith.groovith.dto.MessageDto;
 import com.groovith.groovith.dto.MessageDetailsResponseDto;
@@ -15,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+
 
 
 @Slf4j
@@ -89,5 +92,10 @@ public class MessageService {
                 }).toList());
     }
 
-
+    /**
+     * 채팅방의 메시지 삭제
+     * */
+    public void deleteAllMessageInChatRoom(Long chatRoomId) {
+        messageRepository.deleteByChatRoomId(chatRoomId);
+    }
 }

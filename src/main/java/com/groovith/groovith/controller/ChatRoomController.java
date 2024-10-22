@@ -8,6 +8,7 @@ import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.ChatRoomService;
 import com.groovith.groovith.service.ImageService;
+import com.groovith.groovith.service.MessageService;
 import com.groovith.groovith.service.NotificationService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -29,6 +30,7 @@ public class ChatRoomController {
     private final NotificationService notificationService;
     private final ImageService imageService;
     private final SimpMessageSendingOperations template;
+    private final MessageService messageService;
 
     /**
      *  채팅방 생성
@@ -88,8 +90,7 @@ public class ChatRoomController {
         ChatRoomMemberStatus memberStatus = chatRoomService.leaveChatRoom(userDetails.getUserId(), chatRoomId);
         // 채팅방에 사람이 없을 시 채팅방 삭제, 채팅방 이미지 삭제
         if(memberStatus == ChatRoomMemberStatus.EMPTY){
-            imageService.deleteChatRoomImageById(chatRoomId);
-            chatRoomService.deleteChatRoom(chatRoomId);
+            deleteChatRoom(chatRoomId);
         }
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -98,10 +99,8 @@ public class ChatRoomController {
      * 채팅방 삭제
      */
     @DeleteMapping("/chatrooms/{chatRoomId}")
-    public ResponseEntity<?> deleteChatRoom(@PathVariable(name = "chatRoomId")Long chatRoomId){
-        // 기존 채팅방 이미지 삭제
-        imageService.deleteChatRoomImageById(chatRoomId);
-        chatRoomService.deleteChatRoom(chatRoomId);
+    public ResponseEntity<?> delete(@PathVariable(name = "chatRoomId")Long chatRoomId){
+        deleteChatRoom(chatRoomId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -164,5 +163,20 @@ public class ChatRoomController {
     @AllArgsConstructor
     static class Result<T>{
         private T data;
+    }
+
+
+    /**
+     * 채팅방 삭제 시
+     * 1. 채팅방 이미지 삭제
+     * 2. 메시지 삭제
+     */
+    public void deleteChatRoom(Long chatRoomId){
+        // 기존 채팅방 이미지 삭제
+        imageService.deleteChatRoomImageById(chatRoomId);
+        // 채팅방 내 메시지 삭제
+        messageService.deleteAllMessageInChatRoom(chatRoomId);
+        // 채팅방 삭제
+        chatRoomService.deleteChatRoom(chatRoomId);
     }
 }
