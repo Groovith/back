@@ -174,7 +174,7 @@ public class ChatRoomController {
     public void deleteChatRoom(Long chatRoomId){
         // 기존 채팅방 이미지 삭제
         imageService.deleteChatRoomImageById(chatRoomId);
-        // 채팅방 내 메시지 삭제
+        // 채팅방 내 탈퇴 메시지 삭제
         messageService.deleteAllMessageInChatRoom(chatRoomId);
         // 채팅방 삭제
         chatRoomService.deleteChatRoom(chatRoomId);
