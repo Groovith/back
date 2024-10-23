@@ -15,7 +15,7 @@ public class PlayerDetailsDto {
     private Long chatRoomId;
     private Integer userCount;
     private Integer currentPlaylistIndex;
-    private List<SpotifyTrackDto> currentPlaylist;
+    private List<TrackDto> currentPlaylist;
     private Boolean paused;
     private Boolean repeat;
     private Long position;
@@ -26,7 +26,7 @@ public class PlayerDetailsDto {
             Long chatRoomId,
             Integer userCount,
             Integer currentPlaylistIndex,
-            List<SpotifyTrackDto> currentPlaylist,
+            List<TrackDto> currentPlaylist,
             Boolean paused,
             Boolean repeat,
             Long lastPosition,

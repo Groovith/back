@@ -7,6 +7,8 @@ import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.CurrentPlayListFullException;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
+import com.groovith.groovith.repository.CurrentPlaylistTrackRepository;
+import com.groovith.groovith.repository.TrackRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+
 @Service
 @AllArgsConstructor
 public class PlayerService {
@@ -28,6 +31,8 @@ public class PlayerService {
     private final WebSocketEventListener webSocketEventListener;
     private final CurrentPlaylistRepository currentPlaylistRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final TrackRepository trackRepository;
+    private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
 
     public static final ConcurrentHashMap<Long, PlayerSession> playerSessions = new ConcurrentHashMap<>(); // 채팅방 플레이어 정보 (chatRoomId, PlayerSessionDto)
     public static final ConcurrentHashMap<String, Long> sessionIdChatRoomId = new ConcurrentHashMap<>(); // 각 유저 아이디의 플레이어 참가 여부
@@ -35,18 +40,18 @@ public class PlayerService {
     @Transactional(readOnly = true)
     public PlayerDetailsDto getPlayerDetails(Long chatRoomId) {
         PlayerSession playerSession = playerSessions.get(chatRoomId);
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
         if (playerSession == null) {
             // 현재 세션이 없는 경우
             return PlayerDetailsDto.builder()
                     .chatRoomId(chatRoomId)
-                    .currentPlaylist(currentPlaylist.getTracks())
+                    .currentPlaylist(trackDtoList)
                     .build();
         } else {
             // 현재 세션이 있는 경우
             return PlayerDetailsDto.builder()
                     .chatRoomId(chatRoomId)
-                    .currentPlaylist(currentPlaylist.getTracks())
+                    .currentPlaylist(trackDtoList)
                     .currentPlaylistIndex(playerSession.getIndex())
                     .userCount(playerSession.getUserCount().get())
                     .lastPosition(playerSession.getLastPosition())
@@ -56,6 +61,8 @@ public class PlayerService {
                     .build();
         }
     }
+
+
 
     public PlayerDetailsDto joinPlayer(Long chatRoomId, Long userId) {
         // 유저의 sessionId를 받아온다.
@@ -73,6 +80,9 @@ public class PlayerService {
         if (chatRoomId.equals(existingChatRoomId)) {
             PlayerSession playerSession = playerSessions.get(chatRoomId);
             CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+            List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
+                    .map(currentPlaylistTrack -> new TrackDto(currentPlaylistTrack.getTrack()))
+                    .toList();
             return PlayerDetailsDto.builder()
                     .chatRoomId(chatRoomId)
                     .currentPlaylistIndex(playerSession.getIndex())
@@ -81,7 +91,7 @@ public class PlayerService {
                     .repeat(playerSession.getRepeat())
                     .paused(playerSession.getPaused())
                     .userCount(playerSession.getUserCount().get())
-                    .currentPlaylist(currentPlaylist.getTracks())
+                    .currentPlaylist(trackDtoList)
                     .build();
         }
 
@@ -91,12 +101,15 @@ public class PlayerService {
         // 플레이어 세션을 불러온다. 없다면 새로 생성한다. 있다면 현재 인원을 증가시킨다.
         PlayerSession playerSession = playerSessions.get(chatRoomId);
         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+        List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
+                .map(currentPlaylistTrack -> new TrackDto(currentPlaylistTrack.getTrack()))
+                .toList();
 
         if (playerSession == null) {
             PlayerSession newSession = new PlayerSession();
             // 현재 플레이리스트에 곡이 있다면 처음 곡으로 설정한다. 없다면 그대로 둔다.
+            if (currentPlaylist.getCurrentPlaylistTracks().isEmpty()) {
             // 세션 생성시에 반복재생 설정
-            if (currentPlaylist.getTracks().isEmpty()) {
                 newSession.setPaused(true);
                 newSession.setRepeat(true);
                 newSession.setIndex(0);
@@ -105,7 +118,7 @@ public class PlayerService {
                 newSession.setPaused(false);
                 newSession.setLastPosition(0L);
                 newSession.setRepeat(true);
-                newSession.setDuration(currentPlaylist.getTracks().get(0).getDuration_ms());
+                newSession.setDuration(currentPlaylist.getCurrentPlaylistTracks().get(0).getTrack().getDuration());
                 newSession.setStartedAt(LocalDateTime.now());
             }
             playerSessions.put(chatRoomId, newSession);
@@ -120,7 +133,7 @@ public class PlayerService {
                     .repeat(newSession.getRepeat())
                     .paused(newSession.getPaused())
                     .userCount(newSession.getUserCount().get())
-                    .currentPlaylist(currentPlaylist.getTracks())
+                    .currentPlaylist(trackDtoList)
                     .build();
 
             // 채팅방에 알린다
@@ -140,7 +153,7 @@ public class PlayerService {
                 .repeat(playerSession.getRepeat())
                 .paused(playerSession.getPaused())
                 .userCount(playerSession.getUserCount().get())
-                .currentPlaylist(currentPlaylist.getTracks())
+                .currentPlaylist(trackDtoList)
                 .build();
 
         // 채팅방에 알린다
@@ -156,7 +169,9 @@ public class PlayerService {
                 .orElseThrow(() -> new RuntimeException("웹소켓 세션에 등록되지 않은 userId 입니다. userId: " + userId));
         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId)
                 .orElseThrow(() -> new RuntimeException(chatRoomId + "의 현재 플레이리스트가 없습니다."));
-
+        List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
+                .map(currentPlaylistTrack -> new TrackDto(currentPlaylistTrack.getTrack()))
+                .toList();
         // sessionIdChatRoomId 에서 sessionId를 삭제한다.
         sessionIdChatRoomId.remove(sessionId);
 
@@ -172,7 +187,7 @@ public class PlayerService {
                 // 채팅방에 알린다
                 PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                         .chatRoomId(chatRoomId)
-                        .currentPlaylist(currentPlaylist.getTracks())
+                        .currentPlaylist(trackDtoList)
                         .build();
 
                 template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
@@ -181,7 +196,8 @@ public class PlayerService {
     }
 
     @Transactional
-    public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto, Long userId) {
+    public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto,Long userId, TrackDto trackDto) {
+        // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
         ChatRoomPermission permission = chatRoom.getPermission();
@@ -191,7 +207,7 @@ public class PlayerService {
                 || permission.equals(ChatRoomPermission.EVERYONE)) {
             // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
             switch (playerRequestDto.getAction()) {
-                case PLAY_NEW_TRACK -> playNewTrack(chatRoomId, playerRequestDto);
+                case PLAY_NEW_TRACK -> playNewTrack(chatRoomId, playerRequestDto, trackDto);
                 case PAUSE -> pause(chatRoomId, playerRequestDto);
                 case RESUME -> resume(chatRoomId, playerRequestDto);
                 case SEEK -> seek(chatRoomId, playerRequestDto);
@@ -199,8 +215,8 @@ public class PlayerService {
                 case PREVIOUS_TRACK -> previousTrack(chatRoomId);
                 case PLAY_AT_INDEX -> playAtIndex(chatRoomId, playerRequestDto);
                 case ADD_TO_CURRENT_PLAYLIST -> {
-                    if (playerRequestDto.getTrack() != null) {
-                        addToCurrentPlaylist(chatRoomId, playerRequestDto.getTrack());
+                    if (playerRequestDto.getVideoId() != null) {
+                        addToCurrentPlaylist(chatRoomId, trackDto);
                     }
                 }
                 case REMOVE_FROM_CURRENT_PLAYLIST -> {
@@ -215,28 +231,34 @@ public class PlayerService {
     }
 
     @Transactional
-    public void playNewTrack(Long chatRoomId, PlayerRequestDto playerRequestDto) {
+    public void playNewTrack(Long chatRoomId, PlayerRequestDto playerRequestDto, TrackDto trackDto) {
         PlayerSession playerSession = playerSessions.get(chatRoomId);
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
         if (playerSession == null) return;
 
+        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+        Track track = new Track(trackDto);
         // 플레이리스트 수정
-        List<SpotifyTrackDto> newTracks = new ArrayList<>();
-        newTracks.add(playerRequestDto.getTrack());
-        currentPlaylist.setTracks(newTracks);
-        currentPlaylistRepository.save(currentPlaylist);
+        // 플레이리스트 초기화
+        currentPlaylist.getCurrentPlaylistTracks().clear();
+        // 새 트랙 추가
+        CurrentPlaylistTrack currentPlaylistTrack = CurrentPlaylistTrack.setPlaylistTrack(currentPlaylist, track);
+        currentPlaylistTrackRepository.save(currentPlaylistTrack);
+
+        List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
+                .map(c -> new TrackDto(c.getTrack()))
+                .toList();
 
         // 플레이어 세션 수정
         playerSession.setIndex(0);
         playerSession.setPaused(false);
         playerSession.setLastPosition(0L);
         playerSession.setStartedAt(LocalDateTime.now());
-        playerSession.setDuration(playerRequestDto.getTrack().getDuration_ms());
+        playerSession.setDuration(trackDto.getDuration());
         playerSessions.put(chatRoomId, playerSession);
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .currentPlaylist(trackDtoList )
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -247,10 +269,9 @@ public class PlayerService {
 
         PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
                 .action(PlayerActionResponseType.PLAY_TRACK)
-                .track(playerRequestDto.getTrack())
+                .videoId(playerRequestDto.getVideoId())
                 .position(null)
                 .build();
-
 
         // 채팅방 정보 전송
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
@@ -262,8 +283,9 @@ public class PlayerService {
     public void pause(Long chatRoomId, PlayerRequestDto playerRequestDto) {
         // 정지, 위치 또한 조정
         PlayerSession playerSession = playerSessions.get(chatRoomId);
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
         if (playerSession == null) return;
+
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
 
         playerSession.setPaused(true);
         playerSession.setLastPosition(playerRequestDto.getPosition());
@@ -271,7 +293,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -282,7 +304,7 @@ public class PlayerService {
 
         PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
                 .action(PlayerActionResponseType.PAUSE)
-                .track(null)
+                .videoId(null)
                 .position(playerRequestDto.getPosition())
                 .build();
 
@@ -297,8 +319,9 @@ public class PlayerService {
     public void resume(Long chatRoomId, PlayerRequestDto playerRequestDto) {
         // 정지, 위치 또한 조정
         PlayerSession playerSession = playerSessions.get(chatRoomId);
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
         if (playerSession == null) return;
+
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
 
         playerSession.setPaused(false);
         playerSession.setLastPosition(playerRequestDto.getPosition());
@@ -307,7 +330,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -318,7 +341,7 @@ public class PlayerService {
 
         PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
                 .action(PlayerActionResponseType.RESUME)
-                .track(null)
+                .videoId(null)
                 .position(playerRequestDto.getPosition())
                 .build();
 
@@ -332,7 +355,7 @@ public class PlayerService {
     @Transactional(readOnly = true)
     public void seek(Long chatRoomId, PlayerRequestDto playerRequestDto) {
         PlayerSession playerSession = playerSessions.get(chatRoomId);
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
         if (playerSession == null) return;
 
         playerSession.setLastPosition(playerRequestDto.getPosition());
@@ -341,7 +364,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -352,7 +375,7 @@ public class PlayerService {
 
         PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
                 .action(PlayerActionResponseType.SEEK)
-                .track(null)
+                .videoId(null)
                 .position(playerRequestDto.getPosition())
                 .build();
 
@@ -366,23 +389,23 @@ public class PlayerService {
     @Transactional(readOnly = true)
     public void nextTrack(Long chatRoomId) {
         PlayerSession playerSession = playerSessions.get(chatRoomId);
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
         if (playerSession == null) return;
 
         PlayerResponseDto playerResponseDto;
 
         int nextIndex = playerSession.getIndex() + 1;
-        if (nextIndex < currentPlaylist.getTracks().size()) {
+        if (nextIndex < trackDtoList.size()) {
             // 다음 곡이 있는 경우
             playerSession.setIndex(nextIndex);
             playerSession.setLastPosition(0L);
             playerSession.setPaused(false);
             playerSession.setStartedAt(LocalDateTime.now());
-            playerSession.setDuration(currentPlaylist.getTracks().get(nextIndex).getDuration_ms());
+            playerSession.setDuration(trackDtoList.get(nextIndex).getDuration());
 
             playerResponseDto = PlayerResponseDto.builder()
                     .action(PlayerActionResponseType.PLAY_TRACK)
-                    .track(currentPlaylist.getTracks().get(nextIndex))
+                    .videoId(trackDtoList.get(nextIndex).getVideoId())
                     .index(nextIndex)
                     .build();
 
@@ -394,11 +417,11 @@ public class PlayerService {
                 playerSession.setLastPosition(0L);
                 playerSession.setPaused(false);
                 playerSession.setStartedAt(LocalDateTime.now());
-                playerSession.setDuration(currentPlaylist.getTracks().get(0).getDuration_ms());
+                playerSession.setDuration(trackDtoList.get(0).getDuration());
 
                 playerResponseDto = PlayerResponseDto.builder()
                         .action(PlayerActionResponseType.PLAY_TRACK)
-                        .track(currentPlaylist.getTracks().get(0))
+                        .videoId(trackDtoList.get(0).getVideoId())
                         .index(0)
                         .build();
             } else {
@@ -412,7 +435,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -430,7 +453,7 @@ public class PlayerService {
     @Transactional(readOnly = true)
     public void previousTrack(Long chatRoomId) {
         PlayerSession playerSession = playerSessions.get(chatRoomId);
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
         if (playerSession == null) return;
 
         PlayerResponseDto playerResponseDto;
@@ -442,11 +465,11 @@ public class PlayerService {
             playerSession.setLastPosition(0L);
             playerSession.setPaused(false);
             playerSession.setStartedAt(LocalDateTime.now());
-            playerSession.setDuration(currentPlaylist.getTracks().get(prevIndex).getDuration_ms());
+            playerSession.setDuration(trackDtoList.get(prevIndex).getDuration());
 
             playerResponseDto = PlayerResponseDto.builder()
                     .action(PlayerActionResponseType.PLAY_TRACK)
-                    .track(currentPlaylist.getTracks().get(prevIndex))
+                    .videoId(trackDtoList.get(prevIndex).getVideoId())
                     .index(prevIndex)
                     .build();
 
@@ -454,16 +477,16 @@ public class PlayerService {
             // 이전 곡이 없는 경우
             if (playerSession.getRepeat()) {
                 // 반복 재생이 설정되어 있는 경우
-                int lastIndex = currentPlaylist.getTracks().size() - 1;
+                int lastIndex = trackDtoList.size() - 1;
                 playerSession.setIndex(lastIndex);
                 playerSession.setLastPosition(0L);
                 playerSession.setPaused(false);
                 playerSession.setStartedAt(LocalDateTime.now());
-                playerSession.setDuration(currentPlaylist.getTracks().get(lastIndex).getDuration_ms());
+                playerSession.setDuration(trackDtoList.get(lastIndex).getDuration());
 
                 playerResponseDto = PlayerResponseDto.builder()
                         .action(PlayerActionResponseType.PLAY_TRACK)
-                        .track(currentPlaylist.getTracks().get(lastIndex))
+                        .videoId(trackDtoList.get(lastIndex).getVideoId())
                         .index(lastIndex)
                         .build();
             } else {
@@ -477,7 +500,7 @@ public class PlayerService {
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -495,12 +518,12 @@ public class PlayerService {
     @Transactional
     public void playAtIndex(Long chatRoomId, PlayerRequestDto playerRequestDto) {
         PlayerSession playerSession = playerSessions.get(chatRoomId);
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
         if (playerSession == null) return;
 
         // 인덱스 범위 확인
         Integer requestedIndex = playerRequestDto.getIndex();
-        if (requestedIndex == null || requestedIndex < 0 || requestedIndex >= currentPlaylist.getTracks().size()) {
+        if (requestedIndex == null || requestedIndex < 0 || requestedIndex >= trackDtoList.size()) {
             return;
         }
 
@@ -509,13 +532,13 @@ public class PlayerService {
         playerSession.setPaused(false);
         playerSession.setLastPosition(0L);
         playerSession.setStartedAt(LocalDateTime.now());
-        playerSession.setDuration(currentPlaylist.getTracks().get(requestedIndex).getDuration_ms());
+        playerSession.setDuration(trackDtoList.get(requestedIndex).getDuration());
         playerSessions.put(chatRoomId, playerSession);
 
         // 현재 플레이리스트 정보 갱신
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -527,7 +550,7 @@ public class PlayerService {
         // 플레이 트랙 액션 전송
         PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
                 .action(PlayerActionResponseType.PLAY_TRACK)
-                .track(currentPlaylist.getTracks().get(requestedIndex))
+                .videoId(trackDtoList.get(requestedIndex).getVideoId())
                 .index(requestedIndex)
                 .position(0L) // 새로운 트랙 재생 시작이므로 위치는 0
                 .build();
@@ -539,27 +562,34 @@ public class PlayerService {
     }
 
     @Transactional
-    public void addToCurrentPlaylist(Long chatRoomId, SpotifyTrackDto track) {
+    public void addToCurrentPlaylist(Long chatRoomId, TrackDto trackDto) {
         PlayerSession playerSession = playerSessions.get(chatRoomId);
         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+        List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
+                .map(c -> new TrackDto(c.getTrack()))
+                .toList();
+
         if (playerSession == null) return;
 
-        // 플레이리스트에 새로운 트랙 추가
-        List<SpotifyTrackDto> updatedTracks = new ArrayList<>(currentPlaylist.getTracks());
 
         // 플레이리스트가 다 찼을 경우(100곡)
-        if(currentPlaylist.getTracks().size() >= 100){
+        if(trackDtoList.size() >= 100){
             throw new CurrentPlayListFullException(currentPlaylist.getId());
         }
 
-        updatedTracks.add(track);
-        currentPlaylist.setTracks(updatedTracks);
-        currentPlaylistRepository.save(currentPlaylist);
+        // 플레이리스트에 새로운 트랙 추가(새 연관관계 생성)
+//        List<TrackDto> updatedTracks = new ArrayList<>(trackDtoList);
+        Track track = new Track(trackDto);
+        CurrentPlaylistTrack currentPlaylistTrack = CurrentPlaylistTrack.setPlaylistTrack(currentPlaylist, track);
+        currentPlaylistTrackRepository.save(currentPlaylistTrack);
+//        updatedTracks.add(trackDto);
+//        currentPlaylist.setTrackList(updatedTracks);
+//        currentPlaylistRepository.save(currentPlaylist);
 
         // 채팅방 정보 갱신
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -574,7 +604,7 @@ public class PlayerService {
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together",
                 PlayerResponseDto.builder()
                         .action(PlayerActionResponseType.UPDATE)
-                        .currentPlaylist(currentPlaylist.getTracks())
+                        .videoList(trackDtoList)
                         .index(playerSession.getIndex())
                         .build());
     }
@@ -583,16 +613,23 @@ public class PlayerService {
     public void removeFromCurrentPlaylist(Long chatRoomId, int index) {
         PlayerSession playerSession = playerSessions.get(chatRoomId);
         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+        List<TrackDto> trackDtoList = new ArrayList<>(currentPlaylist.getCurrentPlaylistTracks().stream()
+                .map(c -> new TrackDto(c.getTrack()))
+                .toList());
         if (playerSession == null) return;
 
         // 인덱스 범위 확인
-        List<SpotifyTrackDto> tracks = currentPlaylist.getTracks();
-        if (index < 0 || index >= tracks.size()) return;
+//        List<TrackDto> tracks = currentPlaylist.getTrackList();
+        if (index < 0 || index >= trackDtoList.size()) return;
 
         // 플레이리스트에서 해당 인덱스의 트랙 삭제
-        tracks.remove(index);
-        currentPlaylist.setTracks(tracks);
+
+        currentPlaylist.getCurrentPlaylistTracks().remove(index);
         currentPlaylistRepository.save(currentPlaylist);
+        trackDtoList.remove(index);
+//        trackDtoList.remove(index);
+//        currentPlaylist.setTrackList(tracks);
+//        currentPlaylistRepository.save(currentPlaylist);
 
         // 만약 현재 재생 중인 트랙이 삭제된 트랙보다 뒤에 있다면 인덱스를 조정
         if (playerSession.getIndex() >= index) {
@@ -603,7 +640,7 @@ public class PlayerService {
         // 채팅방 정보 갱신
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
-                .currentPlaylist(currentPlaylist.getTracks())
+                .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
                 .userCount(playerSession.getUserCount().get())
                 .lastPosition(playerSession.getLastPosition())
@@ -618,7 +655,7 @@ public class PlayerService {
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together",
                 PlayerResponseDto.builder()
                         .action(PlayerActionResponseType.UPDATE)
-                        .currentPlaylist(currentPlaylist.getTracks())
+                        .videoList(trackDtoList)
                         .index(playerSession.getIndex())
                         .build());
     }
@@ -643,6 +680,13 @@ public class PlayerService {
                 }
             }
         }
+    }
+
+    public List<TrackDto> getTrackDtoList(Long chatRoomId){
+        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+        return currentPlaylist.getCurrentPlaylistTracks().stream()
+                .map(c -> new TrackDto(c.getTrack()))
+                .toList();
     }
 
 //    @Scheduled(fixedRate = 1000)
