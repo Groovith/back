@@ -17,8 +17,8 @@ public class YoutubeController {
     private final YoutubeService youtubeService;
 
     @GetMapping("/video")
-    public ResponseEntity<TrackDto> getVideo(@RequestBody VideoRequestDto requestDto) throws IOException {
-        TrackDto trackDto = youtubeService.getVideo(requestDto.getVideoId());
+    public ResponseEntity<TrackDto> getVideo(@RequestParam String videoId) throws IOException {
+        TrackDto trackDto = youtubeService.getVideo(videoId);
         return new ResponseEntity<>(trackDto, HttpStatus.OK);
     }
 
