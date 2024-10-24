@@ -24,10 +24,8 @@ public class CurrentPlaylistTrack {
 
     @Builder
     public CurrentPlaylistTrack(CurrentPlaylist currentPlaylist, Track track){
-        CurrentPlaylistTrack currentPlaylistTrack = CurrentPlaylistTrack.builder()
-                .currentPlaylist(currentPlaylist)
-                .track(track)
-                .build();
+        this.currentPlaylist = currentPlaylist;
+        this.track = track;
     }
 
     public static CurrentPlaylistTrack setPlaylistTrack(CurrentPlaylist currentPlaylist, Track track){
