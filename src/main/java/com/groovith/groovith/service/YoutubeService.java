@@ -47,7 +47,7 @@ public class YoutubeService {
         trackDto.setTitle(video.getSnippet().getTitle());
         trackDto.setArtist(video.getSnippet().getChannelTitle());   // 일단 채널 명
         trackDto.setImageUrl(video.getSnippet().getThumbnails().getDefault().getUrl());
-        trackDto.setDuration(Duration.parse(video.getContentDetails().getDuration()).toMillis());
+        trackDto.setDuration(Duration.parse(video.getContentDetails().getDuration()).toSeconds());
 
         System.out.println("---------------------"+trackDto);
         // 트랙 저장

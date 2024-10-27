@@ -42,7 +42,7 @@ public class PlayerDetailsDto {
         // 실행 중인 경우 현재 position 계산
         if (paused != null && !paused) {
             if (startedAt != null) {
-                this.position = lastPosition + Duration.between(startedAt, LocalDateTime.now()).toMillis();
+                this.position = lastPosition + Duration.between(startedAt, LocalDateTime.now()).toSeconds();
             }
         }
     }

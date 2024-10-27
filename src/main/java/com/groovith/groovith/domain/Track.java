@@ -8,6 +8,7 @@ import jakarta.persistence.OneToMany;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -23,7 +24,7 @@ public class Track {
     private Long duration;
 
     @OneToMany(mappedBy = "track")
-    private List<CurrentPlaylistTrack> currentPlaylistTracks;
+    private List<CurrentPlaylistTrack> currentPlaylistTracks = new ArrayList<>();
 
     public Track(TrackDto trackDto){
         this.videoId = trackDto.getVideoId();

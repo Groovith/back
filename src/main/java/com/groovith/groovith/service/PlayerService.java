@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -33,6 +34,8 @@ public class PlayerService {
     private final ChatRoomRepository chatRoomRepository;
     private final TrackRepository trackRepository;
     private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
+    private final YoutubeService youtubeService;
+    private final TrackService trackService;
 
     public static final ConcurrentHashMap<Long, PlayerSession> playerSessions = new ConcurrentHashMap<>(); // 채팅방 플레이어 정보 (chatRoomId, PlayerSessionDto)
     public static final ConcurrentHashMap<String, Long> sessionIdChatRoomId = new ConcurrentHashMap<>(); // 각 유저 아이디의 플레이어 참가 여부
@@ -196,7 +199,7 @@ public class PlayerService {
     }
 
     @Transactional
-    public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto,Long userId, TrackDto trackDto) {
+    public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto,Long userId) throws IOException {
         // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
@@ -207,7 +210,6 @@ public class PlayerService {
                 || permission.equals(ChatRoomPermission.EVERYONE)) {
             // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
             switch (playerRequestDto.getAction()) {
-                case PLAY_NEW_TRACK -> playNewTrack(chatRoomId, playerRequestDto, trackDto);
                 case PAUSE -> pause(chatRoomId, playerRequestDto);
                 case RESUME -> resume(chatRoomId, playerRequestDto);
                 case SEEK -> seek(chatRoomId, playerRequestDto);
@@ -216,6 +218,8 @@ public class PlayerService {
                 case PLAY_AT_INDEX -> playAtIndex(chatRoomId, playerRequestDto);
                 case ADD_TO_CURRENT_PLAYLIST -> {
                     if (playerRequestDto.getVideoId() != null) {
+                        TrackDto trackDto = youtubeService.getVideo(playerRequestDto.getVideoId());
+                        trackService.save(trackDto);
                         addToCurrentPlaylist(chatRoomId, trackDto);
                     }
                 }
@@ -224,59 +228,8 @@ public class PlayerService {
                         removeFromCurrentPlaylist(chatRoomId, playerRequestDto.getIndex());
                     }
                 }
-                case TRACK_ENDED -> {
-                }
             }
         }
-    }
-
-    @Transactional
-    public void playNewTrack(Long chatRoomId, PlayerRequestDto playerRequestDto, TrackDto trackDto) {
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
-        if (playerSession == null) return;
-
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
-        Track track = new Track(trackDto);
-        // 플레이리스트 수정
-        // 플레이리스트 초기화
-        currentPlaylist.getCurrentPlaylistTracks().clear();
-        // 새 트랙 추가
-        CurrentPlaylistTrack currentPlaylistTrack = CurrentPlaylistTrack.setPlaylistTrack(currentPlaylist, track);
-        currentPlaylistTrackRepository.save(currentPlaylistTrack);
-
-        List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
-                .map(c -> new TrackDto(c.getTrack()))
-                .toList();
-
-        // 플레이어 세션 수정
-        playerSession.setIndex(0);
-        playerSession.setPaused(false);
-        playerSession.setLastPosition(0L);
-        playerSession.setStartedAt(LocalDateTime.now());
-        playerSession.setDuration(trackDto.getDuration());
-        playerSessions.put(chatRoomId, playerSession);
-
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                .chatRoomId(chatRoomId)
-                .currentPlaylist(trackDtoList )
-                .currentPlaylistIndex(playerSession.getIndex())
-                .userCount(playerSession.getUserCount().get())
-                .lastPosition(playerSession.getLastPosition())
-                .startedAt(playerSession.getStartedAt())
-                .paused(playerSession.getPaused())
-                .repeat(playerSession.getRepeat())
-                .build();
-
-        PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
-                .action(PlayerActionResponseType.PLAY_TRACK)
-                .videoId(playerRequestDto.getVideoId())
-                .position(null)
-                .build();
-
-        // 채팅방 정보 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
-        // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerResponseDto);
     }
 
     @Transactional(readOnly = true)
@@ -667,10 +620,10 @@ public class PlayerService {
             PlayerSession playerSession = entry.getValue();
 
             if (!playerSession.getPaused()) {
-                long elapsedMillis = Duration.between(playerSession.getStartedAt(), LocalDateTime.now()).toMillis();
-                long currentPosition = playerSession.getLastPosition() + elapsedMillis;
+                long elapsedSeconds = Duration.between(playerSession.getStartedAt(), LocalDateTime.now()).toSeconds();
+                long currentPosition = playerSession.getLastPosition() + elapsedSeconds;
 
-                if (currentPosition >= playerSession.getDuration() - 1500) {
+                if (currentPosition >= playerSession.getDuration()) {
                     // 곡의 duration 을 초과한 경우 다음 트랙으로 이동
                     nextTrack(chatRoomId);
                 } else {
@@ -682,8 +635,11 @@ public class PlayerService {
         }
     }
 
-    public List<TrackDto> getTrackDtoList(Long chatRoomId){
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+    @Transactional
+    public List<TrackDto> getTrackDtoList(Long chatRoomId) {
+        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId)
+                .orElseThrow(() -> new RuntimeException("Playlist not found"));
+
         return currentPlaylist.getCurrentPlaylistTracks().stream()
                 .map(c -> new TrackDto(c.getTrack()))
                 .toList();
