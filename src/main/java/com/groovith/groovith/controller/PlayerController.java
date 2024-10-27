@@ -55,8 +55,7 @@ public class PlayerController {
         if (userId == null) {
             throw new RuntimeException("User ID is missing in the session.");
         }
-        TrackDto trackDto = youtubeService.getVideo(playerRequestDto.getVideoId());
-        trackService.save(trackDto);
-        playerService.handleMessage(chatRoomId, playerRequestDto, userId, trackDto);
+
+        playerService.handleMessage(chatRoomId, playerRequestDto, userId);
     }
 }
