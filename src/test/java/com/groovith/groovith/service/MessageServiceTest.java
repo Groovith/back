@@ -1,104 +1,142 @@
-//package com.groovith.groovith.service;
-//
-//import com.fasterxml.jackson.annotation.JsonTypeInfo;
-//import com.groovith.groovith.controller.UserController;
-//import com.groovith.groovith.domain.*;
-//import com.groovith.groovith.dto.MessageDto;
-//import com.groovith.groovith.dto.MessageListDto;
-//import com.groovith.groovith.repository.ChatRoomRepository;
-//import com.groovith.groovith.repository.MessageRepository;
-//import com.groovith.groovith.repository.UserChatRoomRepository;
-//import org.assertj.core.api.Assertions;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.extension.ExtendWith;
-//import org.mockito.InjectMocks;
-//import org.mockito.Mock;
-//import org.mockito.junit.jupiter.MockitoExtension;
-//import org.springframework.test.util.ReflectionTestUtils;
-//
-//import java.util.ArrayList;
-//import java.util.List;
-//import java.util.Optional;
-//import java.util.stream.Collectors;
-//
-//import static org.mockito.ArgumentMatchers.any;
-//import static org.mockito.ArgumentMatchers.anyLong;
-//import static org.mockito.Mockito.*;
-//
-//@ExtendWith(MockitoExtension.class)
-//class MessageServiceTest {
-//
-//    @InjectMocks MessageService messageService;
-//    @Mock private MessageRepository messageRepository;
-//    @Mock private ChatRoomRepository chatRoomRepository;
-//
-//    @Test
-//    public void save(){
-//        //given
-//        Long userId = 1L;
-//        Long chatRoomId = 1L;
-//        String content = "Hi";
-//
-//        ChatRoom chatRoom = ChatRoom.builder()
-//                .name("room")
-//                .build();
-//        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
-//
-//        MessageDto messageDto = new MessageDto();
-//        messageDto.setContent(content);
-//        messageDto.setType(MessageType.CHAT);
-//        messageDto.setUserId(userId);
-//        messageDto.setChatRoomId(chatRoomId);
-//
-//        Message message = Message.setMessage(content, chatRoom, userId, MessageType.CHAT, messageDto.getUsername());
-//
-//        //when
-//        when(chatRoomRepository.findById(anyLong()))
-//                .thenReturn(Optional.of(chatRoom));
-//        when(messageRepository.save(any(Message.class)))
-//                .thenReturn(message);
-//
-//        MessageDto dto = messageService.createMessage(messageDto);
-//
-//
-//        //then
-//        Assertions.assertThat(savedMessage).isEqualTo(message);
-//
-//    }
-//
-//    @Test
-//    public void findAllDesc(){
-//        //given
-//        ChatRoom chatRoom = createChatRoom();
-//
-//        List<Message> data = new ArrayList<>();
-//        for(int i=0; i<5; i++){
-//            Message message = createMessage(chatRoom);
-//            data.add(message);
-//        }
-//        List<MessageListDto>messageList = data.stream().map(MessageListDto::new).collect(Collectors.toList());
-//        //when
-//        when(messageRepository.findAllByChatRoomId(anyLong())).thenReturn(data);
-//
-//        List<MessageListDto> findList = messageService.findAllDesc(1L);
-//
-//        //then
-//        Assertions.assertThat(findList).isEqualTo(messageList);
-//        Assertions.assertThat(findList.size()).isEqualTo(5);
-//
-//    }
-//
-//    public ChatRoom createChatRoom(){
-//        return ChatRoom.builder()
-//                .name("room")
-//                .build();
-//    }
-//
-//    public Message createMessage(ChatRoom chatRoom){
-//        return Message.builder()
-//                .content("content")
-//                .messageType(MessageType.CHAT)
-//                .chatRoom(chatRoom)
-//                .build();
-//    }
-//}
+package com.groovith.groovith.service;
+
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.groovith.groovith.controller.UserController;
+import com.groovith.groovith.domain.*;
+import com.groovith.groovith.dto.MessageDetailsResponseDto;
+import com.groovith.groovith.dto.MessageDto;
+import com.groovith.groovith.dto.MessageListResponseDto;
+import com.groovith.groovith.dto.MessageResponseDto;
+import com.groovith.groovith.repository.ChatRoomRepository;
+import com.groovith.groovith.repository.MessageRepository;
+import com.groovith.groovith.repository.UserChatRoomRepository;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class MessageServiceTest {
+
+    @InjectMocks MessageService messageService;
+    @Mock private MessageRepository messageRepository;
+    @Mock private ChatRoomRepository chatRoomRepository;
+
+    @Mock private UserChatRoomRepository userChatRoomRepository;
+
+    @Value("${cloud.aws.s3.defaultUserImageUrl}")
+    private String DEFAULT_IMG_URL;
+
+    @Test
+    public void save(){
+        //given
+        Long userId = 1L;
+        Long chatRoomId = 1L;
+        String content = "Hi";
+
+        ChatRoom chatRoom = createChatRoom();
+        User user = createUser();
+        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+
+        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
+
+        MessageDto messageDto = new MessageDto();
+        messageDto.setContent(content);
+        messageDto.setType(MessageType.CHAT);
+        messageDto.setUserId(user.getId());
+        messageDto.setChatRoomId(chatRoom.getId());
+
+        Message message = Message.setMessage(content, MessageType.CHAT, userChatRoom, chatRoomId, DEFAULT_IMG_URL);
+
+        //when
+        when(userChatRoomRepository.findByUserIdAndChatRoomId(user.getId(), chatRoom.getId()))
+                .thenReturn(Optional.of(userChatRoom));
+
+        MessageResponseDto messageResponseDto = messageService.createMessage(messageDto);
+
+
+        //then
+        Assertions.assertThat(messageResponseDto.getMessageId()).isEqualTo(message.getId());
+
+    }
+
+    @Test
+    public void findMessages(){
+        //given
+        ChatRoom chatRoom = createChatRoom();
+        User user = createUser();
+
+        List<Message> data = new ArrayList<>();
+        List<MessageDetailsResponseDto> messages = new ArrayList<>();
+       
+
+        for(int i=0; i<5; i++){
+            Message message = createMessage("message"+i);
+            MessageDetailsResponseDto dto = new MessageDetailsResponseDto();
+            dto.setMessageId(message.getId());
+            dto.setContent(message.getContent());
+            dto.setType(message.getMessageType());
+            dto.setChatRoomId(message.getChatRoomId());
+            dto.setCreatedAt(message.getCreatedAt());
+            dto.setImageUrl(message.getImageUrl());
+            messages.add(dto);
+            data.add(createMessage("message"+i));
+        }
+
+        MessageListResponseDto messageListResponseDto = new MessageListResponseDto(messages);
+
+        //when
+        when(messageRepository.findMessages(chatRoom.getId(), null)).thenReturn(new SliceImpl<>(data));
+        MessageListResponseDto findList = messageService.findMessages(chatRoom.getId(), null);
+        
+        //then
+        Assertions.assertThat(findList).isEqualTo(messageListResponseDto);
+
+    }
+
+
+
+    public ChatRoom createChatRoom(){
+        return ChatRoom.builder()
+                .name("room")
+                .build();
+    }
+
+    public User createUser(){
+        User user = new User();
+        user.setUsername("username");
+        user.setNickname("nickname");
+//        user.setPassword(bCryptPasswordEncoder.encode(password));
+        user.setEmail("email");
+        user.setRole("ROLE_USER");
+        user.setStreaming(StreamingType.NONE);
+        user.setImageUrl(DEFAULT_IMG_URL);
+        user.setStatus(UserStatus.PUBLIC);
+        return new User();
+    }
+
+    public Message createMessage(String content){
+        User user = createUser();
+        ChatRoom chatRoom = createChatRoom();
+
+        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
+
+        return Message.setMessage(content, MessageType.CHAT, userChatRoom, chatRoom.getId(), DEFAULT_IMG_URL);
+    }
+}

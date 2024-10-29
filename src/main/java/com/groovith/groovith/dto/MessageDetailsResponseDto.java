@@ -36,35 +36,8 @@ public class MessageDetailsResponseDto {
     private String username;
     private String content;
     private MessageType type;
+    private String imageUrl;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime createdAt;
-
-//    private PlayerCall playerCall;
-//    private Long playlistId;
-//    private Long playlistIndex;
-//    private Long newIndex;
-//    private TrackDto trackDto;
-//    private Long position;
-//    private Long senderId;
-
-    //sentAt: "0000-00-00T00:00:00Z",
-//    public MessageDetailsResponseDto(Message message){
-//        this.messageId = message.getId();
-//        this.chatRoomId = message.getUserChatRoom().getChatRoom().getId();
-//        this.content = message.getContent();
-//        this.type = message.getMessageType();
-//        this.createdAt = message.getCreatedAt();
-//
-//        // 유저가 탈퇴했을 경우
-//        if(message.getIsUserDeleted()){
-//            this.userId = null;
-//            this.username = "알수없음";
-//        }
-//        else {
-//            this.userId = message.getUserChatRoom().getUser().getId();
-//            this.username = message.getUserChatRoom().getUser().getUsername();
-//        }
-//
-//    }
 }
