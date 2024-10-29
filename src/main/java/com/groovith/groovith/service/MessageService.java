@@ -36,7 +36,7 @@ public class MessageService {
 
         // 메세지 생성
         Message message = Message.setMessage(
-                messageDto.getContent(), messageDto.getType(),userChatRoom, chatRoomId
+                messageDto.getContent(), messageDto.getType(),userChatRoom, chatRoomId, messageDto.getImageUrl()
         );
 
 
@@ -69,6 +69,7 @@ public class MessageService {
     public MessageListResponseDto findMessages(Long chatRoomId, Long lastMessageId){
         Slice<Message> messages = messageRepository.findMessages(chatRoomId, lastMessageId);
 
+
         return new MessageListResponseDto(messages.stream()
                 .map(message -> {
                     MessageDetailsResponseDto dto = new MessageDetailsResponseDto();
@@ -77,6 +78,7 @@ public class MessageService {
                     dto.setType(message.getMessageType());
                     dto.setChatRoomId(message.getChatRoomId());
                     dto.setCreatedAt(message.getCreatedAt());
+                    dto.setImageUrl(message.getImageUrl());
                     // 탈퇴한 유저 메세지라면
                     if(message.isUserDeleted()){
                         dto.setUserId(null);
