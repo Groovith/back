@@ -248,9 +248,7 @@ public class PlayerService {
     @Transactional(readOnly = true)
     public void pause(Long chatRoomId, PlayerRequestDto playerRequestDto) {
         // 정지, 위치 또한 조정
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
-        if (playerSession == null) return;
-
+        PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
 
         playerSession.setPaused(true);
@@ -270,6 +268,12 @@ public class PlayerService {
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
         // 같이 듣기 액션 전송
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerResponseDto);
+    }
+
+    private PlayerSession getPlayerSessionByChatRoomId(Long chatRoomId) {
+        PlayerSession playerSession = playerSessions.get(chatRoomId);
+        if (playerSession == null) throw new RuntimeException("No Session with chatRoomId: " + chatRoomId);
+        return playerSession;
     }
 
     @Transactional(readOnly = true)
