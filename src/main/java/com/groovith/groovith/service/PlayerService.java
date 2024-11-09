@@ -3,6 +3,7 @@ package com.groovith.groovith.service;
 import com.groovith.groovith.config.WebSocketEventListener;
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.ChatRoomPermission;
+import com.groovith.groovith.domain.enums.PlayerActionRequestType;
 import com.groovith.groovith.domain.enums.PlayerActionResponseType;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
@@ -208,27 +209,7 @@ public class PlayerService {
         if((permission.equals(ChatRoomPermission.MASTER) && isMasterUser)
                 || permission.equals(ChatRoomPermission.EVERYONE)) {
             // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
-            switch (playerRequestDto.getAction()) {
-                case PAUSE -> pause(chatRoomId, playerRequestDto);
-                case RESUME -> resume(chatRoomId, playerRequestDto);
-                case SEEK -> seek(chatRoomId, playerRequestDto);
-                case NEXT_TRACK -> nextTrack(chatRoomId);
-                case PREVIOUS_TRACK -> previousTrack(chatRoomId);
-                case PLAY_AT_INDEX -> playAtIndex(chatRoomId, playerRequestDto);
-                case ADD_TO_CURRENT_PLAYLIST -> {
-                    if (playerRequestDto.getVideoId() != null) {
-                        TrackDto trackDto = youtubeService.getVideo(playerRequestDto.getVideoId());
-                        trackService.save(trackDto);
-                        addToCurrentPlaylist(chatRoomId, trackDto);
-                    }
-                }
-                case REMOVE_FROM_CURRENT_PLAYLIST -> {
-                    if (playerRequestDto.getIndex() != null) {
-                        removeFromCurrentPlaylist(chatRoomId, playerRequestDto.getIndex());
-                    }
-                }
-                default -> throw new ValidationException("Invalid action type.");
-            }
+            handleActionAndSendMessages(playerRequestDto.getAction(), chatRoomId, playerRequestDto);
         }
     }
 
@@ -242,12 +223,35 @@ public class PlayerService {
         return chatRoom.getMasterUserId().equals(userId);
     }
 
-    @Transactional(readOnly = true)
-    public void pause(Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        // 정지, 위치 또한 조정
+    private void handleActionAndSendMessages(PlayerActionRequestType action, Long chatRoomId, PlayerRequestDto playerRequestDto) throws IOException {
         PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
+        switch (action) {
+            case PAUSE -> pause(playerSession, trackDtoList, chatRoomId, playerRequestDto);
+            case RESUME -> resume(playerSession, trackDtoList, chatRoomId, playerRequestDto);
+            case SEEK -> seek(chatRoomId, playerRequestDto);
+            case NEXT_TRACK -> nextTrack(chatRoomId);
+            case PREVIOUS_TRACK -> previousTrack(chatRoomId);
+            case PLAY_AT_INDEX -> playAtIndex(chatRoomId, playerRequestDto);
+            case ADD_TO_CURRENT_PLAYLIST -> {
+                if (playerRequestDto.getVideoId() != null) {
+                    TrackDto trackDto = youtubeService.getVideo(playerRequestDto.getVideoId());
+                    trackService.save(trackDto);
+                    addToCurrentPlaylist(chatRoomId, trackDto);
+                }
+            }
+            case REMOVE_FROM_CURRENT_PLAYLIST -> {
+                if (playerRequestDto.getIndex() != null) {
+                    removeFromCurrentPlaylist(chatRoomId, playerRequestDto.getIndex());
+                }
+            }
+            default -> throw new ValidationException("Invalid action type.");
+        }
+    }
 
+    @Transactional(readOnly = true)
+    public void pause(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
+        // 정지, 위치 또한 조정
         playerSessions.put(chatRoomId, PlayerSession.pause(playerSession, playerRequestDto.getPosition()));
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.pause(chatRoomId, trackDtoList, playerSession);
@@ -257,11 +261,8 @@ public class PlayerService {
     }
 
     @Transactional(readOnly = true)
-    public void resume(Long chatRoomId, PlayerRequestDto playerRequestDto) {
+    public void resume(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
         // 정지, 위치 또한 조정
-        PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
-        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
-
         playerSessions.put(chatRoomId, PlayerSession.resume(playerSession, playerRequestDto.getPosition()));
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.resume(chatRoomId, trackDtoList, playerSession);
