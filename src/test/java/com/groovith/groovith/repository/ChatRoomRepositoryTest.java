@@ -1,8 +1,7 @@
 package com.groovith.groovith.repository;
 
 import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.ChatRoomStatus;
-import com.groovith.groovith.domain.ChatRoomType;
+import com.groovith.groovith.domain.enums.ChatRoomStatus;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

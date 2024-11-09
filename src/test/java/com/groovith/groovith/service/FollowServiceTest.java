@@ -1,6 +1,9 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.*;
+import com.groovith.groovith.domain.enums.FollowStatus;
+import com.groovith.groovith.domain.enums.StreamingType;
+import com.groovith.groovith.domain.enums.UserStatus;
 import com.groovith.groovith.dto.FollowResponse;
 import com.groovith.groovith.dto.UserDetailsResponseDto;
 import com.groovith.groovith.repository.FollowRepository;

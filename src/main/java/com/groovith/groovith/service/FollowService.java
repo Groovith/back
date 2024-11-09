@@ -1,7 +1,7 @@
 package com.groovith.groovith.service;
 
-import com.groovith.groovith.domain.FollowStatus;
-import com.groovith.groovith.domain.UserStatus;
+import com.groovith.groovith.domain.enums.FollowStatus;
+import com.groovith.groovith.domain.enums.UserStatus;
 import com.groovith.groovith.dto.PendingFollowsResponseDto;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.FollowRepository;
@@ -13,11 +13,9 @@ import com.groovith.groovith.dto.UserDetailsResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.tools.ForwardingFileObject;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,7 +1,7 @@
 //package com.groovith.groovith.controller;
 //
 //import com.fasterxml.jackson.databind.ObjectMapper;
-//import com.groovith.groovith.domain.StreamingType;
+//import com.groovith.groovith.domain.enums.StreamingType;
 //import com.groovith.groovith.domain.User;
 //import com.groovith.groovith.dto.JoinRequestDto;
 //import com.groovith.groovith.dto.UserDetailsResponseDto;

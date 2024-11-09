@@ -2,9 +2,7 @@ package com.groovith.groovith.dto;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.groovith.groovith.domain.Message;
-import com.groovith.groovith.domain.MessageType;
-import com.groovith.groovith.domain.User;
+import com.groovith.groovith.domain.enums.MessageType;
 import lombok.Data;
 
 import java.time.LocalDateTime;

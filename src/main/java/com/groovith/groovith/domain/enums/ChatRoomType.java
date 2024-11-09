@@ -1,4 +1,4 @@
-package com.groovith.groovith.domain;
+package com.groovith.groovith.domain.enums;
 
 /**
  *  채팅창 타입 :

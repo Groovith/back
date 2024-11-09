@@ -1,6 +1,6 @@
 package com.groovith.groovith.dto;
 
-import com.groovith.groovith.domain.StreamingType;
+import com.groovith.groovith.domain.enums.StreamingType;
 import com.groovith.groovith.domain.User;
 import lombok.Data;
 

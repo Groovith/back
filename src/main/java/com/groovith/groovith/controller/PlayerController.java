@@ -25,8 +25,6 @@ import java.util.Objects;
 @AllArgsConstructor
 public class PlayerController {
     private final PlayerService playerService;
-    private final YoutubeService youtubeService;
-    private final TrackService trackService;
 
     @PatchMapping("/join")
     public ResponseEntity<PlayerDetailsDto> joinPlayer(@PathVariable Long chatRoomId, @AuthenticationPrincipal CustomUserDetails userDetails) {
