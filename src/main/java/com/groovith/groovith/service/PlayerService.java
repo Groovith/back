@@ -12,6 +12,8 @@ import com.groovith.groovith.repository.CurrentPlaylistRepository;
 import com.groovith.groovith.repository.CurrentPlaylistTrackRepository;
 import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class PlayerService {
     private final SimpMessageSendingOperations template;
     private final WebSocketEventListener webSocketEventListener;
@@ -37,6 +40,7 @@ public class PlayerService {
     private final YoutubeService youtubeService;
     private final TrackService trackService;
     private final PlaylistService playlistService;
+    private final StringRedisTemplate redisTemplate;
     private static final int MAX_PLAYLIST_ITEMS = 100;
 
     public static final ConcurrentHashMap<Long, PlayerSession> playerSessions = new ConcurrentHashMap<>(); // 채팅방 플레이어 정보 (chatRoomId, PlayerSessionDto)
@@ -112,7 +116,7 @@ public class PlayerService {
             PlayerSession newSession = new PlayerSession();
             // 현재 플레이리스트에 곡이 있다면 처음 곡으로 설정한다. 없다면 그대로 둔다.
             if (currentPlaylist.getCurrentPlaylistTracks().isEmpty()) {
-            // 세션 생성시에 반복재생 설정
+                // 세션 생성시에 반복재생 설정
                 newSession.setPaused(true);
                 newSession.setRepeat(true);
                 newSession.setIndex(0);
@@ -199,12 +203,12 @@ public class PlayerService {
     }
 
     @Transactional
-    public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto,Long userId) throws IOException {
+    public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto, Long userId) throws IOException {
         // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
         ChatRoomPermission permission = getChatRoomPermission(chatRoomId);
         boolean isMasterUser = isMasterUser(chatRoomId, userId);
         // masterUser 만 플레이어 조작 가능 or 권한이 모두 인 경우
-        if((permission.equals(ChatRoomPermission.MASTER) && isMasterUser)
+        if ((permission.equals(ChatRoomPermission.MASTER) && isMasterUser)
                 || permission.equals(ChatRoomPermission.EVERYONE)) {
             // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
             handleActionAndSendMessages(playerRequestDto.getAction(), chatRoomId, playerRequestDto);
@@ -212,12 +216,12 @@ public class PlayerService {
     }
 
     private ChatRoomPermission getChatRoomPermission(Long chatRoomId) {
-        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
         return chatRoom.getPermission();
     }
 
     private boolean isMasterUser(Long chatRoomId, Long userId) {
-        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
         return chatRoom.getMasterUserId().equals(userId);
     }
 
@@ -280,31 +284,41 @@ public class PlayerService {
 
     @Transactional(readOnly = true)
     public void nextTrack(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId) {
-        PlayerCommandDto playerCommandDto;
+        String lockKey = "nextTrackLock:" + chatRoomId;
+        Boolean lockAcquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(5));
 
-        int nextIndex = playerSession.getIndex() + 1;
-        if (nextIndex < trackDtoList.size()) {
-            // 다음 곡이 있는 경우
-            PlayerSession.changeTrack(playerSession, nextIndex, trackDtoList.get(nextIndex).getDuration());
-            playerCommandDto = PlayerCommandDto.playTrackAtIndex(nextIndex, trackDtoList.get(nextIndex).getVideoId());
-        } else {
-            // 다음 곡이 없는 경우
-            if (playerSession.getRepeat()) {
-                // 반복 재생이 설정되어 있는 경우
-                PlayerSession.returnToStart(playerSession, trackDtoList.get(0).getDuration());
-                playerCommandDto = PlayerCommandDto.playTrackAtIndex(0, trackDtoList.get(0).getVideoId());
-            } else {
-                // 반복 재생이 설정되어 있지 않은 경우 -> 딱히 뭐 하지 않음
-                playerCommandDto = PlayerCommandDto.builder()
-                        .build();
+        if (Boolean.TRUE.equals(lockAcquired)) {
+            try {
+                PlayerCommandDto playerCommandDto;
+
+                int nextIndex = playerSession.getIndex() + 1;
+                if (nextIndex < trackDtoList.size()) {
+                    // 다음 곡이 있는 경우
+                    log.info("Play Next Track: {}", nextIndex);
+                    PlayerSession.changeTrack(playerSession, nextIndex, trackDtoList.get(nextIndex).getDuration());
+                    playerCommandDto = PlayerCommandDto.playTrackAtIndex(nextIndex, trackDtoList.get(nextIndex).getVideoId());
+                } else {
+                    // 다음 곡이 없는 경우
+                    if (playerSession.getRepeat()) {
+                        // 반복 재생이 설정되어 있는 경우
+                        PlayerSession.returnToStart(playerSession, trackDtoList.get(0).getDuration());
+                        playerCommandDto = PlayerCommandDto.playTrackAtIndex(0, trackDtoList.get(0).getVideoId());
+                    } else {
+                        // 반복 재생이 설정되어 있지 않은 경우 -> 딱히 뭐 하지 않음
+                        playerCommandDto = PlayerCommandDto.builder()
+                                .build();
+                    }
+                }
+
+                playerSessions.put(chatRoomId, playerSession);
+                PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
+
+                // 채팅방 정보 전송
+                sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
-
-        playerSessions.put(chatRoomId, playerSession);
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
-
-        // 채팅방 정보 전송
-        sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
 
     @Transactional(readOnly = true)
@@ -363,7 +377,7 @@ public class PlayerService {
     public void addToCurrentPlaylist(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, TrackDto trackDto) {
         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
         // 플레이리스트가 다 찼을 경우(100곡)
-        if(trackDtoList.size() >= MAX_PLAYLIST_ITEMS){
+        if (trackDtoList.size() >= MAX_PLAYLIST_ITEMS) {
             throw new CurrentPlayListFullException(currentPlaylist.getId());
         }
 
@@ -409,27 +423,27 @@ public class PlayerService {
         return playerSession;
     }
 
-    @Scheduled(fixedRate = 1000)  // 1초마다 실행
-    public void updatePosition() {
-        for (Map.Entry<Long, PlayerSession> entry : playerSessions.entrySet()) {
-            Long chatRoomId = entry.getKey();
-            PlayerSession playerSession = entry.getValue();
-
-            if (!playerSession.getPaused()) {
-                long elapsedSeconds = Duration.between(playerSession.getStartedAt(), LocalDateTime.now()).toSeconds();
-                long currentPosition = playerSession.getLastPosition() + elapsedSeconds;
-
-                if (currentPosition >= playerSession.getDuration()) {
-                    // 곡의 duration 을 초과한 경우 다음 트랙으로 이동
-                    nextTrack(playerSession, getTrackDtoList(chatRoomId), chatRoomId);
-                } else {
-                    // 아직 duration 을 초과하지 않았다면 position 업데이트
-                    playerSession.setLastPosition(currentPosition);
-                    playerSession.setStartedAt(LocalDateTime.now());
-                }
-            }
-        }
-    }
+//    @Scheduled(fixedRate = 1000)  // 1초마다 실행
+//    public void updatePosition() {
+//        for (Map.Entry<Long, PlayerSession> entry : playerSessions.entrySet()) {
+//            Long chatRoomId = entry.getKey();
+//            PlayerSession playerSession = entry.getValue();
+//
+//            if (!playerSession.getPaused()) {
+//                long elapsedSeconds = Duration.between(playerSession.getStartedAt(), LocalDateTime.now()).toSeconds();
+//                long currentPosition = playerSession.getLastPosition() + elapsedSeconds;
+//
+//                if (currentPosition >= playerSession.getDuration()) {
+//                    // 곡의 duration 을 초과한 경우 다음 트랙으로 이동
+//                    nextTrack(playerSession, getTrackDtoList(chatRoomId), chatRoomId);
+//                } else {
+//                    // 아직 duration 을 초과하지 않았다면 position 업데이트
+//                    playerSession.setLastPosition(currentPosition);
+//                    playerSession.setStartedAt(LocalDateTime.now());
+//                }
+//            }
+//        }
+//    }
 
     @Transactional
     public List<TrackDto> getTrackDtoList(Long chatRoomId) {

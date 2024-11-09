@@ -4,6 +4,7 @@ import com.groovith.groovith.domain.PlayerSession;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
+@Slf4j
 public class PlayerDetailsDto {
     private Long id;
     private Long chatRoomId;
@@ -43,7 +45,8 @@ public class PlayerDetailsDto {
         // 실행 중인 경우 현재 position 계산
         if (paused != null && !paused) {
             if (startedAt != null) {
-                this.position = lastPosition + Duration.between(startedAt, LocalDateTime.now()).toSeconds();
+                long durationSeconds = Duration.between(startedAt, LocalDateTime.now()).toSeconds();
+                this.position = lastPosition + durationSeconds;
             }
         }
     }
