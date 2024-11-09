@@ -4,14 +4,12 @@ import com.groovith.groovith.config.WebSocketEventListener;
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.ChatRoomPermission;
 import com.groovith.groovith.domain.enums.PlayerActionRequestType;
-import com.groovith.groovith.domain.enums.PlayerActionResponseType;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.CurrentPlayListFullException;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
 import com.groovith.groovith.repository.CurrentPlaylistTrackRepository;
-import com.groovith.groovith.repository.TrackRepository;
 import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
@@ -22,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +36,7 @@ public class PlayerService {
     private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
     private final YoutubeService youtubeService;
     private final TrackService trackService;
+    private final PlaylistService playlistService;
     private static final int MAX_PLAYLIST_ITEMS = 100;
 
     public static final ConcurrentHashMap<Long, PlayerSession> playerSessions = new ConcurrentHashMap<>(); // 채팅방 플레이어 정보 (chatRoomId, PlayerSessionDto)
@@ -242,7 +240,7 @@ public class PlayerService {
             }
             case REMOVE_FROM_CURRENT_PLAYLIST -> {
                 if (playerRequestDto.getIndex() != null) {
-                    removeFromCurrentPlaylist(playerSession, trackDtoList, chatRoomId, playerRequestDto.getIndex());
+                    removeFromCurrentPlaylist(playerSession, chatRoomId, playerRequestDto.getIndex());
                 }
             }
             default -> throw new ValidationException("Invalid action type.");
@@ -383,16 +381,10 @@ public class PlayerService {
     }
 
     @Transactional
-    public void removeFromCurrentPlaylist(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, int index) {
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
-
-        // 인덱스 범위 확인
-        if (index < 0 || index >= trackDtoList.size()) throw new RuntimeException("Requested index: " + index + " is out of range: " + (trackDtoList.size() - 1));
-
+    public void removeFromCurrentPlaylist(PlayerSession playerSession, Long chatRoomId, int index) {
         // 플레이리스트에서 해당 인덱스의 트랙 삭제
-        CurrentPlaylistTrack currentPlaylistTrack = currentPlaylist.getCurrentPlaylistTracks().get(index);
-        currentPlaylistTrackRepository.delete(currentPlaylistTrack);
-        trackDtoList = getTrackDtoList(chatRoomId);
+        playlistService.deleteTrackByIndex(chatRoomId, index);
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
 
         PlayerSession.removeTrack(playerSession, index);
         playerSessions.put(chatRoomId, playerSession);
