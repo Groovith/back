@@ -1,8 +1,10 @@
 package com.groovith.groovith.service;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.groovith.groovith.controller.UserController;
 import com.groovith.groovith.domain.*;
+import com.groovith.groovith.domain.enums.MessageType;
+import com.groovith.groovith.domain.enums.StreamingType;
+import com.groovith.groovith.domain.enums.UserChatRoomStatus;
+import com.groovith.groovith.domain.enums.UserStatus;
 import com.groovith.groovith.dto.MessageDetailsResponseDto;
 import com.groovith.groovith.dto.MessageDto;
 import com.groovith.groovith.dto.MessageListResponseDto;
@@ -17,18 +19,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)

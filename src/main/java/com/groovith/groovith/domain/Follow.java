@@ -1,5 +1,6 @@
 package com.groovith.groovith.domain;
 
+import com.groovith.groovith.domain.enums.FollowStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -2,6 +2,8 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.config.WebSocketEventListener;
 import com.groovith.groovith.domain.*;
+import com.groovith.groovith.domain.enums.ChatRoomPermission;
+import com.groovith.groovith.domain.enums.PlayerActionResponseType;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import com.groovith.groovith.exception.CurrentPlayListFullException;
@@ -9,6 +11,7 @@ import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
 import com.groovith.groovith.repository.CurrentPlaylistTrackRepository;
 import com.groovith.groovith.repository.TrackRepository;
+import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -201,10 +204,8 @@ public class PlayerService {
     @Transactional
     public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto,Long userId) throws IOException {
         // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
-        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
-        ChatRoomPermission permission = chatRoom.getPermission();
-        boolean isMasterUser = chatRoom.getMasterUserId().equals(userId);
+        ChatRoomPermission permission = getChatRoomPermission(chatRoomId);
+        boolean isMasterUser = isMasterUser(chatRoomId, userId);
         // masterUser 만 플레이어 조작 가능 or 권한이 모두 인 경우
         if((permission.equals(ChatRoomPermission.MASTER) && isMasterUser)
                 || permission.equals(ChatRoomPermission.EVERYONE)) {
@@ -228,8 +229,20 @@ public class PlayerService {
                         removeFromCurrentPlaylist(chatRoomId, playerRequestDto.getIndex());
                     }
                 }
+                default -> throw new ValidationException("Invalid action type.");
             }
         }
+    }
+
+    private ChatRoomPermission getChatRoomPermission(Long chatRoomId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+        ChatRoomPermission permission = chatRoom.getPermission();
+        return permission;
+    }
+
+    private boolean isMasterUser(Long chatRoomId, Long userId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+        return chatRoom.getMasterUserId().equals(userId);
     }
 
     @Transactional(readOnly = true)

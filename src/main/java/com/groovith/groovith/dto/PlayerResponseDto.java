@@ -1,6 +1,6 @@
 package com.groovith.groovith.dto;
 
-import com.groovith.groovith.domain.PlayerActionResponseType;
+import com.groovith.groovith.domain.enums.PlayerActionResponseType;
 import lombok.Builder;
 import lombok.Data;
 

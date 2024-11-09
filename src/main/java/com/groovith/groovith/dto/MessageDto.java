@@ -1,15 +1,8 @@
 package com.groovith.groovith.dto;
 
-import com.groovith.groovith.domain.UserChatRoom;
-import com.groovith.groovith.domain.CommandType;
-import com.groovith.groovith.domain.Message;
-import com.groovith.groovith.domain.MessageType;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import lombok.AccessLevel;
+import com.groovith.groovith.domain.enums.CommandType;
+import com.groovith.groovith.domain.enums.MessageType;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 메세지 저장에 사용될 dto

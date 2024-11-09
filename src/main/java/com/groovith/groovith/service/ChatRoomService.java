@@ -1,6 +1,8 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.*;
+import com.groovith.groovith.domain.enums.ChatRoomMemberStatus;
+import com.groovith.groovith.domain.enums.UserChatRoomStatus;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;

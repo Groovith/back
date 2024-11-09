@@ -1,5 +1,7 @@
 package com.groovith.groovith.domain;
 
+import com.groovith.groovith.domain.enums.ChatRoomPermission;
+import com.groovith.groovith.domain.enums.ChatRoomStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
