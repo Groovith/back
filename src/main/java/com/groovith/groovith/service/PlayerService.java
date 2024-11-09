@@ -259,6 +259,10 @@ public class PlayerService {
         PlayerCommandDto playerCommandDto = PlayerCommandDto.pause(playerRequestDto.getPosition());
 
 
+        sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
+    }
+
+    private void sendMessages(Long chatRoomId, PlayerDetailsDto playerDetailsDto, PlayerCommandDto playerCommandDto) {
         // 채팅방 정보 전송
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
         // 같이 듣기 액션 전송
@@ -303,9 +307,7 @@ public class PlayerService {
 
 
         // 채팅방 정보 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
-        // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
+        sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
 
     @Transactional(readOnly = true)
@@ -337,9 +339,7 @@ public class PlayerService {
 
 
         // 채팅방 정보 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
-        // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
+        sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
 
     @Transactional(readOnly = true)
@@ -401,9 +401,7 @@ public class PlayerService {
                 .build();
 
         // 채팅방 정보 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
-        // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
+        sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
 
     @Transactional(readOnly = true)
@@ -466,9 +464,7 @@ public class PlayerService {
                 .build();
 
         // 채팅방 정보 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
-        // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
+        sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
 
     @Transactional
@@ -512,9 +508,7 @@ public class PlayerService {
                 .build();
 
         // 채팅방 정보 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
-        // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
+        sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
 
     @Transactional
@@ -555,14 +549,11 @@ public class PlayerService {
                 .build();
 
         // 플레이리스트 업데이트 알림 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
-        // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together",
-                PlayerCommandDto.builder()
-                        .action(PlayerActionResponseType.UPDATE)
-                        .videoList(trackDtoList)
-                        .index(playerSession.getIndex())
-                        .build());
+        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.builder()
+                .action(PlayerActionResponseType.UPDATE)
+                .videoList(trackDtoList)
+                .index(playerSession.getIndex())
+                .build());
     }
 
     @Transactional
@@ -606,14 +597,11 @@ public class PlayerService {
                 .build();
 
         // 플레이리스트 업데이트 알림 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
-        // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together",
-                PlayerCommandDto.builder()
-                        .action(PlayerActionResponseType.UPDATE)
-                        .videoList(trackDtoList)
-                        .index(playerSession.getIndex())
-                        .build());
+        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.builder()
+                .action(PlayerActionResponseType.UPDATE)
+                .videoList(trackDtoList)
+                .index(playerSession.getIndex())
+                .build());
     }
 
     @Scheduled(fixedRate = 1000)  // 1초마다 실행
