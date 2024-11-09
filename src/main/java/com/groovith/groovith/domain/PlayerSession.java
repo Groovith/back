@@ -14,4 +14,10 @@ public class PlayerSession {
     private LocalDateTime startedAt;
     private AtomicInteger userCount;
     private Long duration;
+
+    public static PlayerSession pause(PlayerSession playerSession, Long position) {
+        playerSession.setPaused(true);
+        playerSession.setLastPosition(position);
+        return playerSession;
+    }
 }

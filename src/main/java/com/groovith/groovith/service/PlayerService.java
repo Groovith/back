@@ -236,8 +236,7 @@ public class PlayerService {
 
     private ChatRoomPermission getChatRoomPermission(Long chatRoomId) {
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
-        ChatRoomPermission permission = chatRoom.getPermission();
-        return permission;
+        return chatRoom.getPermission();
     }
 
     private boolean isMasterUser(Long chatRoomId, Long userId) {
@@ -251,13 +250,10 @@ public class PlayerService {
         PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
 
-        playerSession.setPaused(true);
-        playerSession.setLastPosition(playerRequestDto.getPosition());
-        playerSessions.put(chatRoomId, playerSession);
+        playerSessions.put(chatRoomId, PlayerSession.pause(playerSession, playerRequestDto.getPosition()));
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.pause(chatRoomId, trackDtoList, playerSession);
         PlayerCommandDto playerCommandDto = PlayerCommandDto.pause(playerRequestDto.getPosition());
-
 
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
@@ -278,9 +274,7 @@ public class PlayerService {
     @Transactional(readOnly = true)
     public void resume(Long chatRoomId, PlayerRequestDto playerRequestDto) {
         // 정지, 위치 또한 조정
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
-        if (playerSession == null) return;
-
+        PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
 
         playerSession.setPaused(false);
@@ -288,16 +282,7 @@ public class PlayerService {
         playerSession.setStartedAt(LocalDateTime.now());
         playerSessions.put(chatRoomId, playerSession);
 
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                .chatRoomId(chatRoomId)
-                .currentPlaylist(trackDtoList)
-                .currentPlaylistIndex(playerSession.getIndex())
-                .userCount(playerSession.getUserCount().get())
-                .lastPosition(playerSession.getLastPosition())
-                .startedAt(playerSession.getStartedAt())
-                .paused(playerSession.getPaused())
-                .repeat(playerSession.getRepeat())
-                .build();
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.resume(chatRoomId, trackDtoList, playerSession);
 
         PlayerCommandDto playerCommandDto = PlayerCommandDto.builder()
                 .action(PlayerActionResponseType.RESUME)
