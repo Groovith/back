@@ -243,7 +243,7 @@ public class PlayerService {
             }
             case REMOVE_FROM_CURRENT_PLAYLIST -> {
                 if (playerRequestDto.getIndex() != null) {
-                    removeFromCurrentPlaylist(chatRoomId, playerRequestDto.getIndex());
+                    removeFromCurrentPlaylist(playerSession, trackDtoList, chatRoomId, playerRequestDto.getIndex());
                 }
             }
             default -> throw new ValidationException("Invalid action type.");
@@ -345,7 +345,7 @@ public class PlayerService {
         // 인덱스 범위 확인
         Integer requestedIndex = playerRequestDto.getIndex();
         if (requestedIndex == null || requestedIndex < 0 || requestedIndex >= trackDtoList.size()) {
-            return;
+            throw new RuntimeException("Requested index: " + requestedIndex + " is out of range: " + (trackDtoList.size() - 1));
         }
 
         // 플레이어 세션 수정
@@ -374,57 +374,35 @@ public class PlayerService {
         Track track = new Track(trackDto);
         CurrentPlaylistTrack currentPlaylistTrack = CurrentPlaylistTrack.setPlaylistTrack(currentPlaylist, track);
         currentPlaylistTrackRepository.save(currentPlaylistTrack);
-        trackDtoList.add(trackDto);
+        trackDtoList = getTrackDtoList(chatRoomId);
 
         // 채팅방 정보 갱신
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
 
         // 플레이리스트 업데이트 알림 전송
-        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList));
+        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList, playerSession.getIndex()));
     }
 
     @Transactional
-    public void removeFromCurrentPlaylist(Long chatRoomId, int index) {
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
+    public void removeFromCurrentPlaylist(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, int index) {
         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
-        List<TrackDto> trackDtoList = new ArrayList<>(currentPlaylist.getCurrentPlaylistTracks().stream()
-                .map(c -> new TrackDto(c.getTrack()))
-                .toList());
-        if (playerSession == null) return;
 
         // 인덱스 범위 확인
-//        List<TrackDto> tracks = currentPlaylist.getTrackList();
-        if (index < 0 || index >= trackDtoList.size()) return;
+        if (index < 0 || index >= trackDtoList.size()) throw new RuntimeException("Requested index: " + index + " is out of range: " + (trackDtoList.size() - 1));
 
         // 플레이리스트에서 해당 인덱스의 트랙 삭제
+        CurrentPlaylistTrack currentPlaylistTrack = currentPlaylist.getCurrentPlaylistTracks().get(index);
+        currentPlaylistTrackRepository.delete(currentPlaylistTrack);
+        trackDtoList = getTrackDtoList(chatRoomId);
 
-        currentPlaylist.getCurrentPlaylistTracks().remove(index);
-        currentPlaylistRepository.save(currentPlaylist);
-        trackDtoList.remove(index);
-//        trackDtoList.remove(index);
-//        currentPlaylist.setTrackList(tracks);
-//        currentPlaylistRepository.save(currentPlaylist);
-
-        // 만약 현재 재생 중인 트랙이 삭제된 트랙보다 뒤에 있다면 인덱스를 조정
-        if (playerSession.getIndex() >= index) {
-            playerSession.setIndex(Math.max(0, playerSession.getIndex() - 1));
-        }
+        PlayerSession.removeTrack(playerSession, index);
         playerSessions.put(chatRoomId, playerSession);
 
         // 채팅방 정보 갱신
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                .chatRoomId(chatRoomId)
-                .currentPlaylist(trackDtoList)
-                .currentPlaylistIndex(playerSession.getIndex())
-                .userCount(playerSession.getUserCount().get())
-                .lastPosition(playerSession.getLastPosition())
-                .startedAt(playerSession.getStartedAt())
-                .paused(playerSession.getPaused())
-                .repeat(playerSession.getRepeat())
-                .build();
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
 
         // 플레이리스트 업데이트 알림 전송
-        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList));
+        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList, playerSession.getIndex()));
     }
 
     private void sendMessages(Long chatRoomId, PlayerDetailsDto playerDetailsDto, PlayerCommandDto playerCommandDto) {

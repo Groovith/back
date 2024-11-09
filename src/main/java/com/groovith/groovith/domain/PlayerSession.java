@@ -49,4 +49,11 @@ public class PlayerSession {
         playerSession.setStartedAt(LocalDateTime.now());
         playerSession.setDuration(duration);
     }
+
+    public static void removeTrack(PlayerSession playerSession, int index) {
+        // 만약 현재 재생 중인 트랙이 삭제된 트랙보다 뒤에 있다면 인덱스를 조정
+        if (playerSession.getIndex() >= index) {
+            playerSession.setIndex(Math.max(0, playerSession.getIndex() - 1));
+        }
+    }
 }

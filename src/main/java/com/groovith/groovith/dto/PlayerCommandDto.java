@@ -57,10 +57,11 @@ public class PlayerCommandDto {
                 .build();
     }
 
-    public static PlayerCommandDto updatePlaylist(List<TrackDto> trackDtoList) {
+    public static PlayerCommandDto updatePlaylist(List<TrackDto> trackDtoList, int index) {
         return PlayerCommandDto.builder()
                 .action(PlayerActionResponseType.UPDATE)
                 .tracks(trackDtoList)
+                .index(index)
                 .build();
     }
 }
