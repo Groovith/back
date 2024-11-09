@@ -238,7 +238,7 @@ public class PlayerService {
                 if (playerRequestDto.getVideoId() != null) {
                     TrackDto trackDto = youtubeService.getVideo(playerRequestDto.getVideoId());
                     trackService.save(trackDto);
-                    addToCurrentPlaylist(chatRoomId, trackDto);
+                    addToCurrentPlaylist(playerSession, trackDtoList, chatRoomId, trackDto);
                 }
             }
             case REMOVE_FROM_CURRENT_PLAYLIST -> {
@@ -363,48 +363,24 @@ public class PlayerService {
     }
 
     @Transactional
-    public void addToCurrentPlaylist(Long chatRoomId, TrackDto trackDto) {
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
+    public void addToCurrentPlaylist(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, TrackDto trackDto) {
         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
-        List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
-                .map(c -> new TrackDto(c.getTrack()))
-                .toList();
-
-        if (playerSession == null) return;
-
-
         // 플레이리스트가 다 찼을 경우(100곡)
         if(trackDtoList.size() >= MAX_PLAYLIST_ITEMS){
             throw new CurrentPlayListFullException(currentPlaylist.getId());
         }
 
         // 플레이리스트에 새로운 트랙 추가(새 연관관계 생성)
-//        List<TrackDto> updatedTracks = new ArrayList<>(trackDtoList);
         Track track = new Track(trackDto);
         CurrentPlaylistTrack currentPlaylistTrack = CurrentPlaylistTrack.setPlaylistTrack(currentPlaylist, track);
         currentPlaylistTrackRepository.save(currentPlaylistTrack);
-//        updatedTracks.add(trackDto);
-//        currentPlaylist.setTrackList(updatedTracks);
-//        currentPlaylistRepository.save(currentPlaylist);
+        trackDtoList.add(trackDto);
 
         // 채팅방 정보 갱신
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                .chatRoomId(chatRoomId)
-                .currentPlaylist(trackDtoList)
-                .currentPlaylistIndex(playerSession.getIndex())
-                .userCount(playerSession.getUserCount().get())
-                .lastPosition(playerSession.getLastPosition())
-                .startedAt(playerSession.getStartedAt())
-                .paused(playerSession.getPaused())
-                .repeat(playerSession.getRepeat())
-                .build();
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
 
         // 플레이리스트 업데이트 알림 전송
-        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.builder()
-                .action(PlayerActionResponseType.UPDATE)
-                .videoList(trackDtoList)
-                .index(playerSession.getIndex())
-                .build());
+        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList));
     }
 
     @Transactional
@@ -448,11 +424,7 @@ public class PlayerService {
                 .build();
 
         // 플레이리스트 업데이트 알림 전송
-        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.builder()
-                .action(PlayerActionResponseType.UPDATE)
-                .videoList(trackDtoList)
-                .index(playerSession.getIndex())
-                .build());
+        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList));
     }
 
     private void sendMessages(Long chatRoomId, PlayerDetailsDto playerDetailsDto, PlayerCommandDto playerCommandDto) {

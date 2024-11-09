@@ -11,7 +11,7 @@ public class PlayerCommandDto {
     private PlayerActionResponseType action;
     private String videoId;
     private Long position;
-    private List<TrackDto> videoList;
+    private List<TrackDto> tracks;
     private Integer index;
 
     @Builder
@@ -19,12 +19,12 @@ public class PlayerCommandDto {
             PlayerActionResponseType action,
             String videoId,
             Long position,
-            List<TrackDto> videoList,
+            List<TrackDto> tracks,
             Integer index) {
         this.action = action;
         this.videoId = videoId;
         this.position = position;
-        this.videoList = videoList;
+        this.tracks = tracks;
         this.index = index;
     }
 
@@ -54,6 +54,13 @@ public class PlayerCommandDto {
                 .action(PlayerActionResponseType.PLAY_TRACK)
                 .videoId(videoId)
                 .index(index)
+                .build();
+    }
+
+    public static PlayerCommandDto updatePlaylist(List<TrackDto> trackDtoList) {
+        return PlayerCommandDto.builder()
+                .action(PlayerActionResponseType.UPDATE)
+                .tracks(trackDtoList)
                 .build();
     }
 }
