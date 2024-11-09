@@ -27,4 +27,12 @@ public class PlayerResponseDto {
         this.videoList = videoList;
         this.index = index;
     }
+
+    public static PlayerResponseDto pause(Long position) {
+        return PlayerResponseDto.builder()
+                .action(PlayerActionResponseType.PAUSE)
+                .videoId(null)
+                .position(position)
+                .build();
+    }
 }

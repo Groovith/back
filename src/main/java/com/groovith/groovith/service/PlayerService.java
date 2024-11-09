@@ -256,12 +256,7 @@ public class PlayerService {
         playerSessions.put(chatRoomId, playerSession);
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.pause(chatRoomId, trackDtoList, playerSession);
-
-        PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
-                .action(PlayerActionResponseType.PAUSE)
-                .videoId(null)
-                .position(playerRequestDto.getPosition())
-                .build();
+        PlayerResponseDto playerResponseDto = PlayerResponseDto.pause(playerRequestDto.getPosition());
 
 
         // 채팅방 정보 전송
