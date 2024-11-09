@@ -231,7 +231,7 @@ public class PlayerService {
             case RESUME -> resume(playerSession, trackDtoList, chatRoomId, playerRequestDto);
             case SEEK -> seek(playerSession, trackDtoList, chatRoomId, playerRequestDto);
             case NEXT_TRACK -> nextTrack(playerSession, trackDtoList, chatRoomId);
-            case PREVIOUS_TRACK -> previousTrack(chatRoomId);
+            case PREVIOUS_TRACK -> previousTrack(playerSession, trackDtoList, chatRoomId);
             case PLAY_AT_INDEX -> playAtIndex(chatRoomId, playerRequestDto);
             case ADD_TO_CURRENT_PLAYLIST -> {
                 if (playerRequestDto.getVideoId() != null) {
@@ -287,7 +287,7 @@ public class PlayerService {
         int nextIndex = playerSession.getIndex() + 1;
         if (nextIndex < trackDtoList.size()) {
             // 다음 곡이 있는 경우
-            PlayerSession.nextTrack(playerSession, nextIndex, trackDtoList.get(nextIndex).getDuration());
+            PlayerSession.changeTrack(playerSession, nextIndex, trackDtoList.get(nextIndex).getDuration());
             playerCommandDto = PlayerCommandDto.playTrackAtIndex(nextIndex, trackDtoList.get(nextIndex).getVideoId());
         } else {
             // 다음 곡이 없는 경우
@@ -310,44 +310,21 @@ public class PlayerService {
     }
 
     @Transactional(readOnly = true)
-    public void previousTrack(Long chatRoomId) {
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
-        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
-        if (playerSession == null) return;
-
+    public void previousTrack(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId) {
         PlayerCommandDto playerCommandDto;
 
         int prevIndex = playerSession.getIndex() - 1;
         if (prevIndex >= 0) {
             // 이전 곡이 있는 경우
-            playerSession.setIndex(prevIndex);
-            playerSession.setLastPosition(0L);
-            playerSession.setPaused(false);
-            playerSession.setStartedAt(LocalDateTime.now());
-            playerSession.setDuration(trackDtoList.get(prevIndex).getDuration());
-
-            playerCommandDto = PlayerCommandDto.builder()
-                    .action(PlayerActionResponseType.PLAY_TRACK)
-                    .videoId(trackDtoList.get(prevIndex).getVideoId())
-                    .index(prevIndex)
-                    .build();
-
+            PlayerSession.changeTrack(playerSession, prevIndex, trackDtoList.get(prevIndex).getDuration());
+            playerCommandDto = PlayerCommandDto.playTrackAtIndex(prevIndex, trackDtoList.get(prevIndex).getVideoId());
         } else {
             // 이전 곡이 없는 경우
             if (playerSession.getRepeat()) {
                 // 반복 재생이 설정되어 있는 경우
                 int lastIndex = trackDtoList.size() - 1;
-                playerSession.setIndex(lastIndex);
-                playerSession.setLastPosition(0L);
-                playerSession.setPaused(false);
-                playerSession.setStartedAt(LocalDateTime.now());
-                playerSession.setDuration(trackDtoList.get(lastIndex).getDuration());
-
-                playerCommandDto = PlayerCommandDto.builder()
-                        .action(PlayerActionResponseType.PLAY_TRACK)
-                        .videoId(trackDtoList.get(lastIndex).getVideoId())
-                        .index(lastIndex)
-                        .build();
+                PlayerSession.changeTrack(playerSession, lastIndex, trackDtoList.get(lastIndex).getDuration());
+                playerCommandDto = PlayerCommandDto.playTrackAtIndex(lastIndex, trackDtoList.get(lastIndex).getVideoId());
             } else {
                 // 반복 재생이 설정되어 있지 않은 경우 -> 딱히 뭐 하지 않음
                 playerCommandDto = PlayerCommandDto.builder()
@@ -356,17 +333,7 @@ public class PlayerService {
         }
 
         playerSessions.put(chatRoomId, playerSession);
-
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                .chatRoomId(chatRoomId)
-                .currentPlaylist(trackDtoList)
-                .currentPlaylistIndex(playerSession.getIndex())
-                .userCount(playerSession.getUserCount().get())
-                .lastPosition(playerSession.getLastPosition())
-                .startedAt(playerSession.getStartedAt())
-                .paused(playerSession.getPaused())
-                .repeat(playerSession.getRepeat())
-                .build();
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
 
         // 채팅방 정보 전송
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
@@ -534,7 +501,7 @@ public class PlayerService {
 
                 if (currentPosition >= playerSession.getDuration()) {
                     // 곡의 duration 을 초과한 경우 다음 트랙으로 이동
-                    nextTrack(chatRoomId);
+                    nextTrack(playerSession, getTrackDtoList(chatRoomId), chatRoomId);
                 } else {
                     // 아직 duration 을 초과하지 않았다면 position 업데이트
                     playerSession.setLastPosition(currentPosition);

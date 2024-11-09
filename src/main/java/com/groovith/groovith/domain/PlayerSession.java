@@ -34,7 +34,7 @@ public class PlayerSession {
         return playerSession;
     }
 
-    public static void nextTrack(PlayerSession playerSession, int nextIndex, Long duration) {
+    public static void changeTrack(PlayerSession playerSession, int nextIndex, Long duration) {
         playerSession.setIndex(nextIndex);
         playerSession.setLastPosition(0L);
         playerSession.setPaused(false);

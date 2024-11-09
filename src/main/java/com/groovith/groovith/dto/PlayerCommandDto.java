@@ -49,11 +49,11 @@ public class PlayerCommandDto {
                 .build();
     }
 
-    public static PlayerCommandDto playTrackAtIndex(int nextIndex, String videoId) {
+    public static PlayerCommandDto playTrackAtIndex(int index, String videoId) {
         return PlayerCommandDto.builder()
                 .action(PlayerActionResponseType.PLAY_TRACK)
                 .videoId(videoId)
-                .index(nextIndex)
+                .index(index)
                 .build();
     }
 }
