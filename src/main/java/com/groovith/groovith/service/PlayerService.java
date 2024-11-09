@@ -36,7 +36,6 @@ public class PlayerService {
     private final WebSocketEventListener webSocketEventListener;
     private final CurrentPlaylistRepository currentPlaylistRepository;
     private final ChatRoomRepository chatRoomRepository;
-    private final TrackRepository trackRepository;
     private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
     private final YoutubeService youtubeService;
     private final TrackService trackService;
