@@ -48,20 +48,7 @@ public class PlayerDetailsDto {
         }
     }
 
-    public static PlayerDetailsDto pause(Long chatRoomId, List<TrackDto> trackDtoList, PlayerSession playerSession) {
-        return PlayerDetailsDto.builder()
-                .chatRoomId(chatRoomId)
-                .currentPlaylist(trackDtoList)
-                .currentPlaylistIndex(playerSession.getIndex())
-                .userCount(playerSession.getUserCount().get())
-                .lastPosition(playerSession.getLastPosition())
-                .startedAt(playerSession.getStartedAt())
-                .paused(playerSession.getPaused())
-                .repeat(playerSession.getRepeat())
-                .build();
-    }
-
-    public static PlayerDetailsDto resume(Long chatRoomId, List<TrackDto> trackDtoList, PlayerSession playerSession) {
+    public static PlayerDetailsDto toPlayerDetailsDto(Long chatRoomId, PlayerSession playerSession, List<TrackDto> trackDtoList) {
         return PlayerDetailsDto.builder()
                 .chatRoomId(chatRoomId)
                 .currentPlaylist(trackDtoList)

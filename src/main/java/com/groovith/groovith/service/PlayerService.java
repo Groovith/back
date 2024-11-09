@@ -229,8 +229,8 @@ public class PlayerService {
         switch (action) {
             case PAUSE -> pause(playerSession, trackDtoList, chatRoomId, playerRequestDto);
             case RESUME -> resume(playerSession, trackDtoList, chatRoomId, playerRequestDto);
-            case SEEK -> seek(chatRoomId, playerRequestDto);
-            case NEXT_TRACK -> nextTrack(chatRoomId);
+            case SEEK -> seek(playerSession, trackDtoList, chatRoomId, playerRequestDto);
+            case NEXT_TRACK -> nextTrack(playerSession, trackDtoList, chatRoomId);
             case PREVIOUS_TRACK -> previousTrack(chatRoomId);
             case PLAY_AT_INDEX -> playAtIndex(chatRoomId, playerRequestDto);
             case ADD_TO_CURRENT_PLAYLIST -> {
@@ -251,10 +251,9 @@ public class PlayerService {
 
     @Transactional(readOnly = true)
     public void pause(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        // 정지, 위치 또한 조정
         playerSessions.put(chatRoomId, PlayerSession.pause(playerSession, playerRequestDto.getPosition()));
 
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.pause(chatRoomId, trackDtoList, playerSession);
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
         PlayerCommandDto playerCommandDto = PlayerCommandDto.pause(playerRequestDto.getPosition());
 
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
@@ -262,86 +261,40 @@ public class PlayerService {
 
     @Transactional(readOnly = true)
     public void resume(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        // 정지, 위치 또한 조정
         playerSessions.put(chatRoomId, PlayerSession.resume(playerSession, playerRequestDto.getPosition()));
 
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.resume(chatRoomId, trackDtoList, playerSession);
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
         PlayerCommandDto playerCommandDto = PlayerCommandDto.resume(playerRequestDto.getPosition());
 
-        // 채팅방 정보 전송
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
 
     @Transactional(readOnly = true)
-    public void seek(Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
-        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
-        if (playerSession == null) return;
+    public void seek(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
+        playerSessions.put(chatRoomId, PlayerSession.seek(playerSession, playerRequestDto.getPosition()));
 
-        playerSession.setLastPosition(playerRequestDto.getPosition());
-        playerSession.setStartedAt(LocalDateTime.now());
-        playerSessions.put(chatRoomId, playerSession);
-
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                .chatRoomId(chatRoomId)
-                .currentPlaylist(trackDtoList)
-                .currentPlaylistIndex(playerSession.getIndex())
-                .userCount(playerSession.getUserCount().get())
-                .lastPosition(playerSession.getLastPosition())
-                .startedAt(playerSession.getStartedAt())
-                .paused(playerSession.getPaused())
-                .repeat(playerSession.getRepeat())
-                .build();
-
-        PlayerCommandDto playerCommandDto = PlayerCommandDto.builder()
-                .action(PlayerActionResponseType.SEEK)
-                .videoId(null)
-                .position(playerRequestDto.getPosition())
-                .build();
-
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
+        PlayerCommandDto playerCommandDto = PlayerCommandDto.seek(playerRequestDto.getPosition());
 
         // 채팅방 정보 전송
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
 
     @Transactional(readOnly = true)
-    public void nextTrack(Long chatRoomId) {
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
-        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
-        if (playerSession == null) return;
-
+    public void nextTrack(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId) {
         PlayerCommandDto playerCommandDto;
 
         int nextIndex = playerSession.getIndex() + 1;
         if (nextIndex < trackDtoList.size()) {
             // 다음 곡이 있는 경우
-            playerSession.setIndex(nextIndex);
-            playerSession.setLastPosition(0L);
-            playerSession.setPaused(false);
-            playerSession.setStartedAt(LocalDateTime.now());
-            playerSession.setDuration(trackDtoList.get(nextIndex).getDuration());
-
-            playerCommandDto = PlayerCommandDto.builder()
-                    .action(PlayerActionResponseType.PLAY_TRACK)
-                    .videoId(trackDtoList.get(nextIndex).getVideoId())
-                    .index(nextIndex)
-                    .build();
-
+            PlayerSession.nextTrack(playerSession, nextIndex, trackDtoList.get(nextIndex).getDuration());
+            playerCommandDto = PlayerCommandDto.playTrackAtIndex(nextIndex, trackDtoList.get(nextIndex).getVideoId());
         } else {
             // 다음 곡이 없는 경우
             if (playerSession.getRepeat()) {
                 // 반복 재생이 설정되어 있는 경우
-                playerSession.setIndex(0);
-                playerSession.setLastPosition(0L);
-                playerSession.setPaused(false);
-                playerSession.setStartedAt(LocalDateTime.now());
-                playerSession.setDuration(trackDtoList.get(0).getDuration());
-
-                playerCommandDto = PlayerCommandDto.builder()
-                        .action(PlayerActionResponseType.PLAY_TRACK)
-                        .videoId(trackDtoList.get(0).getVideoId())
-                        .index(0)
-                        .build();
+                PlayerSession.returnToStart(playerSession, trackDtoList.get(0).getDuration());
+                playerCommandDto = PlayerCommandDto.playTrackAtIndex(0, trackDtoList.get(0).getVideoId());
             } else {
                 // 반복 재생이 설정되어 있지 않은 경우 -> 딱히 뭐 하지 않음
                 playerCommandDto = PlayerCommandDto.builder()
@@ -350,17 +303,7 @@ public class PlayerService {
         }
 
         playerSessions.put(chatRoomId, playerSession);
-
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                .chatRoomId(chatRoomId)
-                .currentPlaylist(trackDtoList)
-                .currentPlaylistIndex(playerSession.getIndex())
-                .userCount(playerSession.getUserCount().get())
-                .lastPosition(playerSession.getLastPosition())
-                .startedAt(playerSession.getStartedAt())
-                .paused(playerSession.getPaused())
-                .repeat(playerSession.getRepeat())
-                .build();
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
 
         // 채팅방 정보 전송
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);

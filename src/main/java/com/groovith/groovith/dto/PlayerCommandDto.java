@@ -41,4 +41,19 @@ public class PlayerCommandDto {
                 .position(position)
                 .build();
     }
+
+    public static PlayerCommandDto seek(Long position) {
+        return PlayerCommandDto.builder()
+                .action(PlayerActionResponseType.SEEK)
+                .position(position)
+                .build();
+    }
+
+    public static PlayerCommandDto playTrackAtIndex(int nextIndex, String videoId) {
+        return PlayerCommandDto.builder()
+                .action(PlayerActionResponseType.PLAY_TRACK)
+                .videoId(videoId)
+                .index(nextIndex)
+                .build();
+    }
 }

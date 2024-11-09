@@ -27,4 +27,26 @@ public class PlayerSession {
         playerSession.setStartedAt(LocalDateTime.now());
         return playerSession;
     }
+
+    public static PlayerSession seek(PlayerSession playerSession, Long position) {
+        playerSession.setLastPosition(position);
+        playerSession.setStartedAt(LocalDateTime.now());
+        return playerSession;
+    }
+
+    public static void nextTrack(PlayerSession playerSession, int nextIndex, Long duration) {
+        playerSession.setIndex(nextIndex);
+        playerSession.setLastPosition(0L);
+        playerSession.setPaused(false);
+        playerSession.setStartedAt(LocalDateTime.now());
+        playerSession.setDuration(duration);
+    }
+
+    public static void returnToStart(PlayerSession playerSession, Long duration) {
+        playerSession.setIndex(0);
+        playerSession.setLastPosition(0L);
+        playerSession.setPaused(false);
+        playerSession.setStartedAt(LocalDateTime.now());
+        playerSession.setDuration(duration);
+    }
 }
