@@ -257,16 +257,7 @@ public class PlayerService {
         playerSession.setLastPosition(playerRequestDto.getPosition());
         playerSessions.put(chatRoomId, playerSession);
 
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                .chatRoomId(chatRoomId)
-                .currentPlaylist(trackDtoList)
-                .currentPlaylistIndex(playerSession.getIndex())
-                .userCount(playerSession.getUserCount().get())
-                .lastPosition(playerSession.getLastPosition())
-                .startedAt(playerSession.getStartedAt())
-                .paused(playerSession.getPaused())
-                .repeat(playerSession.getRepeat())
-                .build();
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.pause(chatRoomId, trackDtoList, playerSession);
 
         PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
                 .action(PlayerActionResponseType.PAUSE)

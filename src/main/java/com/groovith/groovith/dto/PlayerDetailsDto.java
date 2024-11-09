@@ -1,5 +1,6 @@
 package com.groovith.groovith.dto;
 
+import com.groovith.groovith.domain.PlayerSession;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,7 +23,7 @@ public class PlayerDetailsDto {
     private Long duration;
 
     @Builder
-    public PlayerDetailsDto (
+    public PlayerDetailsDto(
             Long chatRoomId,
             Integer userCount,
             Integer currentPlaylistIndex,
@@ -45,5 +46,18 @@ public class PlayerDetailsDto {
                 this.position = lastPosition + Duration.between(startedAt, LocalDateTime.now()).toSeconds();
             }
         }
+    }
+
+    public static PlayerDetailsDto pause(Long chatRoomId, List<TrackDto> trackDtoList, PlayerSession playerSession) {
+        return PlayerDetailsDto.builder()
+                .chatRoomId(chatRoomId)
+                .currentPlaylist(trackDtoList)
+                .currentPlaylistIndex(playerSession.getIndex())
+                .userCount(playerSession.getUserCount().get())
+                .lastPosition(playerSession.getLastPosition())
+                .startedAt(playerSession.getStartedAt())
+                .paused(playerSession.getPaused())
+                .repeat(playerSession.getRepeat())
+                .build();
     }
 }
