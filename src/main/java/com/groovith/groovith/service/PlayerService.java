@@ -256,13 +256,13 @@ public class PlayerService {
         playerSessions.put(chatRoomId, playerSession);
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.pause(chatRoomId, trackDtoList, playerSession);
-        PlayerResponseDto playerResponseDto = PlayerResponseDto.pause(playerRequestDto.getPosition());
+        PlayerCommandDto playerCommandDto = PlayerCommandDto.pause(playerRequestDto.getPosition());
 
 
         // 채팅방 정보 전송
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
         // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerResponseDto);
+        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
     }
 
     private PlayerSession getPlayerSessionByChatRoomId(Long chatRoomId) {
@@ -295,7 +295,7 @@ public class PlayerService {
                 .repeat(playerSession.getRepeat())
                 .build();
 
-        PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
+        PlayerCommandDto playerCommandDto = PlayerCommandDto.builder()
                 .action(PlayerActionResponseType.RESUME)
                 .videoId(null)
                 .position(playerRequestDto.getPosition())
@@ -305,7 +305,7 @@ public class PlayerService {
         // 채팅방 정보 전송
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
         // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerResponseDto);
+        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
     }
 
     @Transactional(readOnly = true)
@@ -329,7 +329,7 @@ public class PlayerService {
                 .repeat(playerSession.getRepeat())
                 .build();
 
-        PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
+        PlayerCommandDto playerCommandDto = PlayerCommandDto.builder()
                 .action(PlayerActionResponseType.SEEK)
                 .videoId(null)
                 .position(playerRequestDto.getPosition())
@@ -339,7 +339,7 @@ public class PlayerService {
         // 채팅방 정보 전송
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
         // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerResponseDto);
+        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
     }
 
     @Transactional(readOnly = true)
@@ -348,7 +348,7 @@ public class PlayerService {
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
         if (playerSession == null) return;
 
-        PlayerResponseDto playerResponseDto;
+        PlayerCommandDto playerCommandDto;
 
         int nextIndex = playerSession.getIndex() + 1;
         if (nextIndex < trackDtoList.size()) {
@@ -359,7 +359,7 @@ public class PlayerService {
             playerSession.setStartedAt(LocalDateTime.now());
             playerSession.setDuration(trackDtoList.get(nextIndex).getDuration());
 
-            playerResponseDto = PlayerResponseDto.builder()
+            playerCommandDto = PlayerCommandDto.builder()
                     .action(PlayerActionResponseType.PLAY_TRACK)
                     .videoId(trackDtoList.get(nextIndex).getVideoId())
                     .index(nextIndex)
@@ -375,14 +375,14 @@ public class PlayerService {
                 playerSession.setStartedAt(LocalDateTime.now());
                 playerSession.setDuration(trackDtoList.get(0).getDuration());
 
-                playerResponseDto = PlayerResponseDto.builder()
+                playerCommandDto = PlayerCommandDto.builder()
                         .action(PlayerActionResponseType.PLAY_TRACK)
                         .videoId(trackDtoList.get(0).getVideoId())
                         .index(0)
                         .build();
             } else {
                 // 반복 재생이 설정되어 있지 않은 경우 -> 딱히 뭐 하지 않음
-                playerResponseDto = PlayerResponseDto.builder()
+                playerCommandDto = PlayerCommandDto.builder()
                         .build();
             }
         }
@@ -403,7 +403,7 @@ public class PlayerService {
         // 채팅방 정보 전송
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
         // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerResponseDto);
+        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
     }
 
     @Transactional(readOnly = true)
@@ -412,7 +412,7 @@ public class PlayerService {
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
         if (playerSession == null) return;
 
-        PlayerResponseDto playerResponseDto;
+        PlayerCommandDto playerCommandDto;
 
         int prevIndex = playerSession.getIndex() - 1;
         if (prevIndex >= 0) {
@@ -423,7 +423,7 @@ public class PlayerService {
             playerSession.setStartedAt(LocalDateTime.now());
             playerSession.setDuration(trackDtoList.get(prevIndex).getDuration());
 
-            playerResponseDto = PlayerResponseDto.builder()
+            playerCommandDto = PlayerCommandDto.builder()
                     .action(PlayerActionResponseType.PLAY_TRACK)
                     .videoId(trackDtoList.get(prevIndex).getVideoId())
                     .index(prevIndex)
@@ -440,14 +440,14 @@ public class PlayerService {
                 playerSession.setStartedAt(LocalDateTime.now());
                 playerSession.setDuration(trackDtoList.get(lastIndex).getDuration());
 
-                playerResponseDto = PlayerResponseDto.builder()
+                playerCommandDto = PlayerCommandDto.builder()
                         .action(PlayerActionResponseType.PLAY_TRACK)
                         .videoId(trackDtoList.get(lastIndex).getVideoId())
                         .index(lastIndex)
                         .build();
             } else {
                 // 반복 재생이 설정되어 있지 않은 경우 -> 딱히 뭐 하지 않음
-                playerResponseDto = PlayerResponseDto.builder()
+                playerCommandDto = PlayerCommandDto.builder()
                         .build();
             }
         }
@@ -468,7 +468,7 @@ public class PlayerService {
         // 채팅방 정보 전송
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
         // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerResponseDto);
+        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
     }
 
     @Transactional
@@ -504,7 +504,7 @@ public class PlayerService {
                 .build();
 
         // 플레이 트랙 액션 전송
-        PlayerResponseDto playerResponseDto = PlayerResponseDto.builder()
+        PlayerCommandDto playerCommandDto = PlayerCommandDto.builder()
                 .action(PlayerActionResponseType.PLAY_TRACK)
                 .videoId(trackDtoList.get(requestedIndex).getVideoId())
                 .index(requestedIndex)
@@ -514,7 +514,7 @@ public class PlayerService {
         // 채팅방 정보 전송
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
         // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerResponseDto);
+        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
     }
 
     @Transactional
@@ -558,7 +558,7 @@ public class PlayerService {
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
         // 같이 듣기 액션 전송
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together",
-                PlayerResponseDto.builder()
+                PlayerCommandDto.builder()
                         .action(PlayerActionResponseType.UPDATE)
                         .videoList(trackDtoList)
                         .index(playerSession.getIndex())
@@ -609,7 +609,7 @@ public class PlayerService {
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
         // 같이 듣기 액션 전송
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together",
-                PlayerResponseDto.builder()
+                PlayerCommandDto.builder()
                         .action(PlayerActionResponseType.UPDATE)
                         .videoList(trackDtoList)
                         .index(playerSession.getIndex())

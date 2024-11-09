@@ -7,7 +7,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class PlayerResponseDto {
+public class PlayerCommandDto {
     private PlayerActionResponseType action;
     private String videoId;
     private Long position;
@@ -15,7 +15,7 @@ public class PlayerResponseDto {
     private Integer index;
 
     @Builder
-    public PlayerResponseDto(
+    public PlayerCommandDto(
             PlayerActionResponseType action,
             String videoId,
             Long position,
@@ -28,8 +28,8 @@ public class PlayerResponseDto {
         this.index = index;
     }
 
-    public static PlayerResponseDto pause(Long position) {
-        return PlayerResponseDto.builder()
+    public static PlayerCommandDto pause(Long position) {
+        return PlayerCommandDto.builder()
                 .action(PlayerActionResponseType.PAUSE)
                 .videoId(null)
                 .position(position)
