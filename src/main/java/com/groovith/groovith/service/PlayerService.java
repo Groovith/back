@@ -40,6 +40,7 @@ public class PlayerService {
     private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
     private final YoutubeService youtubeService;
     private final TrackService trackService;
+    private static final int MAX_PLAYLIST_ITEMS = 100;
 
     public static final ConcurrentHashMap<Long, PlayerSession> playerSessions = new ConcurrentHashMap<>(); // 채팅방 플레이어 정보 (chatRoomId, PlayerSessionDto)
     public static final ConcurrentHashMap<String, Long> sessionIdChatRoomId = new ConcurrentHashMap<>(); // 각 유저 아이디의 플레이어 참가 여부
@@ -232,7 +233,7 @@ public class PlayerService {
             case SEEK -> seek(playerSession, trackDtoList, chatRoomId, playerRequestDto);
             case NEXT_TRACK -> nextTrack(playerSession, trackDtoList, chatRoomId);
             case PREVIOUS_TRACK -> previousTrack(playerSession, trackDtoList, chatRoomId);
-            case PLAY_AT_INDEX -> playAtIndex(chatRoomId, playerRequestDto);
+            case PLAY_AT_INDEX -> playAtIndex(playerSession, trackDtoList, chatRoomId, playerRequestDto);
             case ADD_TO_CURRENT_PLAYLIST -> {
                 if (playerRequestDto.getVideoId() != null) {
                     TrackDto trackDto = youtubeService.getVideo(playerRequestDto.getVideoId());
@@ -340,11 +341,7 @@ public class PlayerService {
     }
 
     @Transactional
-    public void playAtIndex(Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
-        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
-        if (playerSession == null) return;
-
+    public void playAtIndex(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
         // 인덱스 범위 확인
         Integer requestedIndex = playerRequestDto.getIndex();
         if (requestedIndex == null || requestedIndex < 0 || requestedIndex >= trackDtoList.size()) {
@@ -352,32 +349,14 @@ public class PlayerService {
         }
 
         // 플레이어 세션 수정
-        playerSession.setIndex(requestedIndex);
-        playerSession.setPaused(false);
-        playerSession.setLastPosition(0L);
-        playerSession.setStartedAt(LocalDateTime.now());
-        playerSession.setDuration(trackDtoList.get(requestedIndex).getDuration());
+        PlayerSession.changeTrack(playerSession, requestedIndex, trackDtoList.get(requestedIndex).getDuration());
         playerSessions.put(chatRoomId, playerSession);
 
         // 현재 플레이리스트 정보 갱신
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                .chatRoomId(chatRoomId)
-                .currentPlaylist(trackDtoList)
-                .currentPlaylistIndex(playerSession.getIndex())
-                .userCount(playerSession.getUserCount().get())
-                .lastPosition(playerSession.getLastPosition())
-                .startedAt(playerSession.getStartedAt())
-                .paused(playerSession.getPaused())
-                .repeat(playerSession.getRepeat())
-                .build();
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
 
         // 플레이 트랙 액션 전송
-        PlayerCommandDto playerCommandDto = PlayerCommandDto.builder()
-                .action(PlayerActionResponseType.PLAY_TRACK)
-                .videoId(trackDtoList.get(requestedIndex).getVideoId())
-                .index(requestedIndex)
-                .position(0L) // 새로운 트랙 재생 시작이므로 위치는 0
-                .build();
+        PlayerCommandDto playerCommandDto = PlayerCommandDto.playTrackAtIndex(requestedIndex, trackDtoList.get(requestedIndex).getVideoId());
 
         // 채팅방 정보 전송
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
@@ -395,7 +374,7 @@ public class PlayerService {
 
 
         // 플레이리스트가 다 찼을 경우(100곡)
-        if(trackDtoList.size() >= 100){
+        if(trackDtoList.size() >= MAX_PLAYLIST_ITEMS){
             throw new CurrentPlayListFullException(currentPlaylist.getId());
         }
 
