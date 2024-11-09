@@ -68,8 +68,6 @@ public class PlayerService {
         }
     }
 
-
-
     public PlayerDetailsDto joinPlayer(Long chatRoomId, Long userId) {
         // 유저의 sessionId를 받아온다.
         // sessionId를 sessionIdChatRoomId에 등록한다.
@@ -258,38 +256,16 @@ public class PlayerService {
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
 
-    private void sendMessages(Long chatRoomId, PlayerDetailsDto playerDetailsDto, PlayerCommandDto playerCommandDto) {
-        // 채팅방 정보 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
-        // 같이 듣기 액션 전송
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
-    }
-
-    private PlayerSession getPlayerSessionByChatRoomId(Long chatRoomId) {
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
-        if (playerSession == null) throw new RuntimeException("No Session with chatRoomId: " + chatRoomId);
-        return playerSession;
-    }
-
     @Transactional(readOnly = true)
     public void resume(Long chatRoomId, PlayerRequestDto playerRequestDto) {
         // 정지, 위치 또한 조정
         PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
 
-        playerSession.setPaused(false);
-        playerSession.setLastPosition(playerRequestDto.getPosition());
-        playerSession.setStartedAt(LocalDateTime.now());
-        playerSessions.put(chatRoomId, playerSession);
+        playerSessions.put(chatRoomId, PlayerSession.resume(playerSession, playerRequestDto.getPosition()));
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.resume(chatRoomId, trackDtoList, playerSession);
-
-        PlayerCommandDto playerCommandDto = PlayerCommandDto.builder()
-                .action(PlayerActionResponseType.RESUME)
-                .videoId(null)
-                .position(playerRequestDto.getPosition())
-                .build();
-
+        PlayerCommandDto playerCommandDto = PlayerCommandDto.resume(playerRequestDto.getPosition());
 
         // 채팅방 정보 전송
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
@@ -587,6 +563,19 @@ public class PlayerService {
                 .videoList(trackDtoList)
                 .index(playerSession.getIndex())
                 .build());
+    }
+
+    private void sendMessages(Long chatRoomId, PlayerDetailsDto playerDetailsDto, PlayerCommandDto playerCommandDto) {
+        // 채팅방 정보 전송
+        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
+        // 같이 듣기 액션 전송
+        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
+    }
+
+    private PlayerSession getPlayerSessionByChatRoomId(Long chatRoomId) {
+        PlayerSession playerSession = playerSessions.get(chatRoomId);
+        if (playerSession == null) throw new RuntimeException("No Session with chatRoomId: " + chatRoomId);
+        return playerSession;
     }
 
     @Scheduled(fixedRate = 1000)  // 1초마다 실행

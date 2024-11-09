@@ -20,4 +20,11 @@ public class PlayerSession {
         playerSession.setLastPosition(position);
         return playerSession;
     }
+
+    public static PlayerSession resume(PlayerSession playerSession, Long position) {
+        playerSession.setPaused(false);
+        playerSession.setLastPosition(position);
+        playerSession.setStartedAt(LocalDateTime.now());
+        return playerSession;
+    }
 }

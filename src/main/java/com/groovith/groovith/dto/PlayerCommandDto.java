@@ -31,7 +31,13 @@ public class PlayerCommandDto {
     public static PlayerCommandDto pause(Long position) {
         return PlayerCommandDto.builder()
                 .action(PlayerActionResponseType.PAUSE)
-                .videoId(null)
+                .position(position)
+                .build();
+    }
+
+    public static PlayerCommandDto resume(Long position) {
+        return PlayerCommandDto.builder()
+                .action(PlayerActionResponseType.RESUME)
                 .position(position)
                 .build();
     }
