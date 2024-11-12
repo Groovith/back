@@ -29,17 +29,9 @@ public class Message extends BaseTime{
     private Long chatRoomId;
 
     private String imageUrl;
-//
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name="chatroom_id")
-//    private ChatRoom chatRoom;
-//
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name="user_id")
-//    private User user;
 
-    @Column(name = "is_user_deleted")
     // 삭제된 유저의 메시지인지
+    @Column(name = "is_user_deleted")
     private boolean isUserDeleted;
 
 
