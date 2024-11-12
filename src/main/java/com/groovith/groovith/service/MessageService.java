@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+
 @Slf4j
 @RequiredArgsConstructor
 @Transactional
@@ -23,10 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class MessageService {
     private final static Long DELETED_USER_ID = null;
     private final static String DELETED_USER_USERNAME = "알수없음";
+
     private final MessageRepository messageRepository;
     private final UserChatRoomRepository userChatRoomRepository;
 
-    public MessageResponseDto createMessage(MessageDto messageDto){
+    public MessageResponseDto saveMessage(MessageDto messageDto){
         Long userId = messageDto.getUserId();
         Long chatRoomId = messageDto.getChatRoomId();
 
@@ -64,7 +66,7 @@ public class MessageService {
                 .content(message.getContent())
                 .type(message.getMessageType())
                 .createdAt(message.getCreatedAt())
-                .imageUrl(message.getImageUrl())
+                .imageUrl(getUserImageUrlByMessage(message))
                 .build();
     }
 
@@ -81,4 +83,9 @@ public class MessageService {
         }
         return message.getUserChatRoom().getUser().getUsername();
     }
+
+    private String getUserImageUrlByMessage(Message message){
+        return message.getUserChatRoom().getUser().getImageUrl();
+    }
+
 }

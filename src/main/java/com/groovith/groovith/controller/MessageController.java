@@ -51,7 +51,7 @@ public class MessageController {
         }
         Optional<User> user = userRepository.findById(userId);
         MessageDto messageDto = createMessageDto(chatRoomId, userId, user, messageRequestDto);
-        MessageResponseDto messageResponseDto = messageService.createMessage(messageDto);
+        MessageResponseDto messageResponseDto = messageService.saveMessage(messageDto);
 
         template.convertAndSend("/sub/api/chat/" + chatRoomId, messageResponseDto);
     }
