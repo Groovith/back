@@ -1,7 +1,6 @@
 package com.groovith.groovith.controller;
 
 
-
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.MessageListResponseDto;
 import com.groovith.groovith.dto.MessageRequestDto;
@@ -27,8 +26,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- *  메세지 관련 컨르롤러
- * */
+ * 메세지 관련 컨르롤러
+ */
 
 @Slf4j
 @RequiredArgsConstructor
@@ -42,20 +41,17 @@ public class MessageController {
     /**
      * 메세지 전송
      * 메세지타입 : CHAT, JOIN, LEAVE, PLAYER
-     * */
+     */
     @MessageMapping("/api/chat/{chatRoomId}")
-    public void send(@Payload MessageRequestDto messageRequestDto, @DestinationVariable Long chatRoomId, SimpMessageHeaderAccessor headerAccessor)
-    {
+    public void send(@Payload MessageRequestDto messageRequestDto, @DestinationVariable Long chatRoomId, SimpMessageHeaderAccessor headerAccessor) {
         // Stomp 헤더 토큰으로 송신 유저 찾기
         Long userId = (Long) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("userId");
         if (userId == null) {
             throw new RuntimeException("User ID is missing in the session.");
         }
         Optional<User> user = userRepository.findById(userId);
-
         MessageDto messageDto = createMessageDto(chatRoomId, userId, user, messageRequestDto);
-
-        MessageResponseDto  messageResponseDto = messageService.createMessage(messageDto);
+        MessageResponseDto messageResponseDto = messageService.createMessage(messageDto);
 
         template.convertAndSend("/sub/api/chat/" + chatRoomId, messageResponseDto);
     }
@@ -65,22 +61,22 @@ public class MessageController {
      * 첫 채팅일 경우 lastMessageId = null, 자동으로 제일 최신 메시지로부터 20개 가져오기(message-id 내림차순)
      * 불러온 메시지 리스트의 메시지 중 제일 작은 id 값 메시지 -> lastMessageId
      * lastMessageId 기준으로 또 내림차순 20개 가져오기
-     * */
+     */
     @GetMapping("/api/chat/{chatRoomId}")
     public ResponseEntity<MessageListResponseDto> messages(
-            @PathVariable(name = "chatRoomId")Long chatRoomId,
+            @PathVariable(name = "chatRoomId") Long chatRoomId,
             @RequestParam(required = false) Long lastMessageId) {
         return new ResponseEntity<>(messageService.findMessages(chatRoomId, lastMessageId), HttpStatus.OK);
     }
 
     private MessageDto createMessageDto(Long chatRoomId, Long userId, Optional<User> user, MessageRequestDto messageRequestDto) {
-        MessageDto messageDto = new MessageDto();
-        messageDto.setChatRoomId(chatRoomId);
-        messageDto.setUserId(userId);
-        messageDto.setContent(messageRequestDto.getContent());
-        messageDto.setType(messageRequestDto.getType());
-        messageDto.setUsername(user.get().getUsername());
-        messageDto.setImageUrl(user.get().getImageUrl());
-        return messageDto;
+        return MessageDto.builder()
+                .content(messageRequestDto.getContent())
+                .type(messageRequestDto.getType())
+                .username(user.get().getUsername())
+                .chatRoomId(chatRoomId)
+                .userId(userId)
+                .imageUrl(user.get().getImageUrl())
+                .build();
     }
 }

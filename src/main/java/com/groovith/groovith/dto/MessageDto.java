@@ -1,11 +1,11 @@
 package com.groovith.groovith.dto;
 
-import com.groovith.groovith.domain.enums.CommandType;
 import com.groovith.groovith.domain.enums.MessageType;
+import lombok.Builder;
 import lombok.Data;
 
 /**
- * 메세지 저장에 사용될 dto
+ *
  * */
 @Data
 public class MessageDto {
@@ -20,25 +20,15 @@ public class MessageDto {
 
     private MessageType type;   //  CHAT, JOIN, LEAVE, PLAYER
 
-    private CommandType command;
-
-    private String track;
-
     private String imageUrl;
-//    public Message toEntity(UserChatRoom userChatRoom){
-//        return Message.builder()
-//                .content(content)
-//                .messageType(type)
-//                .build();
-//    }
-//
-//    @Builder
-//    public Message(String content, UserChatRoom userChatRoom, MessageType messageType){
-//        this.content = content;
-//        this.userChatRoom = userChatRoom;
-//        this.messageType = messageType;
-//        userChatRoom.getMessages().add(this);
-//    }
-//
 
+    @Builder
+    public MessageDto(String content, Long chatRoomId, Long userId, String username, MessageType type, String imageUrl){
+        this.content = content;
+        this.chatRoomId = chatRoomId;
+        this.userId = userId;
+        this.username = username;
+        this.type = type;
+        this.imageUrl = imageUrl;
+    }
 }
