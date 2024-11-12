@@ -1,10 +1,8 @@
 package com.groovith.groovith.dto;
 
-import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.ChatRoomPermission;
-import com.groovith.groovith.domain.ChatRoomStatus;
-import com.groovith.groovith.domain.ChatRoomType;
-import lombok.Builder;
+import com.groovith.groovith.domain.enums.ChatRoomPermission;
+import com.groovith.groovith.domain.enums.ChatRoomStatus;
+import com.groovith.groovith.domain.enums.ChatRoomType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

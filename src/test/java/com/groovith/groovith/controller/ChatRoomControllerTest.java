@@ -3,8 +3,8 @@
 //
 //import com.fasterxml.jackson.databind.ObjectMapper;
 //import com.groovith.groovith.domain.ChatRoom;
-//import com.groovith.groovith.domain.ChatRoomStatus;
-//import com.groovith.groovith.domain.ChatRoomType;
+//import com.groovith.groovith.domain.enums.ChatRoomStatus;
+//import com.groovith.groovith.domain.enums.ChatRoomType;
 //import com.groovith.groovith.dto.ChatRoomDetailsDto;
 //import com.groovith.groovith.dto.ChatRoomListResponseDto;
 //import com.groovith.groovith.dto.CreateChatRoomRequestDto;

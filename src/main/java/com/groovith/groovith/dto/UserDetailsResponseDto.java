@@ -1,15 +1,11 @@
 package com.groovith.groovith.dto;
 
-import com.groovith.groovith.domain.Follow;
-import com.groovith.groovith.domain.FollowStatus;
+import com.groovith.groovith.domain.enums.FollowStatus;
 import com.groovith.groovith.domain.User;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter

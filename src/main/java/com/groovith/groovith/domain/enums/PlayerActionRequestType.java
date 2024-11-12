@@ -1,7 +1,6 @@
-package com.groovith.groovith.domain;
+package com.groovith.groovith.domain.enums;
 
 public enum PlayerActionRequestType {
-    PLAY_NEW_TRACK,
     PAUSE,
     RESUME,
     PLAY_AT_INDEX,

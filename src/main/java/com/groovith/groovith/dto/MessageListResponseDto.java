@@ -6,5 +6,5 @@ import java.util.List;
 
 @Data
 public class MessageListResponseDto {
-    private final List<MessageDetailsResponseDto> messages;
+    private final List<MessageResponseDto> messages;
 }

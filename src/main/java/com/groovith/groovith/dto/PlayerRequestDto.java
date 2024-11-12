@@ -1,11 +1,11 @@
 package com.groovith.groovith.dto;
 
-import com.groovith.groovith.domain.PlayerActionRequestType;
+import com.groovith.groovith.domain.enums.PlayerActionRequestType;
 import lombok.Data;
 
 @Data
 public class PlayerRequestDto {
-    private SpotifyTrackDto track;
+    private String videoId;
     private Integer index;
     private Boolean repeat;
     private Long position;

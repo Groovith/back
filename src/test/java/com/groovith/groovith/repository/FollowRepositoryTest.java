@@ -1,10 +1,9 @@
 package com.groovith.groovith.repository;
 
 import com.groovith.groovith.domain.Follow;
-import com.groovith.groovith.domain.StreamingType;
+import com.groovith.groovith.domain.enums.StreamingType;
 import com.groovith.groovith.domain.User;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;

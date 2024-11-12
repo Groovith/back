@@ -1,12 +1,11 @@
 package com.groovith.groovith.domain;
 
+import com.groovith.groovith.domain.enums.MessageType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -28,44 +27,34 @@ public class Message extends BaseTime{
 
     @Column(name = "chatroom_id")
     private Long chatRoomId;
-//
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name="chatroom_id")
-//    private ChatRoom chatRoom;
-//
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name="user_id")
-//    private User user;
 
-    @Column(name = "is_user_deleted")
+    private String imageUrl;
+
     // 삭제된 유저의 메시지인지
+    @Column(name = "is_user_deleted")
     private boolean isUserDeleted;
 
 
     @Builder
-    public Message(String content, UserChatRoom userChatRoom, MessageType messageType, Long chatRoomId){
+    public Message(String content, UserChatRoom userChatRoom, MessageType messageType, Long chatRoomId, String imageUrl){
         this.content = content;
         this.userChatRoom = userChatRoom;
         this.messageType = messageType;
         this.isUserDeleted = false; // 메시지가 처음 생성될때는 당연히 유저 탈퇴 상태x
         this.chatRoomId = chatRoomId;
-//        this.chatRoom = chatRoom;
-//        this.userId = userId;
-//        this.username = username;
+        this.imageUrl = imageUrl;
     }
 
     /**
      * 연관관계 편의 메서드, 메시지 생성은 setMessage()로 생성
      * */
-    public static Message setMessage(String content, MessageType messageType, UserChatRoom userChatRoom, Long chatRoomId){
+    public static Message setMessage(String content, MessageType messageType, UserChatRoom userChatRoom, Long chatRoomId, String imageUrl){
         Message message = Message.builder()
                 .content(content)
                 .messageType(messageType)
                 .userChatRoom(userChatRoom)
                 .chatRoomId(chatRoomId)
-//                .chatRoom(chatRoom)
-//                .userId(userId)
-//                .username(username)
+                .imageUrl(imageUrl)
                 .build();
         userChatRoom.getMessages().add(message);
         return message;

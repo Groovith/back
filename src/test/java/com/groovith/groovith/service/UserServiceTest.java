@@ -1,8 +1,8 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.Follow;
-import com.groovith.groovith.domain.FollowStatus;
-import com.groovith.groovith.domain.StreamingType;
+import com.groovith.groovith.domain.enums.FollowStatus;
+import com.groovith.groovith.domain.enums.StreamingType;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.repository.FollowRepository;
@@ -14,10 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;

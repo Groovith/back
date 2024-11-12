@@ -1,26 +1,13 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.ChatRoomStatus;
-import com.groovith.groovith.dto.ChatRoomDetailsDto;
-import com.groovith.groovith.dto.SearchChatRoomsResponseDto;
+import com.groovith.groovith.domain.enums.ChatRoomStatus;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.UserRepository;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SearchServiceTest {

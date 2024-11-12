@@ -2,6 +2,7 @@ package com.groovith.groovith.config;
 
 import com.groovith.groovith.domain.CurrentPlaylist;
 import com.groovith.groovith.dto.PlayerDetailsDto;
+import com.groovith.groovith.dto.TrackDto;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -12,9 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,7 +26,6 @@ public class WebSocketEventListener {
     private static final ConcurrentHashMap<Long, String> userIdSessionId = new ConcurrentHashMap<>();
     private final SimpMessageSendingOperations template;
     private final CurrentPlaylistRepository currentPlaylistRepository;
-
 
     @EventListener
     public void handleWebSocketConnectListener(SessionSubscribeEvent event) {
@@ -78,11 +76,14 @@ public class WebSocketEventListener {
                         System.out.println("채팅방 " + chatRoomId + " 의 플레이어에 참가자가 없어서 세션이 삭제되었습니다.");
 
                         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+                        List<TrackDto> trackDtoList = new ArrayList<>(currentPlaylist.getCurrentPlaylistTracks().stream()
+                                .map(c -> new TrackDto(c.getTrack()))
+                                .toList());
 
                         // 채팅방에 알린다
                         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                                 .chatRoomId(chatRoomId)
-                                .currentPlaylist(currentPlaylist.getTracks())
+                                .currentPlaylist(trackDtoList)
                                 .build();
 
                         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);

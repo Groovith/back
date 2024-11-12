@@ -1,4 +1,4 @@
-package com.groovith.groovith.domain;
+package com.groovith.groovith.domain.enums;
 
 public enum FollowStatus {
     // 팔로우 하지않음, 팔로우 요청 수락, 요청 보류중, 요청 거부
