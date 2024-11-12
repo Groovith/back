@@ -8,7 +8,6 @@ import com.groovith.groovith.dto.MessageResponseDto;
 import com.groovith.groovith.exception.UserChatRoomNotFoundException;
 import com.groovith.groovith.repository.MessageRepository;
 import com.groovith.groovith.dto.MessageDto;
-import com.groovith.groovith.dto.MessageDetailsResponseDto;
 import com.groovith.groovith.repository.UserChatRoomRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
