@@ -53,7 +53,6 @@ public class MessageController {
         }
         Optional<User> user = userRepository.findById(userId);
 
-        //메시지 저장 Dto
         MessageDto messageDto = createMessageDto(chatRoomId, userId, user, messageRequestDto);
 
         MessageResponseDto  messageResponseDto = messageService.createMessage(messageDto);
