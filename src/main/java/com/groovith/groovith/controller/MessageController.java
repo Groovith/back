@@ -54,28 +54,10 @@ public class MessageController {
         }
         Optional<User> user = userRepository.findById(userId);
 
-
         //메시지 저장 Dto
-        MessageDto messageDto = new MessageDto();
-        messageDto.setChatRoomId(chatRoomId);
-        messageDto.setUserId(userId);
-        messageDto.setContent(messageRequestDto.getContent());
-        messageDto.setType(messageRequestDto.getType());
-        messageDto.setUsername(user.get().getUsername());
-        messageDto.setImageUrl(user.get().getImageUrl());
+        MessageDto messageDto = createMessageDto(chatRoomId, userId, user, messageRequestDto);
 
-        // PRIVATE 일 경우에만 채팅 저장
         MessageResponseDto  messageResponseDto = messageService.createMessage(messageDto);
-//        // 메시지 반환 Dto
-//        MessageResponseDto messageResponseDto = new MessageResponseDto();
-//        messageResponseDto.setMessageId(message.getId());
-//        messageResponseDto.setChatRoomId(message.getChatRoom().getId());
-//        messageResponseDto.setUserId(message.getUserId());
-//        messageResponseDto.setUsername(user.get().getUsername());
-//        messageResponseDto.setContent(message.getContent());
-//        messageResponseDto.setType(message.getMessageType());
-//        messageResponseDto.setCreatedAt(message.getCreatedAt());
-//        messageResponseDto.setImageUrl(user.get().getImageUrl());
 
         template.convertAndSend("/sub/api/chat/" + chatRoomId, messageResponseDto);
     }
@@ -91,5 +73,16 @@ public class MessageController {
             @PathVariable(name = "chatRoomId")Long chatRoomId,
             @RequestParam(required = false) Long lastMessageId) {
         return new ResponseEntity<>(messageService.findMessages(chatRoomId, lastMessageId), HttpStatus.OK);
+    }
+
+    private MessageDto createMessageDto(Long chatRoomId, Long userId, Optional<User> user, MessageRequestDto messageRequestDto) {
+        MessageDto messageDto = new MessageDto();
+        messageDto.setChatRoomId(chatRoomId);
+        messageDto.setUserId(userId);
+        messageDto.setContent(messageRequestDto.getContent());
+        messageDto.setType(messageRequestDto.getType());
+        messageDto.setUsername(user.get().getUsername());
+        messageDto.setImageUrl(user.get().getImageUrl());
+        return messageDto;
     }
 }

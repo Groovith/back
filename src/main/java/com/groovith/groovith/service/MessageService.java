@@ -22,11 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @Service
 public class MessageService {
-
+    private final static Long DELETED_USER_ID = null;
+    private final static String DELETED_USER_USERNAME = "알수없음";
     private final MessageRepository messageRepository;
     private final UserChatRoomRepository userChatRoomRepository;
 
-    // 메세지 생성 후 PRIVATE 이면 save, PUBLIC 이면 저장 x
     public MessageResponseDto createMessage(MessageDto messageDto){
         Long userId = messageDto.getUserId();
         Long chatRoomId = messageDto.getChatRoomId();
@@ -39,27 +39,10 @@ public class MessageService {
                 messageDto.getContent(), messageDto.getType(),userChatRoom, chatRoomId, messageDto.getImageUrl()
         );
 
-
-//        // chatRoomStatus == PRIVATE 일 경우에만 메세지 저장
-//        if(chatRoom.getStatus() == ChatRoomStatus.PRIVATE){
-//            messageRepository.save(message);
-//        }
-
         // 채팅방 종류 상관없이 메시지 전체 저장
         messageRepository.save(message);
 
-        // 메시지 반환 Dto
-        MessageResponseDto messageResponseDto = new MessageResponseDto();
-        messageResponseDto.setMessageId(message.getId());
-        messageResponseDto.setChatRoomId(messageDto.getChatRoomId());
-        messageResponseDto.setUserId(messageDto.getUserId());
-        messageResponseDto.setUsername(messageDto.getUsername());
-        messageResponseDto.setContent(message.getContent());
-        messageResponseDto.setType(message.getMessageType());
-        messageResponseDto.setCreatedAt(message.getCreatedAt());
-        messageResponseDto.setImageUrl(messageDto.getImageUrl());
-
-        return messageResponseDto;
+        return createMessageResponseDto(message);
     }
 
     /**
@@ -69,27 +52,34 @@ public class MessageService {
     public MessageListResponseDto findMessages(Long chatRoomId, Long lastMessageId){
         Slice<Message> messages = messageRepository.findMessages(chatRoomId, lastMessageId);
 
-
         return new MessageListResponseDto(messages.stream()
-                .map(message -> {
-                    MessageDetailsResponseDto dto = new MessageDetailsResponseDto();
-                    dto.setMessageId(message.getId());
-                    dto.setContent(message.getContent());
-                    dto.setType(message.getMessageType());
-                    dto.setChatRoomId(message.getChatRoomId());
-                    dto.setCreatedAt(message.getCreatedAt());
-                    dto.setImageUrl(message.getImageUrl());
-                    // 탈퇴한 유저 메세지라면
-                    if(message.isUserDeleted()){
-                        dto.setUserId(null);
-                        dto.setUsername("알수없음");
-                    } else{
-                        dto.setUserId(message.getUserChatRoom().getUser().getId());
-                        dto.setUsername(message.getUserChatRoom().getUser().getUsername());
-                    }
-                    return dto;
-                }).toList());
+                .map(this::createMessageResponseDto).toList());
     }
 
+    private MessageResponseDto createMessageResponseDto(Message message){
+        return MessageResponseDto.builder()
+                .messageId(message.getId())
+                .chatRoomId(message.getChatRoomId())
+                .userId(getUserIdByMessage(message))
+                .username(getUsernameByMessage(message))
+                .content(message.getContent())
+                .type(message.getMessageType())
+                .createdAt(message.getCreatedAt())
+                .imageUrl(message.getImageUrl())
+                .build();
+    }
 
+    private Long getUserIdByMessage(Message message){
+        if(message.isUserDeleted()){
+            return DELETED_USER_ID;
+        }
+        return message.getUserChatRoom().getUser().getId();
+    }
+
+    private String getUsernameByMessage(Message message){
+        if(message.isUserDeleted()){
+            return DELETED_USER_USERNAME;
+        }
+        return message.getUserChatRoom().getUser().getUsername();
+    }
 }
