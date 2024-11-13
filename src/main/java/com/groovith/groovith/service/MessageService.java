@@ -39,7 +39,7 @@ public class MessageService {
 
         // 메세지 생성
         Message message = Message.setMessage(
-                messageDto.getContent(), messageDto.getType(),userChatRoom, chatRoomId
+                messageDto.getContent(), messageDto.getType(),userChatRoom, chatRoomId, messageDto.getImageUrl()
         );
 
         // 채팅방 종류 상관없이 메시지 전체 저장
