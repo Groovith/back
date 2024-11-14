@@ -24,12 +24,12 @@ public class ChatRoomService {
 
     @Value("${cloud.aws.s3.defaultChatRoomImageUrl}")
     private String DEFAULT_IMG_URL;
+    private static final int SINGLE_NEW_MEMBER = 1;
     private static final int MAX_MEMBER = 100;
     private static final String ERROR_ONLY_MASTER_USER_CAN_CHANGE_PERMISSION = "권한 변경은 masterUser 만 가능합니다";
 
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
-    private final UserService userService;
     private final UserChatRoomRepository userChatRoomRepository;
     private final CurrentPlaylistRepository currentPlaylistRepository;
 
@@ -102,11 +102,10 @@ public class ChatRoomService {
         // 유저, 채팅방 조회
         User user = findUserByUserId(userId);
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
-        Optional<UserChatRoom> userChatRoom = findUserChatRoomByUserIdAndChatRoomId(userId, chatRoomId);
         // 채팅방 인원 제한 : 100명
-        validateChatRoomCapacity(chatRoom, 1);
+        validateChatRoomCapacity(chatRoom, SINGLE_NEW_MEMBER);
 
-        setOrUpdateUserChatRoomEntryStatus(user, chatRoom, userChatRoom);
+        updateUserChatRoomStatus(user, chatRoom, UserChatRoomStatus.ENTER);
         chatRoom.addUser();
     }
 
@@ -115,14 +114,10 @@ public class ChatRoomService {
      * 채팅방 퇴장
      */
     public ChatRoomMemberStatus leaveChatRoom(Long userId, Long chatRoomId) {
-        User user = findUserByUserId(userId);
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
-        UserChatRoom userChatRoom = findUserChatRoomByUserIdAndChatRoomId(userId, chatRoomId)
-                .orElseThrow(() -> new UserChatRoomNotFoundException(userId, chatRoomId));
 
-        userChatRoom.setStatus(UserChatRoomStatus.LEAVE);
+        updateUserChatRoomStatus(findUserByUserId(userId), chatRoom, UserChatRoomStatus.LEAVE);
         chatRoom.subUser();
-
         // 유저 퇴장시, 채팅방이 비어있다면 현재 채팅방 삭제
         return deleteChatRoomWhenEmpty(chatRoom);
     }
@@ -147,20 +142,21 @@ public class ChatRoomService {
 
         // 초대받은 유저와 채팅방 연관관계 생성
         Optional<UserChatRoom> userChatRoom = findUserChatRoomByUserIdAndChatRoomId(inviteeId, chatRoomId);
-        setOrUpdateUserChatRoomEntryStatus(invitee, chatRoom, userChatRoom);
+        updateUserChatRoomStatus(invitee, chatRoom, UserChatRoomStatus.ENTER);
         chatRoom.addUser();
     }
 
     /**
      * 채팅방으로 친구 초대
      * */
-    public void inviteFriends(Long userId, Long chatRoomId, List<Long> friendsIdList) {
+    public void inviteFriends(Long chatRoomId, List<Long> friendsIdList) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
         // 친구 초대시 최대인원 초과하는지 검증
         validateChatRoomCapacity(chatRoom, friendsIdList.size());
         // 초대받은 각 친구마다 채팅방과 연관관계 생성
         for (Long friendsId : friendsIdList) {
-            setOrUpdateUserChatRoomEntryStatus(findUserByUserId(friendsId), chatRoom, findUserChatRoomByUserIdAndChatRoomId(friendsId, chatRoomId));
+            updateUserChatRoomStatus(findUserByUserId(friendsId), chatRoom, UserChatRoomStatus.ENTER);
+            chatRoom.addUser();
         }
     }
 
@@ -207,15 +203,16 @@ public class ChatRoomService {
         }
     }
 
-    private void setOrUpdateUserChatRoomEntryStatus(User user, ChatRoom chatRoom, Optional<UserChatRoom> userChatRoom){
+    private void updateUserChatRoomStatus(User user, ChatRoom chatRoom, UserChatRoomStatus status) {
+        Optional<UserChatRoom> userChatRoom = findUserChatRoomByUserIdAndChatRoomId(user.getId(), chatRoom.getId());
+
         if (userChatRoom.isEmpty()) {
-            // 채팅방에 들어온적 없다면 새로운 연관관계 채팅방과 생성
-            UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
+            UserChatRoom.setUserChatRoom(user, chatRoom, status);
             return;
         }
-        if (userChatRoom.get().getStatus().equals(UserChatRoomStatus.LEAVE)) {
-            // 들어온적 있을 경우 ENTER 로 상태만 변화
-            userChatRoom.get().setStatus(UserChatRoomStatus.ENTER);
+
+        if (!userChatRoom.get().getStatus().equals(status)) {
+            userChatRoom.get().setStatus(status);
         }
     }
 

@@ -141,7 +141,7 @@ public class ChatRoomController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     )
     {
-        chatRoomService.inviteFriends(userDetails.getUserId(), chatRoomId, requestDto.getFriends());
+        chatRoomService.inviteFriends(chatRoomId, requestDto.getFriends());
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
