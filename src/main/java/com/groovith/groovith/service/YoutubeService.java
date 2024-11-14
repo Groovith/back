@@ -49,7 +49,6 @@ public class YoutubeService {
         trackDto.setImageUrl(video.getSnippet().getThumbnails().getDefault().getUrl());
         trackDto.setDuration(Duration.parse(video.getContentDetails().getDuration()).toSeconds());
 
-        System.out.println("---------------------"+trackDto);
         // 트랙 저장
         trackRepository.save(new Track(trackDto));
 

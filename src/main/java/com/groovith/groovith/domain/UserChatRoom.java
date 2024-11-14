@@ -28,7 +28,7 @@ public class UserChatRoom{
     private ChatRoom chatRoom;
 
     // 채팅방이 삭제될때 메시지들도 같이 삭제 / 유저가 삭제될때는 메시지 유지
-    @OneToMany(mappedBy = "userChatRoom", orphanRemoval = false)
+    @OneToMany(mappedBy = "userChatRoom")
     private final List<Message> messages = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)

@@ -4,9 +4,7 @@ import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.ChatRoomMemberStatus;
 import com.groovith.groovith.domain.enums.UserChatRoomStatus;
 import com.groovith.groovith.dto.*;
-import com.groovith.groovith.exception.ChatRoomFullException;
-import com.groovith.groovith.exception.ChatRoomNotFoundException;
-import com.groovith.groovith.exception.UserNotFoundException;
+import com.groovith.groovith.exception.*;
 import com.groovith.groovith.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,35 +24,32 @@ public class ChatRoomService {
 
     @Value("${cloud.aws.s3.defaultChatRoomImageUrl}")
     private String DEFAULT_IMG_URL;
+    private static final int SINGLE_NEW_MEMBER = 1;
+    private static final int MAX_MEMBER = 100;
+    private static final String ERROR_ONLY_MASTER_USER_CAN_CHANGE_PERMISSION = "권한 변경은 masterUser 만 가능합니다";
 
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
-    private final UserService userService;
     private final UserChatRoomRepository userChatRoomRepository;
     private final CurrentPlaylistRepository currentPlaylistRepository;
-    private final int MAX_MEMBER = 100;
+
     /**
      * 채팅방 생성
-     * */
-    public ChatRoom create(Long userId, CreateChatRoomRequestDto request){
-        ChatRoom data = ChatRoom.builder()
-                .name(request.getName())
-                .chatRoomStatus(request.getStatus())
-                .imageUrl(DEFAULT_IMG_URL)
-                .permission(request.getPermission())
-                .build();
-
-        ChatRoom chatRoom = chatRoomRepository.save(data);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(()->new UserNotFoundException(userId));
-
+     */
+    public ChatRoom create(Long userId, CreateChatRoomRequestDto request) {
+        ChatRoom chatRoom = chatRoomRepository.save(
+                ChatRoom.builder()
+                        .name(request.getName())
+                        .chatRoomStatus(request.getStatus())
+                        .imageUrl(DEFAULT_IMG_URL)
+                        .permission(request.getPermission())
+                        .build()
+        );
+        User user = findUserByUserId(userId);
         //masterUserName 설정
         chatRoom.updateMasterUserId(user.getId());
-
         // 유저 - 채팅방 연관관계 생성
         UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
-
         // 채팅방 플레이리스트 생성
         currentPlaylistRepository.save(new CurrentPlaylist(chatRoom.getId()));
 
@@ -63,9 +58,9 @@ public class ChatRoomService {
 
     /**
      * 채팅방 목록 조회
-     * */
+     */
     @Transactional(readOnly = true)
-    public List<ChatRoomListResponseDto> findAllDesc(){
+    public List<ChatRoomListResponseDto> findAllDesc() {
         return chatRoomRepository.findAllDesc().stream()
                 .map(ChatRoomListResponseDto::new)
                 .collect(Collectors.toList());
@@ -76,112 +71,61 @@ public class ChatRoomService {
      */
     @Transactional(readOnly = true)
     public ChatRoomDetailsListDto getChatRoomsById(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        User user = findUserByUserId(userId);
 
-        // UserChatRoom 에서 현재 사용자가 참가 중인 채팅방 가져오기
-        List<UserChatRoom> userChatRoomList = userChatRoomRepository.findByUserId(user.getId());
-
-        // UserChatRoom 에서 ChatRoom 엔티티를 추출하려 List 로 변환
-        List<ChatRoom> chatRoomList = userChatRoomList.stream().map(UserChatRoom::getChatRoom).toList();
-
-        // ChatRoom 엔티티를 ChatRoomDetailsDto 로 변환 후 반환
-        return new ChatRoomDetailsListDto(chatRoomList.stream().map(ChatRoomDetailsDto::new).toList());
+        return new ChatRoomDetailsListDto(userChatRoomRepository.findByUserId(user.getId()).stream()
+                .map(userChatRoom -> new ChatRoomDetailsDto(userChatRoom.getChatRoom()))
+                .toList());
     }
 
 
     /**
      * 채팅방 상세 조회
-     * */
+     */
     @Transactional(readOnly = true)
-    public ChatRoomDetailsDto findChatRoomDetail(Long chatRoomId){
-        ChatRoom findChatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
-
-        return new ChatRoomDetailsDto(findChatRoom);
+    public ChatRoomDetailsDto findChatRoomDetail(Long chatRoomId) {
+        return new ChatRoomDetailsDto(findChatRoomByChatRoomId(chatRoomId));
     }
 
     /**
-     *  채팅방 삭제
-     * */
-    public void deleteChatRoom(Long chatRoomId){
+     * 채팅방 삭제
+     */
+    public void deleteChatRoom(Long chatRoomId) {
         chatRoomRepository.deleteById(chatRoomId);
     }
 
 
     /**
      * 채팅방 입장
-     * */
-    public void enterChatRoom(Long userId, Long chatRoomId){
+     */
+    public void enterChatRoom(Long userId, Long chatRoomId) {
         // 유저, 채팅방 조회
-        User user = userRepository.findById(userId)
-                .orElseThrow(()-> new UserNotFoundException(userId));
-        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
-
-
-        Optional<UserChatRoom> data = userChatRoomRepository
-                .findByUserIdAndChatRoomId(userId, chatRoomId);
-        // 이전에 입장한 적이 있다면
-        if(data.isPresent()){
-            UserChatRoom userChatRoom = data.get();
-            if(userChatRoom.getStatus()==UserChatRoomStatus.ENTER) {
-                // 초대받은 유저가 채팅방에 이미 참가중인지 확인
-                throw new IllegalArgumentException("유저가 채팅방에 이미 참가중 "+" userId ="+userId+" chatRoomId= "+chatRoom.getId() );
-            }
-            // 탈퇴는 고려 x
-            userChatRoom.setStatus(UserChatRoomStatus.ENTER);
-        }else{
-            // 처음 입장일 경우 연관관계 생성
-            UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
-        }
-        chatRoom.addUser();
-
+        User user = findUserByUserId(userId);
+        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
         // 채팅방 인원 제한 : 100명
-        if(chatRoom.getCurrentMemberCount() > MAX_MEMBER){
-            throw new ChatRoomFullException(chatRoomId);
-        }
+        validateChatRoomCapacity(chatRoom, SINGLE_NEW_MEMBER);
+
+        updateUserChatRoomStatus(user, chatRoom, UserChatRoomStatus.ENTER);
+        chatRoom.addUser();
     }
 
 
-
     /**
-     *  채팅방 퇴장
-     * */
+     * 채팅방 퇴장
+     */
     public ChatRoomMemberStatus leaveChatRoom(Long userId, Long chatRoomId) {
+        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(()-> new UserNotFoundException(userId));
-
-        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
-
-        UserChatRoom userChatRoom = userChatRoomRepository.findByUserIdAndChatRoomId(user.getId(), chatRoomId)
-                .orElseThrow(()->new IllegalArgumentException("채팅방에 유저가 존재하지 않음 userId:" + user.getId()));
-
-        // 중간 테이블 삭제
-//        userChatRoomRepository.delete(userChatRoom);
-
-        // User, ChatRoom의 연관관계 삭제
-//        UserChatRoom.deleteUserChatRoom(userChatRoom, user, chatRoom);
-        userChatRoom.setStatus(UserChatRoomStatus.LEAVE);
-        // current 1 감소
+        updateUserChatRoomStatus(findUserByUserId(userId), chatRoom, UserChatRoomStatus.LEAVE);
         chatRoom.subUser();
-
         // 유저 퇴장시, 채팅방이 비어있다면 현재 채팅방 삭제
-        if(chatRoom.getCurrentMemberCount()<=0){
-            // 채팅방 플레이리스트 함께 삭제
-            currentPlaylistRepository.deleteByChatRoomId(chatRoomId);
-            return ChatRoomMemberStatus.EMPTY;
-        }else{
-            return ChatRoomMemberStatus.ACTIVE;
-        }
+        return deleteChatRoomWhenEmpty(chatRoom);
     }
 
 
     @Transactional(readOnly = true)
-    public List<UserChatRoomDto> findAllUser(Long chatRoomId){
-        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+    public List<UserChatRoomDto> findAllUser(Long chatRoomId) {
+        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
 
         return chatRoom.getUserChatRooms().stream()
                 .map(userChatRoom -> userChatRoom.getUser().toUserChatRoomDto(userChatRoom.getUser()))
@@ -189,76 +133,95 @@ public class ChatRoomService {
     }
 
     /**
-     * 채팅방으로 초대
+     * 채팅방으로 초대 - 현재 사용 x
      */
-    public void invite(Long inviterId, Long inviteeId, Long chatRoomId){
-
-        User inviter = userRepository.findById(inviterId)
-                .orElseThrow(()->new UserNotFoundException(inviterId));
-        User invitee = userRepository.findById(inviteeId)
-                .orElseThrow(()-> new UserNotFoundException(inviteeId));
-
-        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+    public void invite(Long inviterId, Long inviteeId, Long chatRoomId) {
+        //User inviter = findByUserById(inviterId);
+        User invitee = findUserByUserId(inviteeId);
+        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
 
         // 초대받은 유저와 채팅방 연관관계 생성
-        Optional<UserChatRoom> data = userChatRoomRepository
-                .findByUserIdAndChatRoomId(inviteeId, chatRoomId);
-        // 이전에 입장한 적이 있다면
-        if(data.isPresent()){
-            UserChatRoom userChatRoom = data.get();
-            if(userChatRoom.getStatus()==UserChatRoomStatus.ENTER) {
-                // 초대받은 유저가 채팅방에 이미 참가중인지 확인
-                throw new IllegalArgumentException("유저가 채팅방에 이미 참가중 "+" userId ="+inviteeId+" chatRoomId= "+chatRoom.getId() );
-            }
-            // 탈퇴는 고려 x
-            userChatRoom.setStatus(UserChatRoomStatus.ENTER);
-        }else{
-            // 처음 입장일 경우 연관관계 생성
-            UserChatRoom.setUserChatRoom(invitee, chatRoom, UserChatRoomStatus.ENTER);
-        }
+        Optional<UserChatRoom> userChatRoom = findUserChatRoomByUserIdAndChatRoomId(inviteeId, chatRoomId);
+        updateUserChatRoomStatus(invitee, chatRoom, UserChatRoomStatus.ENTER);
         chatRoom.addUser();
     }
 
-    public void inviteFriends(Long userId, Long chatRoomId, List<Long> friendsIdList){
-        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()-> new ChatRoomNotFoundException(chatRoomId));
-        // 초대된 인원이 정원 초과할 때
-        if(friendsIdList.size()+chatRoom.getCurrentMemberCount() > MAX_MEMBER){
-            throw new ChatRoomFullException(chatRoomId);
-        }
-
-        for(Long friendsId : friendsIdList){
-            User friend = userRepository.findById(friendsId)
-                    .orElseThrow(()->new UserNotFoundException(friendsId));
-            Optional<UserChatRoom> userChatRoom = userChatRoomRepository.findByUserIdAndChatRoomId(friendsId, chatRoomId);
-
-            // 채팅방에 들어온 적 없거나 현재 없는 경우, 이미 채팅방에 있는 경우는 무시
-            // 들어온 적 없으면 연관관계 새로 생성
-            if(userChatRoom.isEmpty()){
-                UserChatRoom.setUserChatRoom(friend, chatRoom, UserChatRoomStatus.ENTER);
-            } else if (userChatRoom.get().getStatus().equals(UserChatRoomStatus.LEAVE)) {
-                // 들어온적 있을 경우 상태만 변화
-                userChatRoom.get().setStatus(UserChatRoomStatus.ENTER);
-            }
+    /**
+     * 채팅방으로 친구 초대
+     * */
+    public void inviteFriends(Long chatRoomId, List<Long> friendsIdList) {
+        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
+        // 친구 초대시 최대인원 초과하는지 검증
+        validateChatRoomCapacity(chatRoom, friendsIdList.size());
+        // 초대받은 각 친구마다 채팅방과 연관관계 생성
+        for (Long friendsId : friendsIdList) {
+            updateUserChatRoomStatus(findUserByUserId(friendsId), chatRoom, UserChatRoomStatus.ENTER);
+            chatRoom.addUser();
         }
     }
 
     /**
      * 채팅방 권한 변경
-     * */
-    public void updatePermission(Long chatRoomId, Long userId){
-        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+     */
+    public void updatePermission(Long chatRoomId, Long userId) {
+        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
         // mastUserId == userId 인 경우만 권한 변경 가능
-        if(!chatRoom.getMasterUserId().equals(userId)){
-            throw new IllegalArgumentException("권한 변경은 masterUser 만 가능합니다.");
-        }
+        validateMasterUser(userId, chatRoom.getMasterUserId(), ERROR_ONLY_MASTER_USER_CAN_CHANGE_PERMISSION);
+
         chatRoom.changePermission();
     }
 
-    @Transactional(readOnly = true)
-    public ChatRoom findById(Long chatRoomId){
-        return chatRoomRepository.findById(chatRoomId).orElseThrow(()->new ChatRoomNotFoundException(chatRoomId));
+
+    private ChatRoom findChatRoomByChatRoomId(Long chatRoomId) {
+        return chatRoomRepository.findById(chatRoomId).orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
+    }
+
+    private User findUserByUserId(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+    }
+    
+    private Optional<UserChatRoom> findUserChatRoomByUserIdAndChatRoomId(Long userId, Long chatRoomId) {
+        return userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId);
+    }
+
+    private void validateChatRoomCapacity(ChatRoom chatRoom, int newEnterMemberCount) {
+        if (chatRoom.getCurrentMemberCount() + newEnterMemberCount > MAX_MEMBER) {
+            throw new ChatRoomFullException(chatRoom.getId());
+        }
+    }
+
+    private void validateUserAlreadyInChatRoom(Long userId, Long chatRoomId, UserChatRoom userChatRoom) {
+        if (userChatRoom.getStatus() == UserChatRoomStatus.ENTER) {
+            // 초대받은 유저가 채팅방에 이미 참가중인지 확인
+            throw new UserAlreadyInChatRoomException(userId, chatRoomId);
+        }
+    }
+
+    private void validateMasterUser(Long userId, Long masterUserId, String errorMessage) {
+        if (masterUserId.equals(userId)) {
+            throw new NotMasterUserException(errorMessage);
+        }
+    }
+
+    private void updateUserChatRoomStatus(User user, ChatRoom chatRoom, UserChatRoomStatus status) {
+        Optional<UserChatRoom> userChatRoom = findUserChatRoomByUserIdAndChatRoomId(user.getId(), chatRoom.getId());
+
+        if (userChatRoom.isEmpty()) {
+            UserChatRoom.setUserChatRoom(user, chatRoom, status);
+            return;
+        }
+
+        if (!userChatRoom.get().getStatus().equals(status)) {
+            userChatRoom.get().setStatus(status);
+        }
+    }
+
+    private ChatRoomMemberStatus deleteChatRoomWhenEmpty(ChatRoom chatRoom){
+        if (chatRoom.getCurrentMemberCount() <= 0) {
+            // 채팅방 플레이리스트 함께 삭제
+            currentPlaylistRepository.deleteByChatRoomId(chatRoom.getId());
+            return ChatRoomMemberStatus.EMPTY;
+        }
+        return ChatRoomMemberStatus.ACTIVE;
     }
 }

@@ -5,6 +5,6 @@ public class UserChatRoomNotFoundException extends RuntimeException{
     public UserChatRoomNotFoundException() {super();}
 
     public UserChatRoomNotFoundException(Long userId, Long chatRoomId) {
-        super("UserId :"+userId+" ChatRoomId :"+chatRoomId+" Not Found");
+        super("No association found between User (ID: " + userId + ") and Chat Room (ID: " + chatRoomId + ").");
     }
 }

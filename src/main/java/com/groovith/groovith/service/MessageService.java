@@ -6,8 +6,10 @@ import com.groovith.groovith.domain.UserChatRoom;
 import com.groovith.groovith.dto.MessageListResponseDto;
 import com.groovith.groovith.dto.MessageResponseDto;
 import com.groovith.groovith.exception.UserChatRoomNotFoundException;
+import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.MessageRepository;
 import com.groovith.groovith.dto.MessageDto;
+import com.groovith.groovith.dto.MessageDetailsResponseDto;
 import com.groovith.groovith.repository.UserChatRoomRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -88,4 +90,10 @@ public class MessageService {
         return message.getUserChatRoom().getUser().getImageUrl();
     }
 
+    /**
+     * 채팅방의 메시지 삭제
+     * */
+    public void deleteAllMessageInChatRoom(Long chatRoomId) {
+        messageRepository.deleteByChatRoomId(chatRoomId);
+    }
 }

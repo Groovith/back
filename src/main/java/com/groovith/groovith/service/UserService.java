@@ -93,6 +93,13 @@ public class UserService {
         // 탈퇴 회원이 만든 채팅방이면 채팅방 삭제, 아니면 탈퇴 회원이 속해 있던 채팅방 인원 -1
         List<UserChatRoom> userChatRooms = userChatRoomRepository.findByUserId(user.getId());
         for(UserChatRoom userChatRoom : userChatRooms){
+            for(Message message: userChatRoom.getMessages()){
+                // 탈퇴회원 메세지 처리 - isUserDeleted 된 메세지를 조회할때 username = 알수없음 으로 표시
+                message.setIsUserDeleted();
+                // 메시지와 userchatroom 연관관계 제거(user 탈퇴시에 userchatroom이 같이 삭제될때 메시지는 그대로 두기위함)
+                message.setUserChatRoomNull();
+            }
+
             ChatRoom chatRoom = userChatRoom.getChatRoom();
             // 채팅방 만든사람이 탈퇴 회원 or 채팅방에 탈퇴회원만 있었을 경우 채팅방 삭제
             if(chatRoom.getMasterUserId().equals(user.getId()) || chatRoom.getCurrentMemberCount() <= 1){
@@ -102,12 +109,7 @@ public class UserService {
                 chatRoom.subUser();
             }
 
-            for(Message message: userChatRoom.getMessages()){
-                // 탈퇴회원 메세지 처리 - isUserDeleted 된 메세지를 조회할때 username = 알수없음 으로 표시
-                message.setIsUserDeleted();
-                // 메시지와 userchatroom 연관관계 제거(user 탈퇴시에 userchatroom이 같이 삭제될때 메시지는 그대로 두기위함)
-                message.setUserChatRoomNull();
-            }
+
         }
 
         try {
