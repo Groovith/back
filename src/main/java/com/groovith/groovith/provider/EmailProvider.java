@@ -61,7 +61,7 @@ public class EmailProvider {
 
     // 비밀번호 변경 본문 생성
     private String getPasswordResetMessage(String email, String code) {
-        String resetUrl = APP_URL + "/reset-password?email=" + email + "&code=" + code;
+        String resetUrl = APP_URL + "/change-password?email=" + email + "&code=" + code;
 
         StringBuilder message = new StringBuilder();
         message.append("<!DOCTYPE html>");
