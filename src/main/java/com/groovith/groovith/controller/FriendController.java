@@ -40,7 +40,7 @@ public class FriendController {
     /**
      *  친구 목록 불러오기
      * */
-    @GetMapping("/users/friends")
+    @GetMapping("/users/me/friends")
     public ResponseEntity<FriendListResponseDto> getFriends(@AuthenticationPrincipal CustomUserDetails userDetails){
         return new ResponseEntity<>(friendService.getFriends(userDetails.getUserId()), HttpStatus.OK);
     }
