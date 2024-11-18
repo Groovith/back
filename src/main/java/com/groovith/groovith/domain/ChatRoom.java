@@ -51,6 +51,9 @@ public class ChatRoom {
     @Column(name = "master_user_id")
     private Long masterUserId;
 
+    @Column(name = "master_user_name")
+    private String masterUserName;
+
     @Enumerated(EnumType.STRING)
     private ChatRoomPermission permission;
 
@@ -83,8 +86,9 @@ public class ChatRoom {
         this.imageUrl = url;
     }
 
-    public void updateMasterUserId(Long id){
-        this.masterUserId = id;
+    public void setMasterUserInfo(User user){
+        this.masterUserId = user.getId();
+        this.masterUserName = user.getUsername();
     }
 
     public void changePermission() {
