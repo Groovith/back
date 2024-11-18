@@ -41,9 +41,9 @@ public class ImageService {
     private final ChatRoomRepository chatRoomRepository;
 
     // 채팅방 이미지 저장 폴더
-    private String CHATROOM_DIR = "chatroom/";
+    private final String CHATROOM_DIR = "chatroom/";
     // 유저 이미지 저장 폴더
-    private String USER_DIR = "user/";
+    private final String USER_DIR = "user/";
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;

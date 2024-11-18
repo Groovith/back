@@ -26,20 +26,16 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final RefreshRepository refreshRepository;
     private final CertificationRepository certificationRepository;
     private final PasswordResetCertificationRepository passwordResetCertificationRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailProvider emailProvider;
-    private final AmazonS3Client amazonS3Client;
     private final FollowRepository followRepository;
     private final ImageService imageService;
     private final UserChatRoomRepository userChatRoomRepository;
     private final ChatRoomRepository chatRoomRepository;
 
-    @Value("${cloud.aws.s3.bucket}")
-    private String bucket;
     @Value("${cloud.aws.s3.defaultUserImageUrl}")
     private String DEFAULT_IMG_URL;
 
@@ -149,41 +145,6 @@ public class UserService {
         follow.ifPresent(value -> userDetailsResponseDto.setStatus(value.getStatus()));
         return userDetailsResponseDto;
     }
-
-//    /**
-//     * Spotify 인증 후 발급 받은 토큰 저장
-//     *
-//     * @param userId       User ID
-//     * @param refreshToken Spotify Refresh Token (없을 경우 저장하지 않음)
-//     */
-//    public void saveSpotifyToken(Long userId, String refreshToken) {
-//        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-//        userRepository.save(user);
-//    }
-
-//    /**
-//     * Spotify 토큰 삭제 및 연결 해제
-//     *
-//     * @param userId User Id
-//     */
-//    public void removeSpotifyToken(Long userId) {
-//        User user = userRepository.findById(userId)
-//                .orElseThrow(() -> new UserNotFoundException(userId));
-//        userRepository.save(user);
-//    }
-//
-//    /**
-//     * Spotify 토큰 가져오기
-//     *
-//     * @param userId User Id
-//     * @return SpotifyTokensResponseDto
-//     */
-//    public SpotifyTokenResponseDto getSpotifyToken(Long userId) {
-//        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-//        SpotifyTokenResponseDto responseDto = new SpotifyTokenResponseDto();
-//
-//        return responseDto;
-//    }
 
     /**
      * 유저 status 변경

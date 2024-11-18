@@ -24,7 +24,6 @@ public class FollowController {
     private final FollowService followService;
     private final SimpMessageSendingOperations template;
     private final NotificationService notificationService;
-    private final UserService userService;
 
     // 팔로잉 목록 조회
     @GetMapping("/users/{userId}/following")

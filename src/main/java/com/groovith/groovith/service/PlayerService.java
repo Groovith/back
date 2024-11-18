@@ -423,28 +423,6 @@ public class PlayerService {
         return playerSession;
     }
 
-//    @Scheduled(fixedRate = 1000)  // 1초마다 실행
-//    public void updatePosition() {
-//        for (Map.Entry<Long, PlayerSession> entry : playerSessions.entrySet()) {
-//            Long chatRoomId = entry.getKey();
-//            PlayerSession playerSession = entry.getValue();
-//
-//            if (!playerSession.getPaused()) {
-//                long elapsedSeconds = Duration.between(playerSession.getStartedAt(), LocalDateTime.now()).toSeconds();
-//                long currentPosition = playerSession.getLastPosition() + elapsedSeconds;
-//
-//                if (currentPosition >= playerSession.getDuration()) {
-//                    // 곡의 duration 을 초과한 경우 다음 트랙으로 이동
-//                    nextTrack(playerSession, getTrackDtoList(chatRoomId), chatRoomId);
-//                } else {
-//                    // 아직 duration 을 초과하지 않았다면 position 업데이트
-//                    playerSession.setLastPosition(currentPosition);
-//                    playerSession.setStartedAt(LocalDateTime.now());
-//                }
-//            }
-//        }
-//    }
-
     @Transactional
     public List<TrackDto> getTrackDtoList(Long chatRoomId) {
         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId)
@@ -454,67 +432,4 @@ public class PlayerService {
                 .map(c -> new TrackDto(c.getTrack()))
                 .toList();
     }
-
-//    @Scheduled(fixedRate = 1000)
-//    @Transactional(readOnly = true)
-//    public void updatePlayerDetails() {
-//        // 정지되지 않은 모든 플레이어 가져오기
-//        List<Player> players = playerRepository.findAllByPausedFalse().orElseThrow();
-//
-//        for (Player player : players) {
-//            // 현재 재생 상태를 WebSocket 으로 전송
-//            template.convertAndSend("/sub/api/chatrooms/" + player.getChatRoomId() + "/player", new PlayerDetailsDto(player));
-//        }
-//    }
-
-    //    @Scheduled(fixedRate = 1000) // 매 초마다 실행
-//    @Transactional
-//    public void updatePlayerPositions() {
-    // 정지되지 않은 모든 플레이어 가져오기
-//        List<Player> players = playerRepository.findAllByPausedFalse().orElseThrow();
-//
-//        for (Player player : players) {
-//            // 플레이어의 position 을 1000ms 증가
-//            player.setPosition(player.getPosition() + 1000);
-//
-//            // position 이 duration 을 초과하면 다음 곡으로 이동
-//            if (player.getPosition() >= player.getDuration()) {
-//                nextTrack(player.getChatRoomId());
-//            } else {
-//                // 그렇지 않으면 플레이어 상태만 업데이트
-//                playerRepository.save(player);
-//            }
-//
-//            // 현재 재생 상태를 WebSocket 으로 전송
-//            PlayerDetailsDto playerDetailsDto = new PlayerDetailsDto(player);
-//            template.convertAndSend("/sub/api/chatrooms/" + player.getChatRoomId() + "/player", playerDetailsDto);
-//        }
-//    }
-// }
-
-
-//
-//
-//
-//    @Transactional
-//    public PlayerDetailsDto playAtIndex(Long chatRoomId, int index) {
-//        Player player = playerRepository.findByChatRoomId(chatRoomId).orElseThrow(() -> new RuntimeException("player with chatRoomId(" + chatRoomId + ") is null"));
-//
-//        List<SpotifyTrackDto> currentPlaylist = player.getCurrentPlaylist();
-//        if (index < 0 || index >= currentPlaylist.size()) {
-//            throw new RuntimeException("index(" + index + ") out of bound. currentPlaylist.size(" + currentPlaylist.size() + ")");
-//        }
-//        player.setCurrentPlaylistIndex(index);
-//        player.setPaused(false);
-//        player.setPosition(0L);
-//        player.setDuration(currentPlaylist.get(index).getDuration_ms());
-//        playerRepository.save(player);
-//        return new PlayerDetailsDto(player);
-//    }
-//
-
-//
-//
-//
-
 }
