@@ -102,6 +102,18 @@ public class ChatRoom {
         this.permission = newPermission;
     }
 
+    public void update(String name, ChatRoomStatus status, ChatRoomPermission permission){
+        if (name != null) {
+            this.updateName(name);
+        }
+        if (status != null) {
+            this.updateStatus(status);
+        }
+        if (permission != null) {
+            this.updatePermission(permission);
+        }
+    }
+
     public void changePermission() {
         this.permission = (this.permission == ChatRoomPermission.MASTER)
                 ? ChatRoomPermission.EVERYONE
