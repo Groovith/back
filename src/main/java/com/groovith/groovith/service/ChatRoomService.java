@@ -46,8 +46,8 @@ public class ChatRoomService {
                         .build()
         );
         User user = findUserByUserId(userId);
-        //masterUserName 설정
-        chatRoom.updateMasterUserId(user.getId());
+        //masterUserId, masterUserName 설정
+        chatRoom.setMasterUserInfo(user);
         // 유저 - 채팅방 연관관계 생성
         UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
         // 채팅방 플레이리스트 생성

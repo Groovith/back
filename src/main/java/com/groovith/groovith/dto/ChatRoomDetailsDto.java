@@ -27,6 +27,7 @@ import lombok.Data;
 public class ChatRoomDetailsDto {
 
     private Long chatRoomId;
+    private Long masterUserId;
     private String name;
     private String imageUrl;
     private String masterUserName;
@@ -45,7 +46,8 @@ public class ChatRoomDetailsDto {
         this.chatRoomId = chatRoom.getId();
         this.name = chatRoom.getName();
         this.imageUrl = chatRoom.getImageUrl();
-        //this.masterUserName = chatRoom.getMasterUserId();
+        this.masterUserId = chatRoom.getMasterUserId();
+        this.masterUserName = chatRoom.getMasterUserName();
         /*this.totalUsers = chatRoom.getTotalMember();
         this.currentUsers = chatRoom.getCurrentMember();
         this.status = chatRoom.getStatus();
