@@ -93,18 +93,8 @@ public class ChatRoomService {
      * */
     public void updateChatRoom(Long chatRoomId, Long userId, UpdateChatRoomRequestDto request) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
-        if(!chatRoom.getMasterUserId().equals(userId)){
-            throw new NotMasterUserException(ERROR_ONLY_MASTER_USER_CAN_UPDATE_CHATROOM);
-        }
-        if(request.getName() != null){
-            chatRoom.updateName(request.getName());
-        }
-        if(request.getStatus() != null){
-            chatRoom.updateStatus(request.getStatus());
-        }
-        if(request.getPermission() != null){
-            chatRoom.updatePermission(request.getPermission());
-        }
+        validateMasterUser(userId, chatRoom.getMasterUserId(), ERROR_ONLY_MASTER_USER_CAN_UPDATE_CHATROOM);
+        chatRoom.update(request.getName(), request.getStatus(), request.getPermission());
     }
 
     /**
@@ -218,7 +208,7 @@ public class ChatRoomService {
     }
 
     private void validateMasterUser(Long userId, Long masterUserId, String errorMessage) {
-        if (masterUserId.equals(userId)) {
+        if (!masterUserId.equals(userId)) {
             throw new NotMasterUserException(errorMessage);
         }
     }
