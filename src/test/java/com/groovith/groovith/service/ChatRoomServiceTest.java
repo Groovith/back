@@ -5,6 +5,7 @@ import com.groovith.groovith.domain.enums.*;
 import com.groovith.groovith.dto.ChatRoomDetailsDto;
 import com.groovith.groovith.dto.ChatRoomListResponseDto;
 import com.groovith.groovith.dto.CreateChatRoomRequestDto;
+import com.groovith.groovith.dto.UpdateChatRoomRequestDto;
 import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
@@ -45,8 +46,9 @@ class ChatRoomServiceTest {
         String chatRoomName = "testRoom";
         String userName = "masterUserName";
         CreateChatRoomRequestDto requestDto = new CreateChatRoomRequestDto();
-        requestDto.setStatus(ChatRoomStatus.PUBLIC);
-        requestDto.setPermission(ChatRoomPermission.MASTER);
+        ReflectionTestUtils.setField(requestDto, "status", ChatRoomStatus.PUBLIC);
+        ReflectionTestUtils.setField(requestDto, "permission", ChatRoomPermission.MASTER);
+
 
         User user = new User();
         user.setId(userId);
@@ -70,6 +72,35 @@ class ChatRoomServiceTest {
         Assertions.assertThat(actualChatRoom.getMasterUserId()).isEqualTo(user.getId());
         Assertions.assertThat(actualChatRoom.getMasterUserName()).isEqualTo(user.getUsername());
 
+    }
+
+    @Test
+    @DisplayName("채팅방 수정 테스트")
+    void updateChatRoom(){
+        // given
+        Long chatRoomId = 1L;
+        Long userId = 1L;
+        String chatRoomName = "room";
+        String updatedChatRoomName = "updatedRoom";
+        String userName = "masterUserName";
+        ChatRoom chatRoom =createChatRoom(chatRoomName, ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
+        User masterUser = createMasterUser(userId, userName);
+        // masterUser 설정
+        chatRoom.setMasterUserInfo(masterUser);
+
+        UpdateChatRoomRequestDto updateChatRoomRequestDto = new UpdateChatRoomRequestDto();
+        ReflectionTestUtils.setField(updateChatRoomRequestDto, "name", updatedChatRoomName);
+        ReflectionTestUtils.setField(updateChatRoomRequestDto, "status", ChatRoomStatus.PRIVATE);
+        ReflectionTestUtils.setField(updateChatRoomRequestDto, "permission", ChatRoomPermission.EVERYONE);
+
+        // when
+        when(chatRoomRepository.findById(chatRoomId)).thenReturn(Optional.of(chatRoom));
+        chatRoomService.updateChatRoom(chatRoomId, userId, updateChatRoomRequestDto);
+
+        // then
+        Assertions.assertThat(chatRoom.getName()).isEqualTo(updatedChatRoomName);
+        Assertions.assertThat(chatRoom.getStatus()).isEqualTo(ChatRoomStatus.PRIVATE);
+        Assertions.assertThat(chatRoom.getPermission()).isEqualTo(ChatRoomPermission.EVERYONE);
     }
 
 
