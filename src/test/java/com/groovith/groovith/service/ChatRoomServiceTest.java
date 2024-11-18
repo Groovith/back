@@ -1,6 +1,5 @@
 package com.groovith.groovith.service;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.*;
 import com.groovith.groovith.dto.ChatRoomDetailsDto;
@@ -44,12 +43,14 @@ class ChatRoomServiceTest {
         //given
         Long userId = 1L;
         String chatRoomName = "testRoom";
+        String userName = "masterUserName";
         CreateChatRoomRequestDto requestDto = new CreateChatRoomRequestDto();
         requestDto.setStatus(ChatRoomStatus.PUBLIC);
         requestDto.setPermission(ChatRoomPermission.MASTER);
 
         User user = new User();
         user.setId(userId);
+        user.setUsername(userName);
 
         ChatRoom expectedChatRoom = createChatRoom(chatRoomName, ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
 
@@ -65,7 +66,12 @@ class ChatRoomServiceTest {
         //User - ChatRoom 이 연관관계가 생기는지 테스트
         Assertions.assertThat(user.getUserChatRoom().get(0).getChatRoom())
                 .isEqualTo(actualChatRoom);
+        //masterUser 정보 저장 테스트
+        Assertions.assertThat(actualChatRoom.getMasterUserId()).isEqualTo(user.getId());
+        Assertions.assertThat(actualChatRoom.getMasterUserName()).isEqualTo(user.getUsername());
+
     }
+
 
     @Test
     @DisplayName("채팅방 목록 조회 테스트")
@@ -96,9 +102,18 @@ class ChatRoomServiceTest {
     public void findChatRoomDetail(){
         //given
         Long chatroomId = 1L;
-        ChatRoom chatRoom = createChatRoom("room", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
+        Long userId = 1L;
+        String chatRoomName = "room";
+        String masterUserName = "masterUserName";
+        User user = createMasterUser(userId,masterUserName);
+        ChatRoom chatRoom = createChatRoom(chatRoomName, ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
         // ReflectionTestUtils 사용하면 필드값 임의로 지정가능
         ReflectionTestUtils.setField(chatRoom, "id", chatroomId);
+        // 유저와 연관관계 설정
+        UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
+        // 마스터 유저 설정
+        chatRoom.setMasterUserInfo(user);
+
         ChatRoomDetailsDto dto = new ChatRoomDetailsDto(chatRoom);
         dto.setChatRoomId(chatroomId);
 
@@ -110,7 +125,12 @@ class ChatRoomServiceTest {
 
         //then
         Assertions.assertThat(chatRoomDetailsDto.getChatRoomId()).isEqualTo(chatroomId);
-        Assertions.assertThat(chatRoomDetailsDto.getName()).isEqualTo("room");
+        Assertions.assertThat(chatRoomDetailsDto.getName()).isEqualTo(chatRoomName);
+        Assertions.assertThat(chatRoomDetailsDto.getMasterUserId()).isEqualTo(user.getId());
+        Assertions.assertThat(chatRoomDetailsDto.getImageUrl()).isEqualTo(DEFAULT_IMG_URL);
+        Assertions.assertThat(chatRoomDetailsDto.getMasterUserName()).isEqualTo(user.getUsername());
+
+
     }
 
     @Test
@@ -307,6 +327,15 @@ class ChatRoomServiceTest {
         user.setImageUrl(imageUrl);
         user.setStatus(UserStatus.PUBLIC);
         return new User();
+    }
+
+    public User createMasterUser(Long userId, String userName){
+        User user = new User();
+        ReflectionTestUtils.setField(user, "id", userId);
+        user.setUsername(userName);
+        user.setStatus(UserStatus.PUBLIC);
+
+        return user;
     }
 
     public Message createMessage(User user, ChatRoom chatRoom, String content, UserChatRoom userChatRoom) {
