@@ -2,7 +2,6 @@ package com.groovith.groovith.service;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.groovith.groovith.domain.*;
-import com.groovith.groovith.domain.enums.StreamingType;
 import com.groovith.groovith.domain.enums.UserStatus;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.UserNotFoundException;
@@ -68,7 +67,6 @@ public class UserService {
             user.setPassword(bCryptPasswordEncoder.encode(password));
             user.setEmail(email);
             user.setRole("ROLE_USER");
-            user.setStreaming(StreamingType.NONE);
             user.setImageUrl(DEFAULT_IMG_URL);
             user.setStatus(UserStatus.PUBLIC);
 
@@ -152,45 +150,40 @@ public class UserService {
         return userDetailsResponseDto;
     }
 
-    /**
-     * Spotify 인증 후 발급 받은 토큰 저장
-     *
-     * @param userId       User ID
-     * @param refreshToken Spotify Refresh Token (없을 경우 저장하지 않음)
-     */
-    public void saveSpotifyToken(Long userId, String refreshToken) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-        user.setSpotifyRefreshToken(refreshToken);
-        user.setStreaming(StreamingType.SPOTIFY);
-        userRepository.save(user);
-    }
+//    /**
+//     * Spotify 인증 후 발급 받은 토큰 저장
+//     *
+//     * @param userId       User ID
+//     * @param refreshToken Spotify Refresh Token (없을 경우 저장하지 않음)
+//     */
+//    public void saveSpotifyToken(Long userId, String refreshToken) {
+//        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+//        userRepository.save(user);
+//    }
 
-    /**
-     * Spotify 토큰 삭제 및 연결 해제
-     *
-     * @param userId User Id
-     */
-    public void removeSpotifyToken(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        user.setSpotifyRefreshToken(null);
-        user.setStreaming(StreamingType.NONE);
-        userRepository.save(user);
-    }
-
-    /**
-     * Spotify 토큰 가져오기
-     *
-     * @param userId User Id
-     * @return SpotifyTokensResponseDto
-     */
-    public SpotifyTokenResponseDto getSpotifyToken(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-        SpotifyTokenResponseDto responseDto = new SpotifyTokenResponseDto();
-        responseDto.setSpotifyAccessToken(user.getSpotifyRefreshToken());
-
-        return responseDto;
-    }
+//    /**
+//     * Spotify 토큰 삭제 및 연결 해제
+//     *
+//     * @param userId User Id
+//     */
+//    public void removeSpotifyToken(Long userId) {
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException(userId));
+//        userRepository.save(user);
+//    }
+//
+//    /**
+//     * Spotify 토큰 가져오기
+//     *
+//     * @param userId User Id
+//     * @return SpotifyTokensResponseDto
+//     */
+//    public SpotifyTokenResponseDto getSpotifyToken(Long userId) {
+//        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+//        SpotifyTokenResponseDto responseDto = new SpotifyTokenResponseDto();
+//
+//        return responseDto;
+//    }
 
     /**
      * 유저 status 변경

@@ -2,7 +2,6 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.ChatRoomStatus;
-import com.groovith.groovith.domain.enums.StreamingType;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.NotificationRepository;
 import com.groovith.groovith.repository.UserRepository;
@@ -80,7 +79,6 @@ class NotificationServiceTest {
         data.setUsername(username);
         data.setPassword(password);
         data.setRole("ROLE_USER");
-        data.setStreaming(StreamingType.NONE);
         return data;
     }
 

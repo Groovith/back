@@ -1,7 +1,6 @@
 package com.groovith.groovith.repository;
 
 import com.groovith.groovith.domain.Follow;
-import com.groovith.groovith.domain.enums.StreamingType;
 import com.groovith.groovith.domain.User;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -81,7 +80,6 @@ public class FollowRepositoryTest {
         data.setUsername(username);
         data.setPassword(password);
         data.setRole("ROLE_USER");
-        data.setStreaming(StreamingType.NONE);
         return data;
     }
 }

@@ -2,7 +2,6 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.FollowStatus;
-import com.groovith.groovith.domain.enums.StreamingType;
 import com.groovith.groovith.domain.enums.UserStatus;
 import com.groovith.groovith.dto.FollowResponse;
 import com.groovith.groovith.dto.UserDetailsResponseDto;
@@ -190,7 +189,6 @@ class FollowServiceTest {
         data.setUsername(username);
         data.setPassword(password);
         data.setRole("ROLE_USER");
-        data.setStreaming(StreamingType.NONE);
         data.setStatus(status);
         return data;
     }
