@@ -51,8 +51,8 @@ public class User {
     private List<Friend> friends = new ArrayList<>();
 
 
-    public ChatRoomMemberDto toUserChatRoomDto(User user){
-        return new ChatRoomMemberDto(user);
+    public ChatRoomMemberDto toUserChatRoomDto(){
+        return new ChatRoomMemberDto(this);
     }
 
     public void updateStatus(UserStatus userStatus){
