@@ -37,10 +37,8 @@ public class ChatRoomController {
     @PostMapping("/chatrooms")
     public ResponseEntity<CreateChatRoomResponseDto> createChatRoom( @AuthenticationPrincipal CustomUserDetails userDetails, @RequestBody CreateChatRoomRequestDto request) {
         ChatRoom chatRoom = chatRoomService.create(userDetails.getUserId(), request);
-        CreateChatRoomResponseDto response = new CreateChatRoomResponseDto();
-        response.setChatRoomId(chatRoom.getId());
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return new ResponseEntity<>(new CreateChatRoomResponseDto(chatRoom), HttpStatus.OK);
     }
 
     /**
