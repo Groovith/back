@@ -124,7 +124,7 @@ public class ChatRoomService {
 
 
     @Transactional(readOnly = true)
-    public List<UserChatRoomDto> findAllUser(Long chatRoomId) {
+    public List<ChatRoomMemberDto> findAllUser(Long chatRoomId) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
 
         return chatRoom.getUserChatRooms().stream()

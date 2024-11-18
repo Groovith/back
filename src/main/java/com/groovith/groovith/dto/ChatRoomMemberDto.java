@@ -4,7 +4,7 @@ import com.groovith.groovith.domain.User;
 import lombok.Data;
 
 @Data
-public class UserChatRoomDto {
+public class ChatRoomMemberDto {
 
     private Long id;
 
@@ -12,7 +12,7 @@ public class UserChatRoomDto {
 
     private String role;
 
-    public UserChatRoomDto(User user){
+    public ChatRoomMemberDto(User user){
         this.id = user.getId();
         this.username = user.getUsername();
         this.role = user.getRole();
