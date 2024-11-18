@@ -12,9 +12,12 @@ public class ChatRoomMemberDto {
 
     private String role;
 
+    private String imageUrl;
+
     public ChatRoomMemberDto(User user){
         this.id = user.getId();
         this.username = user.getUsername();
         this.role = user.getRole();
+        this.imageUrl = user.getImageUrl();
     }
 }
