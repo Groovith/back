@@ -4,12 +4,13 @@ import com.groovith.groovith.domain.enums.ChatRoomPermission;
 import com.groovith.groovith.domain.enums.ChatRoomStatus;
 import com.groovith.groovith.domain.enums.ChatRoomType;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
  *  ChatRoom 생성 request dto
  * */
-@Data
+@Getter
 @NoArgsConstructor
 public class CreateChatRoomRequestDto {
     //private Long userId;

@@ -27,6 +27,7 @@ public class ChatRoomService {
     private static final int SINGLE_NEW_MEMBER = 1;
     private static final int MAX_MEMBER = 100;
     private static final String ERROR_ONLY_MASTER_USER_CAN_CHANGE_PERMISSION = "권한 변경은 masterUser 만 가능합니다";
+    private static final String ERROR_ONLY_MASTER_USER_CAN_UPDATE_CHATROOM = "채팅방 수정은 masterUser 만 가능합니다";
 
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
@@ -85,6 +86,15 @@ public class ChatRoomService {
     @Transactional(readOnly = true)
     public ChatRoomDetailsDto findChatRoomDetail(Long chatRoomId) {
         return new ChatRoomDetailsDto(findChatRoomByChatRoomId(chatRoomId));
+    }
+
+    /**
+     * 채팅방 수정
+     * */
+    public void updateChatRoom(Long chatRoomId, Long userId, UpdateChatRoomRequestDto request) {
+        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
+        validateMasterUser(userId, chatRoom.getMasterUserId(), ERROR_ONLY_MASTER_USER_CAN_UPDATE_CHATROOM);
+        chatRoom.update(request.getName(), request.getStatus(), request.getPermission());
     }
 
     /**
@@ -198,7 +208,7 @@ public class ChatRoomService {
     }
 
     private void validateMasterUser(Long userId, Long masterUserId, String errorMessage) {
-        if (masterUserId.equals(userId)) {
+        if (!masterUserId.equals(userId)) {
             throw new NotMasterUserException(errorMessage);
         }
     }
