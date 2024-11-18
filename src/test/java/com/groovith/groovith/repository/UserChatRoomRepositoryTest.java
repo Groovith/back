@@ -1,7 +1,6 @@
 package com.groovith.groovith.repository;
 
 import com.groovith.groovith.domain.*;
-import com.groovith.groovith.domain.enums.StreamingType;
 import com.groovith.groovith.domain.enums.UserChatRoomStatus;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +26,6 @@ public class UserChatRoomRepositoryTest {
         data.setUsername("user");
         data.setPassword("1234");
         data.setRole("ROLE_USER");
-        data.setStreaming(StreamingType.NONE);
         User user = userRepository.save(data);
 
         ChatRoom data1 = ChatRoom.builder()
@@ -54,7 +52,6 @@ public class UserChatRoomRepositoryTest {
         data.setUsername("user");
         data.setPassword("1234");
         data.setRole("ROLE_USER");
-        data.setStreaming(StreamingType.NONE);
         User user = userRepository.save(data);
 
         ChatRoom data1 = ChatRoom.builder()

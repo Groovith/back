@@ -1,8 +1,7 @@
 package com.groovith.groovith.domain;
 
-import com.groovith.groovith.domain.enums.StreamingType;
 import com.groovith.groovith.domain.enums.UserStatus;
-import com.groovith.groovith.dto.UserChatRoomDto;
+import com.groovith.groovith.dto.ChatRoomMemberDto;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,13 +32,6 @@ public class User {
     @Enumerated(EnumType.STRING)
     private UserStatus status;
 
-    @Column(name = "streaming", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private StreamingType streaming;
-
-    @Column(name = "spotify_refresh_token")
-    private String spotifyRefreshToken;
-
 //    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
 //    private List<Refresh> refreshTokens = new ArrayList<>();
 
@@ -59,8 +51,8 @@ public class User {
     private List<Friend> friends = new ArrayList<>();
 
 
-    public UserChatRoomDto toUserChatRoomDto(User user){
-        return new UserChatRoomDto(user);
+    public ChatRoomMemberDto toUserChatRoomDto(User user){
+        return new ChatRoomMemberDto(user);
     }
 
     public void updateStatus(UserStatus userStatus){

@@ -4,14 +4,17 @@ import com.groovith.groovith.domain.User;
 import lombok.Data;
 
 @Data
-public class CurrentUserDetailsDto {
-    private Long id;
-    private String username;
-    private String imageUrl;
+public class ChatRoomMemberDto {
 
-    public CurrentUserDetailsDto(User user) {
+    private Long id;
+
+    private String username;
+
+    private String role;
+
+    public ChatRoomMemberDto(User user){
         this.id = user.getId();
         this.username = user.getUsername();
-        this.imageUrl = user.getImageUrl();
+        this.role = user.getRole();
     }
 }

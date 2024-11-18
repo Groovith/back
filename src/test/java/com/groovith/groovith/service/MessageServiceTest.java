@@ -2,7 +2,6 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.MessageType;
-import com.groovith.groovith.domain.enums.StreamingType;
 import com.groovith.groovith.domain.enums.UserChatRoomStatus;
 import com.groovith.groovith.domain.enums.UserStatus;
 import com.groovith.groovith.dto.*;
@@ -148,7 +147,6 @@ class MessageServiceTest {
 //        user.setPassword(bCryptPasswordEncoder.encode(password));
         user.setEmail("email");
         user.setRole("ROLE_USER");
-        user.setStreaming(StreamingType.NONE);
         user.setImageUrl(imageUrl);
         user.setStatus(UserStatus.PUBLIC);
         return new User();

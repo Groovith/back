@@ -354,7 +354,6 @@ class ChatRoomServiceTest {
 //        user.setPassword(bCryptPasswordEncoder.encode(password));
         user.setEmail("email");
         user.setRole("ROLE_USER");
-        user.setStreaming(StreamingType.NONE);
         user.setImageUrl(imageUrl);
         user.setStatus(UserStatus.PUBLIC);
         return new User();

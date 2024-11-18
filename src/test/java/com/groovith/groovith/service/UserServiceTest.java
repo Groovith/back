@@ -2,7 +2,6 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.Follow;
 import com.groovith.groovith.domain.enums.FollowStatus;
-import com.groovith.groovith.domain.enums.StreamingType;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.repository.FollowRepository;
@@ -175,7 +174,6 @@ public void getUserByUsername_팔로우_관계아닐경우(){
         data.setUsername(username);
         data.setPassword(password);
         data.setRole("ROLE_USER");
-        data.setStreaming(StreamingType.NONE);
         return data;
     }
 
