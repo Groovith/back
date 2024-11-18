@@ -132,13 +132,15 @@ public class ChatRoomService {
         return deleteChatRoomWhenEmpty(chatRoom);
     }
 
-
+    /**
+     * 채팅방의 현재 멤버 조회
+     * */
     @Transactional(readOnly = true)
     public List<ChatRoomMemberDto> findAllUser(Long chatRoomId) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
 
         return chatRoom.getUserChatRooms().stream()
-                .map(userChatRoom -> userChatRoom.getUser().toUserChatRoomDto(userChatRoom.getUser()))
+                .map(userChatRoom -> userChatRoom.getUser().toUserChatRoomDto())
                 .collect(Collectors.toList());
     }
 
