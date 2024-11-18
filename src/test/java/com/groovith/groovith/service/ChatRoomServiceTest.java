@@ -2,10 +2,7 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.*;
-import com.groovith.groovith.dto.ChatRoomDetailsDto;
-import com.groovith.groovith.dto.ChatRoomListResponseDto;
-import com.groovith.groovith.dto.CreateChatRoomRequestDto;
-import com.groovith.groovith.dto.UpdateChatRoomRequestDto;
+import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
@@ -126,6 +123,53 @@ class ChatRoomServiceTest {
         Assertions.assertThat(actualChatRoomList)
                 .extracting(ChatRoomListResponseDto::getChatRoomName)
                 .containsExactlyElementsOf(expectedNames);
+    }
+
+    @Test
+    @DisplayName("채팅방 현재 멤버 조회 테스트")
+    void findChatRoomMemberTest() {
+        // given
+        Long user1Id = 1L;
+        User user1 = createUser("user1", "imageUrl1");
+        ReflectionTestUtils.setField(user1, "id", user1Id);
+        ReflectionTestUtils.setField(user1, "role", "ROLE_USER");
+
+        Long user2Id = 2L;
+        User user2 = createUser("user2", "imageUrl2");
+        ReflectionTestUtils.setField(user2, "id", user2Id);
+        ReflectionTestUtils.setField(user2, "role", "ROLE_USER");
+
+        Long user3Id = 3L;
+        User user3 = createUser("user3", "imageUrl3");
+        ReflectionTestUtils.setField(user3, "id", user3Id);
+        ReflectionTestUtils.setField(user3, "role", "ROLE_USER");
+
+        Long chatRoomId = 1L;
+        ChatRoom chatRoom = createChatRoom("room", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
+
+        UserChatRoom.setUserChatRoom(user1, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom.setUserChatRoom(user2, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom.setUserChatRoom(user3, chatRoom, UserChatRoomStatus.ENTER);
+
+        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+
+        // when
+        when(chatRoomRepository.findById(chatRoomId)).thenReturn(Optional.of(chatRoom));
+        List<ChatRoomMemberDto> findMembers = chatRoomService.findAllUser(chatRoomId);
+        System.out.println(findMembers);
+
+        // then
+        Assertions.assertThat(findMembers.size()).isEqualTo(3);
+        assertThatFindMembers(findMembers, 0, user1);
+        assertThatFindMembers(findMembers, 1, user2);
+        assertThatFindMembers(findMembers, 2, user3);
+    }
+
+    private void assertThatFindMembers(List<ChatRoomMemberDto> findMembers, int index, User user){
+        Assertions.assertThat(findMembers.get(index).getId()).isEqualTo(user.getId());
+        Assertions.assertThat(findMembers.get(index).getUsername()).isEqualTo(user.getUsername());
+        Assertions.assertThat(findMembers.get(index).getImageUrl()).isEqualTo(user.getImageUrl());
+
     }
 
     @Test
@@ -347,9 +391,9 @@ class ChatRoomServiceTest {
         }
     }
 
-    public User createUser(String imageUrl) {
+    public User createUser(String username, String imageUrl) {
         User user = new User();
-        user.setUsername("username");
+        user.setUsername(username);
         user.setNickname("nickname");
 //        user.setPassword(bCryptPasswordEncoder.encode(password));
         user.setEmail("email");
