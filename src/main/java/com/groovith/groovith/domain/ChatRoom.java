@@ -91,6 +91,17 @@ public class ChatRoom {
         this.masterUserName = user.getUsername();
     }
 
+    public void updateName(String name){
+        this.name = name;
+    }
+    public void updateStatus(ChatRoomStatus newStatus){
+        this.status = newStatus;
+    }
+
+    public void updatePermission(ChatRoomPermission newPermission){
+        this.permission = newPermission;
+    }
+
     public void changePermission() {
         this.permission = (this.permission == ChatRoomPermission.MASTER)
                 ? ChatRoomPermission.EVERYONE
