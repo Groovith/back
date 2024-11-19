@@ -3,6 +3,7 @@ package com.groovith.groovith.service;
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.ChatRoomMemberStatus;
 import com.groovith.groovith.domain.enums.UserChatRoomStatus;
+import com.groovith.groovith.domain.enums.UserRelationship;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.*;
 import com.groovith.groovith.repository.*;
@@ -33,6 +34,7 @@ public class ChatRoomService {
     private final UserRepository userRepository;
     private final UserChatRoomRepository userChatRoomRepository;
     private final CurrentPlaylistRepository currentPlaylistRepository;
+    private final FriendRepository friendRepository;
 
     /**
      * 채팅방 생성
@@ -90,7 +92,7 @@ public class ChatRoomService {
 
     /**
      * 채팅방 수정
-     * */
+     */
     public void updateChatRoom(Long chatRoomId, Long userId, UpdateChatRoomRequestDto request) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
         validateMasterUser(userId, chatRoom.getMasterUserId(), ERROR_ONLY_MASTER_USER_CAN_UPDATE_CHATROOM);
@@ -133,14 +135,23 @@ public class ChatRoomService {
     }
 
     /**
-     * 채팅방의 현재 멤버 조회
-     * */
+     * 채팅방의 현재 멤버 목록 조회
+     */
     @Transactional(readOnly = true)
-    public List<ChatRoomMemberDto> findAllUser(Long chatRoomId) {
+    public List<ChatRoomMemberDto> findChatRoomMembers(Long chatRoomId, Long userId) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
-
+        User user = findUserByUserId(userId);
         return chatRoom.getUserChatRooms().stream()
-                .map(userChatRoom -> userChatRoom.getUser().toUserChatRoomDto())
+                .map(userChatRoom -> {
+                    User findUser = userChatRoom.getUser();
+                    if (user == findUser) {
+                        return findUser.toUserChatRoomDto(UserRelationship.SELF);
+                    }
+                    if (friendRepository.existsByFromUserAndToUser(user, findUser)) {
+                        return findUser.toUserChatRoomDto(UserRelationship.FRIEND);
+                    }
+                    return findUser.toUserChatRoomDto(UserRelationship.NOT_FRIEND);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -160,7 +171,7 @@ public class ChatRoomService {
 
     /**
      * 채팅방으로 친구 초대
-     * */
+     */
     public void inviteFriends(Long chatRoomId, List<Long> friendsIdList) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
         // 친구 초대시 최대인원 초과하는지 검증
@@ -191,7 +202,7 @@ public class ChatRoomService {
     private User findUserByUserId(Long userId) {
         return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
     }
-    
+
     private Optional<UserChatRoom> findUserChatRoomByUserIdAndChatRoomId(Long userId, Long chatRoomId) {
         return userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId);
     }
@@ -228,7 +239,7 @@ public class ChatRoomService {
         }
     }
 
-    private ChatRoomMemberStatus deleteChatRoomWhenEmpty(ChatRoom chatRoom){
+    private ChatRoomMemberStatus deleteChatRoomWhenEmpty(ChatRoom chatRoom) {
         if (chatRoom.getCurrentMemberCount() <= 0) {
             // 채팅방 플레이리스트 함께 삭제
             currentPlaylistRepository.deleteByChatRoomId(chatRoom.getId());
