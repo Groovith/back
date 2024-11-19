@@ -4,6 +4,8 @@ import com.groovith.groovith.domain.Friend;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.dto.FriendListResponseDto;
 import com.groovith.groovith.dto.UserDetailsResponseDto;
+import com.groovith.groovith.exception.AlreadyFriendException;
+import com.groovith.groovith.exception.FriendNotFoundException;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.FriendRepository;
 import com.groovith.groovith.repository.UserRepository;
@@ -11,9 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
-
+import java.util.Set;
 
 
 @RequiredArgsConstructor
@@ -25,54 +27,66 @@ public class FriendService {
 
     /**
      * 친구 만들기(from_user 의 친구 목록에 to_user 추가)
-     * */
-    public void addFriend(Long from_id, String toUserName){
+     */
+    public void addFriend(Long fromId, String toUserName) {
         // 친구 추가한 유저
-        User fromUser = userRepository.findById(from_id)
-                .orElseThrow(()-> new UserNotFoundException(from_id));
+        User fromUser = findUserById(fromId);
         // 친구 추가된 유저
-        User toUser = userRepository.findByUsername(toUserName)
-                .orElseThrow(()-> new UserNotFoundException(toUserName));
-
-        if(friendRepository.existsByFromUserAndToUser(fromUser, toUser)){
-           throw new IllegalArgumentException("이미 친구관계입니다. from:"+from_id+" to:"+toUserName);
-        }
-
-        Friend friend = Friend.builder()
-                .fromUser(fromUser)
-                .toUser(toUser)
-                .build();
+        User toUser = findUserByUsername(toUserName);
+        validateFriendExists(fromUser, toUser);
+        Friend friend = createFriend(fromUser, toUser);
 
         friendRepository.save(friend);
     }
 
     /**
      * 친구 제거하기
-     * */
-    public void subFriend(Long from_id, String toUserName){
-        System.out.println("username : "+ toUserName);
-        User fromUser = userRepository.findById(from_id)
-                .orElseThrow(()-> new UserNotFoundException(from_id));
-        User toUser = userRepository.findByUsername(toUserName)
-                .orElseThrow(()-> new UserNotFoundException(toUserName));
+     */
+    public void subFriend(Long fromId, String toUserName) {
+        User fromUser = findUserById(fromId);
+        User toUser = findUserByUsername(toUserName);
 
-        Optional<Friend> friend = friendRepository.findByFromUserAndToUser(fromUser, toUser);
-        if(!friend.isPresent()){
-            throw new IllegalArgumentException("친구 관계가 아닙니다. from:"+from_id+" to:"+toUserName);
-        }
+        Friend friend = validateFriendNotExists(fromUser, toUser);
 
-
-        friendRepository.deleteById(friend.get().getId());
+        friendRepository.deleteById(friend.getId());
     }
 
     /**
      * 친구 목록 불러오기
-     * */
+     */
     @Transactional(readOnly = true)
-    public FriendListResponseDto getFriends(Long userId){
-        User user = userRepository.findById(userId)
-                .orElseThrow(()-> new UserNotFoundException(userId));
-        List<User> friends = user.getFriends().stream().map(Friend::getToUser).toList();
-        return new FriendListResponseDto(friends.stream().map(UserDetailsResponseDto::new).toList());
+    public FriendListResponseDto getFriends(Long userId) {
+
+        User user = findUserById(userId);
+        Set<Long> friendsIdsFromUser = new HashSet<>(friendRepository.findFriendsIdsFromUser(user));
+        List<User> friendsFromUser = userRepository.findAllById(friendsIdsFromUser);
+
+        return new FriendListResponseDto(friendsFromUser.stream().map(UserDetailsResponseDto::new).toList());
+    }
+
+    private Friend createFriend(User fromUser, User toUser) {
+        return Friend.builder()
+                .fromUser(fromUser)
+                .toUser(toUser)
+                .build();
+    }
+
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+    }
+
+    private User findUserByUsername(String username) {
+        return userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
+    }
+
+    private void validateFriendExists(User fromUser, User toUser) {
+        if (friendRepository.existsByFromUserAndToUser(fromUser, toUser)) {
+            throw new AlreadyFriendException(fromUser.getId(), toUser.getId());
+        }
+    }
+
+    private Friend validateFriendNotExists(User fromUser, User toUser) {
+        return friendRepository.findByFromUserAndToUser(fromUser, toUser)
+                .orElseThrow(() -> new FriendNotFoundException(fromUser.getId(), toUser.getId()));
     }
 }
