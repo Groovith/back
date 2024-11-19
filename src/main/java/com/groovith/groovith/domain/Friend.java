@@ -17,12 +17,12 @@ public class Friend {
     private Long id;
 
     // 친구 추가한 유저
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_user_id")
     private User fromUser;
 
     // 친구 추가 받은 유저
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "to_user_id")
     private User toUser;
 
