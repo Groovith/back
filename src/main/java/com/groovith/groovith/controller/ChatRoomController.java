@@ -107,8 +107,8 @@ public class ChatRoomController {
     * 채팅방 참가자 목록 조회
     * */
     @GetMapping("/chatrooms/{chatRoomId}/members")
-    public ResponseEntity<Result> findAllUser(@PathVariable(name = "chatRoomId")Long chatRoomId){
-        return new ResponseEntity<>(new Result(chatRoomService.findAllUser(chatRoomId)), HttpStatus.OK);
+    public ResponseEntity<Result> findAllUser(@PathVariable(name = "chatRoomId")Long chatRoomId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return new ResponseEntity<>(new Result(chatRoomService.findChatRoomMembers(chatRoomId, userDetails.getUserId())), HttpStatus.OK);
     }
 
 

@@ -3,6 +3,7 @@ package com.groovith.groovith.service;
 import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.ChatRoomMemberStatus;
 import com.groovith.groovith.domain.enums.UserChatRoomStatus;
+import com.groovith.groovith.domain.enums.UserRelationship;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.*;
 import com.groovith.groovith.repository.*;
@@ -12,8 +13,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -33,6 +36,7 @@ public class ChatRoomService {
     private final UserRepository userRepository;
     private final UserChatRoomRepository userChatRoomRepository;
     private final CurrentPlaylistRepository currentPlaylistRepository;
+    private final FriendRepository friendRepository;
 
     /**
      * 채팅방 생성
@@ -90,7 +94,7 @@ public class ChatRoomService {
 
     /**
      * 채팅방 수정
-     * */
+     */
     public void updateChatRoom(Long chatRoomId, Long userId, UpdateChatRoomRequestDto request) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
         validateMasterUser(userId, chatRoom.getMasterUserId(), ERROR_ONLY_MASTER_USER_CAN_UPDATE_CHATROOM);
@@ -133,15 +137,17 @@ public class ChatRoomService {
     }
 
     /**
-     * 채팅방의 현재 멤버 조회
-     * */
+     * 채팅방의 현재 멤버 목록 조회
+     */
     @Transactional(readOnly = true)
-    public List<ChatRoomMemberDto> findAllUser(Long chatRoomId) {
+    public List<ChatRoomMemberDto> findChatRoomMembers(Long chatRoomId, Long userId) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
+        User user = findUserByUserId(userId);
+        Set<Long> friendsIdsFromUser = getFriendsIdsFromUser(user);
 
         return chatRoom.getUserChatRooms().stream()
-                .map(userChatRoom -> userChatRoom.getUser().toUserChatRoomDto())
-                .collect(Collectors.toList());
+                .map(userChatRoom -> creatChatRoomMemberDto(user, userChatRoom.getUser(), friendsIdsFromUser))
+                .toList();
     }
 
     /**
@@ -160,7 +166,7 @@ public class ChatRoomService {
 
     /**
      * 채팅방으로 친구 초대
-     * */
+     */
     public void inviteFriends(Long chatRoomId, List<Long> friendsIdList) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
         // 친구 초대시 최대인원 초과하는지 검증
@@ -191,7 +197,7 @@ public class ChatRoomService {
     private User findUserByUserId(Long userId) {
         return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
     }
-    
+
     private Optional<UserChatRoom> findUserChatRoomByUserIdAndChatRoomId(Long userId, Long chatRoomId) {
         return userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId);
     }
@@ -228,12 +234,32 @@ public class ChatRoomService {
         }
     }
 
-    private ChatRoomMemberStatus deleteChatRoomWhenEmpty(ChatRoom chatRoom){
+    private ChatRoomMemberStatus deleteChatRoomWhenEmpty(ChatRoom chatRoom) {
         if (chatRoom.getCurrentMemberCount() <= 0) {
             // 채팅방 플레이리스트 함께 삭제
             currentPlaylistRepository.deleteByChatRoomId(chatRoom.getId());
             return ChatRoomMemberStatus.EMPTY;
         }
         return ChatRoomMemberStatus.ACTIVE;
+    }
+
+    private ChatRoomMemberDto creatChatRoomMemberDto(User user, User findUser, Set<Long> friendsIdsFromUser) {
+        return findUser.toUserChatRoomDto(validateUserRelationship(user, findUser, friendsIdsFromUser));
+    }
+
+
+    private Set<Long> getFriendsIdsFromUser(User user) {
+        return new HashSet<>(friendRepository.findFriendsIdsFromUser(user));
+    }
+
+
+    private UserRelationship validateUserRelationship(User user, User findUser, Set<Long> friendsIdsFromUser){
+        if (user == findUser) {
+            return UserRelationship.SELF;
+        }
+        if (friendsIdsFromUser.contains(findUser.getId())) {
+            return UserRelationship.FRIEND;
+        }
+        return UserRelationship.NOT_FRIEND;
     }
 }

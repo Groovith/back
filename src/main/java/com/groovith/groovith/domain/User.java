@@ -1,5 +1,6 @@
 package com.groovith.groovith.domain;
 
+import com.groovith.groovith.domain.enums.UserRelationship;
 import com.groovith.groovith.domain.enums.UserStatus;
 import com.groovith.groovith.dto.ChatRoomMemberDto;
 import jakarta.persistence.*;
@@ -51,8 +52,8 @@ public class User {
     private List<Friend> friends = new ArrayList<>();
 
 
-    public ChatRoomMemberDto toUserChatRoomDto(){
-        return new ChatRoomMemberDto(this);
+    public ChatRoomMemberDto toUserChatRoomDto(UserRelationship userRelationship) {
+        return new ChatRoomMemberDto(this, userRelationship);
     }
 
     public void updateStatus(UserStatus userStatus){
