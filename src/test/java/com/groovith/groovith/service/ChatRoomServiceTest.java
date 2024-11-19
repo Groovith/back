@@ -4,10 +4,7 @@ import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.*;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomFullException;
-import com.groovith.groovith.repository.ChatRoomRepository;
-import com.groovith.groovith.repository.CurrentPlaylistRepository;
-import com.groovith.groovith.repository.UserChatRoomRepository;
-import com.groovith.groovith.repository.UserRepository;
+import com.groovith.groovith.repository.*;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +32,7 @@ class ChatRoomServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private UserChatRoomRepository userChatRoomRepository;
     @Mock private CurrentPlaylistRepository currentPlaylistRepository;
+    @Mock private FriendRepository friendRepository;
 
     @Test
     @DisplayName("채팅방 생성 테스트, 채팅방 생성시 유저와 연관관계 생겨야함")
@@ -137,6 +136,7 @@ class ChatRoomServiceTest {
         User user1 = createUser("user1", "imageUrl1");
         ReflectionTestUtils.setField(user1, "id", user1Id);
         ReflectionTestUtils.setField(user1, "role", "ROLE_USER");
+        Friend.setFriend(user, user1);
 
         Long user2Id = 2L;
         User user2 = createUser("user2", "imageUrl2");
@@ -151,6 +151,7 @@ class ChatRoomServiceTest {
         Long chatRoomId = 1L;
         ChatRoom chatRoom = createChatRoom("room", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
 
+        UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
         UserChatRoom.setUserChatRoom(user1, chatRoom, UserChatRoomStatus.ENTER);
         UserChatRoom.setUserChatRoom(user2, chatRoom, UserChatRoomStatus.ENTER);
         UserChatRoom.setUserChatRoom(user3, chatRoom, UserChatRoomStatus.ENTER);
@@ -160,13 +161,16 @@ class ChatRoomServiceTest {
         // when
         when(chatRoomRepository.findById(chatRoomId)).thenReturn(Optional.of(chatRoom));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(friendRepository.findFriendsIdsFromUser(user)).thenReturn(Arrays.asList(1L));
         List<ChatRoomMemberDto> findMembers = chatRoomService.findChatRoomMembers(chatRoomId, user.getId());
 
         // then
-        Assertions.assertThat(findMembers.size()).isEqualTo(3);
-        assertThatFindMembers(findMembers, 0, user1);
-        assertThatFindMembers(findMembers, 1, user2);
-        assertThatFindMembers(findMembers, 2, user3);
+        Assertions.assertThat(findMembers.size()).isEqualTo(4);
+        assertThatFindMembers(findMembers, 0, user);
+        assertThatFindMembers(findMembers, 1, user1);
+        assertThatFindMembers(findMembers, 2, user2);
+        assertThatFindMembers(findMembers, 3, user3);
+        Assertions.assertThat(findMembers.get(1).getUserRelationship()).isEqualTo(UserRelationship.FRIEND);
     }
 
     private void assertThatFindMembers(List<ChatRoomMemberDto> findMembers, int index, User user){
