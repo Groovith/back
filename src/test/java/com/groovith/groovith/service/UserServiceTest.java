@@ -1,19 +1,25 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.Follow;
+import com.groovith.groovith.domain.Friend;
 import com.groovith.groovith.domain.enums.FollowStatus;
 import com.groovith.groovith.domain.User;
+import com.groovith.groovith.domain.enums.UserRelationship;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.repository.FollowRepository;
+import com.groovith.groovith.repository.FriendRepository;
 import com.groovith.groovith.repository.UserRepository;
 import com.groovith.groovith.security.JwtUtil;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -25,6 +31,7 @@ class UserServiceTest {
     @InjectMocks private UserService userService;
     @Mock private UserRepository userRepository;
     @Mock private FollowRepository followRepository;
+    @Mock private FriendRepository friendRepository;
     @Mock private JwtUtil jwtUtil;
 
 
@@ -127,9 +134,9 @@ public void getUserByUsername_팔로우_관계아닐경우(){
     Long userId = 1L;
     Long findUserId = 2L;
     // 현재 로그인 중인 유저
-    User user = createUser(userId, "user", "1234");
+    User user = createUser(userId, "user");
     // 조회하려는 유저
-    User findUser = createUser(findUserId, "findUser", "1234");
+    User findUser = createUser(findUserId, "findUser");
 
     //when
     when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
@@ -150,9 +157,9 @@ public void getUserByUsername_팔로우_관계아닐경우(){
         Long userId = 1L;
         Long findUserId = 2L;
         // 현재 로그인 중인 유저
-        User user = createUser(userId, "user", "1234");
+        User user = createUser(userId, "user");
         // 조회하려는 유저
-        User findUser = createUser(findUserId, "findUser", "1234");
+        User findUser = createUser(findUserId, "findUser");
 
         Follow follow = createFollow(user, findUser, FollowStatus.ACCEPTED);
 
@@ -168,11 +175,35 @@ public void getUserByUsername_팔로우_관계아닐경우(){
         Assertions.assertThat(result.getStatus()).isEqualTo(FollowStatus.ACCEPTED);
     }
 
-    public User createUser(Long id, String username, String password){
+    @Test
+    @DisplayName("다른유저 조회 테스트")
+    void getUserByUserName(){
+        // given
+        Long userId = 1L;
+        Long findUserId = 2L;
+        User user = createUser(userId, "user");
+        User findUser = createUser(findUserId, "findUser");
+
+        List<Long> friendsIdsFromUser = List.of(2L);
+        // when
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(findUser));
+        when(friendRepository.findFriendsIdsFromUser(user)).thenReturn(friendsIdsFromUser);
+        when(followRepository.findByFollowerIdAndFollowingId(userId, findUserId)).thenReturn(Optional.empty());
+        UserDetailsResponseDto actualResult = userService.getUserByUsername(findUser.getUsername(), userId);
+        // then
+        Assertions.assertThat(actualResult.getId()).isEqualTo(findUser.getId());
+        Assertions.assertThat(actualResult.getUsername()).isEqualTo(findUser.getUsername());
+        Assertions.assertThat(actualResult.getStatus()).isEqualTo(FollowStatus.NOFOLLOW);
+        Assertions.assertThat(actualResult.getUserRelationship()).isEqualTo(UserRelationship.FRIEND);
+
+    }
+
+    public User createUser(Long id, String username){
         User data = new User();
         data.setId(id);
         data.setUsername(username);
-        data.setPassword(password);
+        data.setPassword("password");
         data.setRole("ROLE_USER");
         return data;
     }
