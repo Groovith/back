@@ -13,8 +13,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -141,18 +143,11 @@ public class ChatRoomService {
     public List<ChatRoomMemberDto> findChatRoomMembers(Long chatRoomId, Long userId) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
         User user = findUserByUserId(userId);
+        Set<Long> friendsIdsFromUser = getFriendsIdsFromUser(user);
+
         return chatRoom.getUserChatRooms().stream()
-                .map(userChatRoom -> {
-                    User findUser = userChatRoom.getUser();
-                    if (user == findUser) {
-                        return findUser.toUserChatRoomDto(UserRelationship.SELF);
-                    }
-                    if (friendRepository.existsByFromUserAndToUser(user, findUser)) {
-                        return findUser.toUserChatRoomDto(UserRelationship.FRIEND);
-                    }
-                    return findUser.toUserChatRoomDto(UserRelationship.NOT_FRIEND);
-                })
-                .collect(Collectors.toList());
+                .map(userChatRoom -> creatChatRoomMemberDto(user, userChatRoom.getUser(), friendsIdsFromUser))
+                .toList();
     }
 
     /**
@@ -246,5 +241,25 @@ public class ChatRoomService {
             return ChatRoomMemberStatus.EMPTY;
         }
         return ChatRoomMemberStatus.ACTIVE;
+    }
+
+    private ChatRoomMemberDto creatChatRoomMemberDto(User user, User findUser, Set<Long> friendsIdsFromUser) {
+        return findUser.toUserChatRoomDto(validateUserRelationship(user, findUser, friendsIdsFromUser));
+    }
+
+
+    private Set<Long> getFriendsIdsFromUser(User user) {
+        return new HashSet<>(friendRepository.findFriendsIdsFromUser(user));
+    }
+
+
+    private UserRelationship validateUserRelationship(User user, User findUser, Set<Long> friendsIdsFromUser){
+        if (user == findUser) {
+            return UserRelationship.SELF;
+        }
+        if (friendsIdsFromUser.contains(findUser.getId())) {
+            return UserRelationship.FRIEND;
+        }
+        return UserRelationship.NOT_FRIEND;
     }
 }
