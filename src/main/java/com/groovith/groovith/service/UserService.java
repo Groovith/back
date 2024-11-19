@@ -140,7 +140,7 @@ public class UserService {
         // 조회하려는 유저
         User findUser = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
 
-        UserRelationship relationship = getUserRelationship(friendRepository.findFriendsIdsFromUser(user), findUser);
+        UserRelationship relationship = getUserRelationship(friendRepository.findFriendsIdsFromUser(user), user,  findUser);
         UserDetailsResponseDto userDetailsResponseDto = new UserDetailsResponseDto(findUser, relationship);
 
         Optional<Follow> follow = followRepository.findByFollowerIdAndFollowingId(userId, findUser.getId());
@@ -330,9 +330,12 @@ public class UserService {
     }
 
 
-    private UserRelationship getUserRelationship(List<Long> friendsIdsFromUser, User findUser) {
+    private UserRelationship getUserRelationship(List<Long> friendsIdsFromUser,User user, User findUser) {
         if(friendsIdsFromUser.contains(findUser.getId())){
             return UserRelationship.FRIEND;
+        }
+        if(user.equals(findUser)){
+            return UserRelationship.SELF;
         }
         return UserRelationship.NOT_FRIEND;
     }
