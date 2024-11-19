@@ -2,6 +2,7 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.Friend;
 import com.groovith.groovith.domain.User;
+import com.groovith.groovith.domain.enums.UserRelationship;
 import com.groovith.groovith.dto.FriendListResponseDto;
 import com.groovith.groovith.dto.UserDetailsResponseDto;
 import com.groovith.groovith.exception.AlreadyFriendException;
@@ -62,7 +63,9 @@ public class FriendService {
         Set<Long> friendsIdsFromUser = new HashSet<>(friendRepository.findFriendsIdsFromUser(user));
         List<User> friendsFromUser = userRepository.findAllById(friendsIdsFromUser);
 
-        return new FriendListResponseDto(friendsFromUser.stream().map(UserDetailsResponseDto::new).toList());
+        return new FriendListResponseDto(friendsFromUser.stream()
+                .map(friend -> new UserDetailsResponseDto(friend, UserRelationship.FRIEND))
+                .toList());
     }
 
     private User findUserById(Long userId) {

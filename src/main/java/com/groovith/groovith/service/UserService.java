@@ -2,6 +2,7 @@ package com.groovith.groovith.service;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.groovith.groovith.domain.*;
+import com.groovith.groovith.domain.enums.UserRelationship;
 import com.groovith.groovith.domain.enums.UserStatus;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.UserNotFoundException;
@@ -16,9 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -26,15 +25,16 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final FollowRepository followRepository;
+    private final UserChatRoomRepository userChatRoomRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final FriendRepository friendRepository;
     private final CertificationRepository certificationRepository;
     private final PasswordResetCertificationRepository passwordResetCertificationRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailProvider emailProvider;
-    private final FollowRepository followRepository;
     private final ImageService imageService;
-    private final UserChatRoomRepository userChatRoomRepository;
-    private final ChatRoomRepository chatRoomRepository;
 
     @Value("${cloud.aws.s3.defaultUserImageUrl}")
     private String DEFAULT_IMG_URL;
@@ -133,12 +133,15 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
+    // 다른 유저 조회
     public UserDetailsResponseDto getUserByUsername(String username, Long userId) {
         // 현재 로그인중인 유저
         User user = userRepository.findById(userId).orElseThrow(()-> new UserNotFoundException(userId));
         // 조회하려는 유저
         User findUser = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
-        UserDetailsResponseDto userDetailsResponseDto = new UserDetailsResponseDto(findUser);
+
+        UserRelationship relationship = getUserRelationship(friendRepository.findFriendsIdsFromUser(user), findUser);
+        UserDetailsResponseDto userDetailsResponseDto = new UserDetailsResponseDto(findUser, relationship);
 
         Optional<Follow> follow = followRepository.findByFollowerIdAndFollowingId(userId, findUser.getId());
         // 팔로우 관계가 있을시에 값 업데이트, 기본은 NOFOLLOW
@@ -324,5 +327,13 @@ public class UserService {
             return ResponseDto.databaseError();
         }
         return PasswordResetResponseDto.success();
+    }
+
+
+    private UserRelationship getUserRelationship(List<Long> friendsIdsFromUser, User findUser) {
+        if(friendsIdsFromUser.contains(findUser.getId())){
+            return UserRelationship.FRIEND;
+        }
+        return UserRelationship.NOT_FRIEND;
     }
 }
