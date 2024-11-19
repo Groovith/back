@@ -129,6 +129,10 @@ class ChatRoomServiceTest {
     @DisplayName("채팅방 현재 멤버 조회 테스트")
     void findChatRoomMemberTest() {
         // given
+        Long userId = 100L;
+        User user = createUser("user", DEFAULT_IMG_URL);
+        ReflectionTestUtils.setField(user, "id", userId);
+
         Long user1Id = 1L;
         User user1 = createUser("user1", "imageUrl1");
         ReflectionTestUtils.setField(user1, "id", user1Id);
@@ -155,8 +159,8 @@ class ChatRoomServiceTest {
 
         // when
         when(chatRoomRepository.findById(chatRoomId)).thenReturn(Optional.of(chatRoom));
-        List<ChatRoomMemberDto> findMembers = chatRoomService.findAllUser(chatRoomId);
-        System.out.println(findMembers);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        List<ChatRoomMemberDto> findMembers = chatRoomService.findChatRoomMembers(chatRoomId, user.getId());
 
         // then
         Assertions.assertThat(findMembers.size()).isEqualTo(3);
@@ -400,7 +404,7 @@ class ChatRoomServiceTest {
         user.setRole("ROLE_USER");
         user.setImageUrl(imageUrl);
         user.setStatus(UserStatus.PUBLIC);
-        return new User();
+        return user;
     }
 
     public User createMasterUser(Long userId, String userName){
