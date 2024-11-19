@@ -34,7 +34,7 @@ public class FriendService {
         // 친구 추가된 유저
         User toUser = findUserByUsername(toUserName);
         validateFriendExists(fromUser, toUser);
-        Friend friend = createFriend(fromUser, toUser);
+        Friend friend = Friend.setFriend(fromUser, toUser);
 
         friendRepository.save(friend);
     }
@@ -48,6 +48,7 @@ public class FriendService {
 
         Friend friend = validateFriendNotExists(fromUser, toUser);
 
+        Friend.deleteFriend(fromUser, toUser);
         friendRepository.deleteById(friend.getId());
     }
 
@@ -62,13 +63,6 @@ public class FriendService {
         List<User> friendsFromUser = userRepository.findAllById(friendsIdsFromUser);
 
         return new FriendListResponseDto(friendsFromUser.stream().map(UserDetailsResponseDto::new).toList());
-    }
-
-    private Friend createFriend(User fromUser, User toUser) {
-        return Friend.builder()
-                .fromUser(fromUser)
-                .toUser(toUser)
-                .build();
     }
 
     private User findUserById(Long userId) {

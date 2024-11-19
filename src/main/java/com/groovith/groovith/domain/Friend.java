@@ -35,4 +35,17 @@ public class Friend {
         this.fromUser = fromUser;
         this.toUser = toUser;
     }
+
+    public static Friend setFriend(User fromUser, User toUser){
+        Friend friend = Friend.builder()
+                .fromUser(fromUser)
+                .toUser(toUser)
+                .build();
+        fromUser.getFriends().add(friend);
+        return friend;
+    }
+
+    public static void deleteFriend(User fromUser, User toUser){
+        fromUser.getFriends().removeIf(friend -> friend.getToUser().equals(toUser));
+    }
 }
