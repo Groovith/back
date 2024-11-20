@@ -10,6 +10,8 @@ import com.groovith.groovith.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,9 +78,9 @@ public class ChatRoomService {
      */
     @Transactional(readOnly = true)
     public ChatRoomDetailsListDto getChatRoomsById(Long userId) {
-        User user = findUserByUserId(userId);
+        List<UserChatRoom> enterUserChatRooms = userChatRoomRepository.findEnterChatRoomsByUserId(userId, UserChatRoomStatus.ENTER);
 
-        return new ChatRoomDetailsListDto(userChatRoomRepository.findByUserId(user.getId()).stream()
+        return new ChatRoomDetailsListDto(enterUserChatRooms.stream()
                 .map(userChatRoom -> new ChatRoomDetailsDto(userChatRoom.getChatRoom()))
                 .toList());
     }
@@ -127,13 +129,28 @@ public class ChatRoomService {
     /**
      * 채팅방 퇴장
      */
-    public ChatRoomMemberStatus leaveChatRoom(Long userId, Long chatRoomId) {
+    public ResponseEntity<?> leaveChatRoom(Long userId, Long chatRoomId) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
+        ChatRoomMemberStatus chatRoomMemberStatus = updateChatRoomStatusOnLeave(userId, chatRoom);
+        // 유저 퇴장시, 채팅방이 비어있다면 현재 채팅방 삭제, 방장인 경우 bad Request
+        return validateAndHandleChatRoomStatus(userId, chatRoom, chatRoomMemberStatus);
+    }
 
-        updateUserChatRoomStatus(findUserByUserId(userId), chatRoom, UserChatRoomStatus.LEAVE);
-        chatRoom.subUser();
-        // 유저 퇴장시, 채팅방이 비어있다면 현재 채팅방 삭제
-        return deleteChatRoomWhenEmpty(chatRoom);
+    private ResponseEntity<?> validateAndHandleChatRoomStatus(Long userId, ChatRoom chatRoom, ChatRoomMemberStatus chatRoomMemberStatus) {
+        switch (chatRoomMemberStatus) {
+            case MASTER_LEAVING -> {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            case EMPTY -> {
+                deleteChatRoom(chatRoom.getId());
+                break;
+            }
+            case ACTIVE -> {
+                updateUserChatRoomStatus(findUserByUserId(userId), chatRoom, UserChatRoomStatus.LEAVE);
+                chatRoom.subUser();
+            }
+        }
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     /**
@@ -141,11 +158,12 @@ public class ChatRoomService {
      */
     @Transactional(readOnly = true)
     public List<ChatRoomMemberDto> findChatRoomMembers(Long chatRoomId, Long userId) {
-        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
         User user = findUserByUserId(userId);
-        Set<Long> friendsIdsFromUser = getFriendsIdsFromUser(user);
+        Set<Long> friendsIdsFromUser = new HashSet<>(friendRepository.findFriendsIdsFromUser(user));
+        //fetch join
+        List<UserChatRoom> enterUserChatRooms = userChatRoomRepository.findEnterUserChatRoomsByChatRoomId(chatRoomId, UserChatRoomStatus.ENTER);
 
-        return chatRoom.getUserChatRooms().stream()
+        return enterUserChatRooms.stream()
                 .map(userChatRoom -> creatChatRoomMemberDto(user, userChatRoom.getUser(), friendsIdsFromUser))
                 .toList();
     }
@@ -234,7 +252,10 @@ public class ChatRoomService {
         }
     }
 
-    private ChatRoomMemberStatus deleteChatRoomWhenEmpty(ChatRoom chatRoom) {
+    private ChatRoomMemberStatus updateChatRoomStatusOnLeave(Long userId, ChatRoom chatRoom) {
+        if (chatRoom.getMasterUserId().equals(userId)) {
+            return ChatRoomMemberStatus.MASTER_LEAVING;
+        }
         if (chatRoom.getCurrentMemberCount() <= 0) {
             // 채팅방 플레이리스트 함께 삭제
             currentPlaylistRepository.deleteByChatRoomId(chatRoom.getId());
@@ -253,7 +274,7 @@ public class ChatRoomService {
     }
 
 
-    private UserRelationship validateUserRelationship(User user, User findUser, Set<Long> friendsIdsFromUser){
+    private UserRelationship validateUserRelationship(User user, User findUser, Set<Long> friendsIdsFromUser) {
         if (user == findUser) {
             return UserRelationship.SELF;
         }

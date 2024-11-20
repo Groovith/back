@@ -12,6 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
@@ -80,7 +82,7 @@ class ChatRoomServiceTest {
         String updatedChatRoomName = "updatedRoom";
         String userName = "masterUserName";
         ChatRoom chatRoom =createChatRoom(chatRoomName, ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
-        User masterUser = createMasterUser(userId, userName);
+        User masterUser = createUser(userId, userName, DEFAULT_IMG_URL);
         // masterUser 설정
         chatRoom.setMasterUserInfo(masterUser);
 
@@ -129,39 +131,42 @@ class ChatRoomServiceTest {
     void findChatRoomMemberTest() {
         // given
         Long userId = 100L;
-        User user = createUser("user", DEFAULT_IMG_URL);
+        User user = createUser(userId, "user", DEFAULT_IMG_URL);
         ReflectionTestUtils.setField(user, "id", userId);
 
         Long user1Id = 1L;
-        User user1 = createUser("user1", "imageUrl1");
+        User user1 = createUser(user1Id, "user1", "imageUrl1");
         ReflectionTestUtils.setField(user1, "id", user1Id);
         ReflectionTestUtils.setField(user1, "role", "ROLE_USER");
         Friend.setFriend(user, user1);
 
         Long user2Id = 2L;
-        User user2 = createUser("user2", "imageUrl2");
+        User user2 = createUser(user2Id, "user2", "imageUrl2");
         ReflectionTestUtils.setField(user2, "id", user2Id);
         ReflectionTestUtils.setField(user2, "role", "ROLE_USER");
 
         Long user3Id = 3L;
-        User user3 = createUser("user3", "imageUrl3");
+        User user3 = createUser(user3Id, "user3", "imageUrl3");
         ReflectionTestUtils.setField(user3, "id", user3Id);
         ReflectionTestUtils.setField(user3, "role", "ROLE_USER");
 
         Long chatRoomId = 1L;
         ChatRoom chatRoom = createChatRoom("room", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
-
-        UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
-        UserChatRoom.setUserChatRoom(user1, chatRoom, UserChatRoomStatus.ENTER);
-        UserChatRoom.setUserChatRoom(user2, chatRoom, UserChatRoomStatus.ENTER);
-        UserChatRoom.setUserChatRoom(user3, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom userChatRoom1 = UserChatRoom.setUserChatRoom(user1, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom userChatRoom2 = UserChatRoom.setUserChatRoom(user2, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom userChatRoom3 = UserChatRoom.setUserChatRoom(user3, chatRoom, UserChatRoomStatus.ENTER);
+        List<UserChatRoom> enterUserChatRooms = Arrays.asList(userChatRoom, userChatRoom1, userChatRoom2, userChatRoom3);
 
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
 
         // when
-        when(chatRoomRepository.findById(chatRoomId)).thenReturn(Optional.of(chatRoom));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(friendRepository.findFriendsIdsFromUser(user)).thenReturn(Arrays.asList(1L));
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
+        when(friendRepository.findFriendsIdsFromUser(user))
+                .thenReturn(List.of(1L));
+        when(userChatRoomRepository.findEnterUserChatRoomsByChatRoomId(chatRoomId, UserChatRoomStatus.ENTER))
+                .thenReturn(enterUserChatRooms);
         List<ChatRoomMemberDto> findMembers = chatRoomService.findChatRoomMembers(chatRoomId, user.getId());
 
         // then
@@ -181,6 +186,49 @@ class ChatRoomServiceTest {
     }
 
     @Test
+    @DisplayName("채팅방 멤버 조회 시 UserChatRoom이 Enter 인 멤버만 조회되야함")
+    void findChatRoomMembers_WithStatusEnterOnly(){
+        // given
+        Long userId = 100L;
+        User user = createUser(userId, "user", DEFAULT_IMG_URL);
+
+        Long user1Id = 1L;
+        User user1 = createUser(userId, "user1", "imageUrl1");
+        ReflectionTestUtils.setField(user1, "id", user1Id);
+        ReflectionTestUtils.setField(user1, "role", "ROLE_USER");
+
+        Long user2Id = 2L;
+        User user2 = createUser(user2Id, "user2", "imageUrl2");
+        ReflectionTestUtils.setField(user2, "id", user2Id);
+        ReflectionTestUtils.setField(user2, "role", "ROLE_USER");
+
+        Long user3Id = 3L;
+        User user3 = createUser(user3Id, "user3", "imageUrl3");
+        ReflectionTestUtils.setField(user3, "id", user3Id);
+        ReflectionTestUtils.setField(user3, "role", "ROLE_USER");
+
+        Long chatRoomId = 1L;
+        ChatRoom chatRoom = createChatRoom("room", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
+        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+        UserChatRoom ucr = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom ucr1 = UserChatRoom.setUserChatRoom(user1, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom ucr2 = UserChatRoom.setUserChatRoom(user2, chatRoom, UserChatRoomStatus.LEAVE);
+        UserChatRoom ucr3 = UserChatRoom.setUserChatRoom(user3, chatRoom, UserChatRoomStatus.LEAVE);
+        List<UserChatRoom> enterUserChatRooms = Arrays.asList(ucr, ucr1);
+        // when
+        when(userChatRoomRepository.findEnterUserChatRoomsByChatRoomId(chatRoomId, UserChatRoomStatus.ENTER))
+                .thenReturn(enterUserChatRooms);
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
+        when(friendRepository.findFriendsIdsFromUser(user))
+                .thenReturn(new ArrayList<>()); // 친구 없는 상태
+        List<ChatRoomMemberDto> findMembers = chatRoomService.findChatRoomMembers(chatRoomId, user.getId());
+
+        // then
+        Assertions.assertThat(findMembers.size()).isEqualTo(2);
+    }
+
+    @Test
     @DisplayName("채팅방 상세조회 테스트")
     public void findChatRoomDetail(){
         //given
@@ -188,7 +236,7 @@ class ChatRoomServiceTest {
         Long userId = 1L;
         String chatRoomName = "room";
         String masterUserName = "masterUserName";
-        User user = createMasterUser(userId,masterUserName);
+        User user = createUser(userId,masterUserName,DEFAULT_IMG_URL);
         ChatRoom chatRoom = createChatRoom(chatRoomName, ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
         // ReflectionTestUtils 사용하면 필드값 임의로 지정가능
         ReflectionTestUtils.setField(chatRoom, "id", chatroomId);
@@ -212,8 +260,6 @@ class ChatRoomServiceTest {
         Assertions.assertThat(chatRoomDetailsDto.getMasterUserId()).isEqualTo(user.getId());
         Assertions.assertThat(chatRoomDetailsDto.getImageUrl()).isEqualTo(DEFAULT_IMG_URL);
         Assertions.assertThat(chatRoomDetailsDto.getMasterUserName()).isEqualTo(user.getUsername());
-
-
     }
 
     @Test
@@ -306,6 +352,7 @@ class ChatRoomServiceTest {
         ChatRoom chatRoom = createChatRoom("name", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         ReflectionTestUtils.setField(chatRoom, "currentMemberCount", now);
+        ReflectionTestUtils.setField(chatRoom, "masterUserId", 5L);
 
         // 유저 - 채팅방의 연관관계 설정 - 현재 입장한 상태
         UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
@@ -318,18 +365,75 @@ class ChatRoomServiceTest {
         when(userChatRoomRepository.findByUserIdAndChatRoomId(anyLong(), anyLong()))
                 .thenReturn(Optional.of(userChatRoom));
 
-        ChatRoomMemberStatus result = chatRoomService.leaveChatRoom(userId, chatRoomId);
+        ResponseEntity<?> result = chatRoomService.leaveChatRoom(userId, chatRoomId);
 
         //then
-        Assertions.assertThat(result).isEqualTo(ChatRoomMemberStatus.ACTIVE);
+        Assertions.assertThat(result).isEqualTo(new ResponseEntity<>(HttpStatus.OK));
         Assertions.assertThat(chatRoom.getCurrentMemberCount()).isEqualTo(now-1);
         // 연관관계 상태 업데이트되었는지 확인
         Assertions.assertThat(user.getUserChatRoom().get(0).getStatus()).isEqualTo(UserChatRoomStatus.LEAVE);
     }
 
+    @Test
+    @DisplayName("방장인 아닌 유저가 채팅방 퇴장시 채팅방이 삭제되면 안됨")
+    void chatRoomNotDeletedWhenRegularUserExits(){
+        // given
+        // 방장
+        Long masterId = 1L;
+        User master = createUser(masterId, "master", DEFAULT_IMG_URL);
+        // 퇴장할 유저
+        Long userId = 2L;
+        User user = createUser(userId, "user", DEFAULT_IMG_URL);
+
+        Long chatRoomId = 1L;
+        ChatRoom chatRoom = createChatRoom("name", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
+        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+        ReflectionTestUtils.setField(chatRoom, "masterUserId", masterId);
+        ReflectionTestUtils.setField(chatRoom, "masterUserName", master.getUsername());
+        ReflectionTestUtils.setField(chatRoom, "currentMemberCount", 2);
+        UserChatRoom masterUserChatRoom = UserChatRoom.setUserChatRoom(master, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
+        // when
+        when(chatRoomRepository.findById(chatRoomId)).thenReturn(Optional.of(chatRoom));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId)).thenReturn(Optional.of(userChatRoom));
+
+        ResponseEntity<?> result = chatRoomService.leaveChatRoom(userId, chatRoomId);
+        // then
+        Assertions.assertThat(result).isEqualTo(new ResponseEntity<>(HttpStatus.OK));
+        Assertions.assertThat(chatRoom.getCurrentMemberCount()).isEqualTo(1);
+        Assertions.assertThat(chatRoom.getUserChatRooms().get(0).getUser().getId()).isEqualTo(masterId);
+    }
 
     @Test
-    @DisplayName("유저 퇴장시 채팅방이 비어있다면 퇴장 시 ChatRoomMemberStatus.EMPTY 리턴")
+    @DisplayName("방장이 채팅방 퇴장 시 오류 발생")
+    void masterUserNeverLeaveChatRoom(){
+        // given
+        // 방장
+        Long masterId = 1L;
+        User master = createUser(masterId, "master", DEFAULT_IMG_URL);
+        // 퇴장할 유저
+        Long userId = 2L;
+        User user = createUser(userId, "user", DEFAULT_IMG_URL);
+
+        Long chatRoomId = 1L;
+        ChatRoom chatRoom = createChatRoom("name", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
+        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+        ReflectionTestUtils.setField(chatRoom, "masterUserId", masterId);
+        ReflectionTestUtils.setField(chatRoom, "masterUserName", master.getUsername());
+        ReflectionTestUtils.setField(chatRoom, "currentMemberCount", 2);
+        UserChatRoom masterUserChatRoom = UserChatRoom.setUserChatRoom(master, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
+        // when
+        when(chatRoomRepository.findById(chatRoomId)).thenReturn(Optional.of(chatRoom));
+
+        ResponseEntity<?> result = chatRoomService.leaveChatRoom(masterId, chatRoomId);
+        // then
+        Assertions.assertThat(result).isEqualTo(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    @DisplayName("유저 퇴장시 채팅방이 비어있다면 퇴장 시 채팅방 삭제 + 플레이리스트 삭제")
     public void leaveChatRoomTest2(){
         //given
         Long chatRoomId = 1L;
@@ -340,25 +444,25 @@ class ChatRoomServiceTest {
         // 퇴장할 채팅방
         ChatRoom chatRoom = createChatRoom("name", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+        ReflectionTestUtils.setField(chatRoom, "currentMemberCount", 0);
+        ReflectionTestUtils.setField(chatRoom, "masterUserId", 100L);
 
         // 유저 - 채팅방의 연관관계 설정 - 현재 입장
         UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
 
         //when
-        when(userRepository.findById(anyLong()))
-                .thenReturn(Optional.of(user));
-        when(chatRoomRepository.findById(anyLong()))
+        when(chatRoomRepository.findById(chatRoomId))
                 .thenReturn(Optional.of(chatRoom));
-        when(userChatRoomRepository.findByUserIdAndChatRoomId(anyLong(), anyLong()))
-                .thenReturn(Optional.of(userChatRoom));
-        doNothing().when(currentPlaylistRepository).deleteByChatRoomId(anyLong());
 
-        ChatRoomMemberStatus result = chatRoomService.leaveChatRoom(userId, chatRoomId);
+        doNothing().when(currentPlaylistRepository).deleteByChatRoomId(chatRoomId);
+        doNothing().when(chatRoomRepository).deleteById(chatRoomId);
+
+        ResponseEntity<?> result = chatRoomService.leaveChatRoom(userId, chatRoomId);
 
         //then
-        verify(currentPlaylistRepository).deleteByChatRoomId(chatRoomId);
-        // EMPTY 상태를 반환하는지 테스트
-        Assertions.assertThat(result).isEqualTo(ChatRoomMemberStatus.EMPTY);
+        Assertions.assertThat(result).isEqualTo(new ResponseEntity<>(HttpStatus.OK));
+        verify(currentPlaylistRepository, times(1)).deleteByChatRoomId(chatRoomId);
+        verify(chatRoomRepository, times(1)).deleteById(chatRoomId);
 
     }
 
@@ -399,8 +503,9 @@ class ChatRoomServiceTest {
         }
     }
 
-    public User createUser(String username, String imageUrl) {
+    public User createUser(Long userId, String username, String imageUrl) {
         User user = new User();
+        user.setId(userId);
         user.setUsername(username);
         user.setNickname("nickname");
 //        user.setPassword(bCryptPasswordEncoder.encode(password));
@@ -408,15 +513,6 @@ class ChatRoomServiceTest {
         user.setRole("ROLE_USER");
         user.setImageUrl(imageUrl);
         user.setStatus(UserStatus.PUBLIC);
-        return user;
-    }
-
-    public User createMasterUser(Long userId, String userName){
-        User user = new User();
-        ReflectionTestUtils.setField(user, "id", userId);
-        user.setUsername(userName);
-        user.setStatus(UserStatus.PUBLIC);
-
         return user;
     }
 
