@@ -76,10 +76,10 @@ public class ChatRoomService {
      */
     @Transactional(readOnly = true)
     public ChatRoomDetailsListDto getChatRoomsById(Long userId) {
-        List<ChatRoom> enterUserChatRooms = userChatRoomRepository.findEnterChatRoomsByUserId(userId, UserChatRoomStatus.ENTER);
+        List<UserChatRoom> enterUserChatRooms = userChatRoomRepository.findEnterChatRoomsByUserId(userId, UserChatRoomStatus.ENTER);
 
         return new ChatRoomDetailsListDto(enterUserChatRooms.stream()
-                .map(ChatRoomDetailsDto::new)
+                .map(userChatRoom -> new ChatRoomDetailsDto(userChatRoom.getChatRoom()))
                 .toList());
     }
 
