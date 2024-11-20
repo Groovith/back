@@ -17,6 +17,6 @@ public class UpdatePasswordResponseDto extends ResponseDto{
 
     public static ResponseEntity<ResponseDto> wrongPassword() {
         ResponseDto responseDto = new ResponseDto(ResponseCode.WRONG_PASSWORD, ResponseMessage.WRONG_PASSWORD);
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseDto);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseDto);
     }
 }
