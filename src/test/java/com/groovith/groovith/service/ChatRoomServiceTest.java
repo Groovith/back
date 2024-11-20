@@ -12,6 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
@@ -350,6 +352,7 @@ class ChatRoomServiceTest {
         ChatRoom chatRoom = createChatRoom("name", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         ReflectionTestUtils.setField(chatRoom, "currentMemberCount", now);
+        ReflectionTestUtils.setField(chatRoom, "masterUserId", 5L);
 
         // 유저 - 채팅방의 연관관계 설정 - 현재 입장한 상태
         UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
@@ -362,10 +365,10 @@ class ChatRoomServiceTest {
         when(userChatRoomRepository.findByUserIdAndChatRoomId(anyLong(), anyLong()))
                 .thenReturn(Optional.of(userChatRoom));
 
-        ChatRoomMemberStatus result = chatRoomService.leaveChatRoom(userId, chatRoomId);
+        ResponseEntity<?> result = chatRoomService.leaveChatRoom(userId, chatRoomId);
 
         //then
-        Assertions.assertThat(result).isEqualTo(ChatRoomMemberStatus.ACTIVE);
+        Assertions.assertThat(result).isEqualTo(new ResponseEntity<>(HttpStatus.OK));
         Assertions.assertThat(chatRoom.getCurrentMemberCount()).isEqualTo(now-1);
         // 연관관계 상태 업데이트되었는지 확인
         Assertions.assertThat(user.getUserChatRoom().get(0).getStatus()).isEqualTo(UserChatRoomStatus.LEAVE);
@@ -395,17 +398,42 @@ class ChatRoomServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId)).thenReturn(Optional.of(userChatRoom));
 
-        ChatRoomMemberStatus result = chatRoomService.leaveChatRoom(userId, chatRoomId);
+        ResponseEntity<?> result = chatRoomService.leaveChatRoom(userId, chatRoomId);
         // then
-        Assertions.assertThat(result).isEqualTo(ChatRoomMemberStatus.ACTIVE);
-        Assertions.assertThat(chatRoom).isNotNull();
+        Assertions.assertThat(result).isEqualTo(new ResponseEntity<>(HttpStatus.OK));
         Assertions.assertThat(chatRoom.getCurrentMemberCount()).isEqualTo(1);
         Assertions.assertThat(chatRoom.getUserChatRooms().get(0).getUser().getId()).isEqualTo(masterId);
     }
 
+    @Test
+    @DisplayName("방장이 채팅방 퇴장 시 오류 발생")
+    void masterUserNeverLeaveChatRoom(){
+        // given
+        // 방장
+        Long masterId = 1L;
+        User master = createUser(masterId, "master", DEFAULT_IMG_URL);
+        // 퇴장할 유저
+        Long userId = 2L;
+        User user = createUser(userId, "user", DEFAULT_IMG_URL);
+
+        Long chatRoomId = 1L;
+        ChatRoom chatRoom = createChatRoom("name", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
+        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+        ReflectionTestUtils.setField(chatRoom, "masterUserId", masterId);
+        ReflectionTestUtils.setField(chatRoom, "masterUserName", master.getUsername());
+        ReflectionTestUtils.setField(chatRoom, "currentMemberCount", 2);
+        UserChatRoom masterUserChatRoom = UserChatRoom.setUserChatRoom(master, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
+        // when
+        when(chatRoomRepository.findById(chatRoomId)).thenReturn(Optional.of(chatRoom));
+
+        ResponseEntity<?> result = chatRoomService.leaveChatRoom(masterId, chatRoomId);
+        // then
+        Assertions.assertThat(result).isEqualTo(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
+    }
 
     @Test
-    @DisplayName("유저 퇴장시 채팅방이 비어있다면 퇴장 시 ChatRoomMemberStatus.EMPTY 리턴")
+    @DisplayName("유저 퇴장시 채팅방이 비어있다면 퇴장 시 채팅방 삭제 + 플레이리스트 삭제")
     public void leaveChatRoomTest2(){
         //given
         Long chatRoomId = 1L;
@@ -416,25 +444,25 @@ class ChatRoomServiceTest {
         // 퇴장할 채팅방
         ChatRoom chatRoom = createChatRoom("name", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+        ReflectionTestUtils.setField(chatRoom, "currentMemberCount", 0);
+        ReflectionTestUtils.setField(chatRoom, "masterUserId", 100L);
 
         // 유저 - 채팅방의 연관관계 설정 - 현재 입장
         UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
 
         //when
-        when(userRepository.findById(anyLong()))
-                .thenReturn(Optional.of(user));
-        when(chatRoomRepository.findById(anyLong()))
+        when(chatRoomRepository.findById(chatRoomId))
                 .thenReturn(Optional.of(chatRoom));
-        when(userChatRoomRepository.findByUserIdAndChatRoomId(anyLong(), anyLong()))
-                .thenReturn(Optional.of(userChatRoom));
-        doNothing().when(currentPlaylistRepository).deleteByChatRoomId(anyLong());
 
-        ChatRoomMemberStatus result = chatRoomService.leaveChatRoom(userId, chatRoomId);
+        doNothing().when(currentPlaylistRepository).deleteByChatRoomId(chatRoomId);
+        doNothing().when(chatRoomRepository).deleteById(chatRoomId);
+
+        ResponseEntity<?> result = chatRoomService.leaveChatRoom(userId, chatRoomId);
 
         //then
-        verify(currentPlaylistRepository).deleteByChatRoomId(chatRoomId);
-        // EMPTY 상태를 반환하는지 테스트
-        Assertions.assertThat(result).isEqualTo(ChatRoomMemberStatus.EMPTY);
+        Assertions.assertThat(result).isEqualTo(new ResponseEntity<>(HttpStatus.OK));
+        verify(currentPlaylistRepository, times(1)).deleteByChatRoomId(chatRoomId);
+        verify(chatRoomRepository, times(1)).deleteById(chatRoomId);
 
     }
 
