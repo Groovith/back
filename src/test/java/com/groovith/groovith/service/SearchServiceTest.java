@@ -1,7 +1,7 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.enums.ChatRoomStatus;
+import com.groovith.groovith.domain.enums.ChatRoomPrivacy;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.UserRepository;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,10 +45,10 @@ class SearchServiceTest {
 //
 //    }
 
-    ChatRoom createChatRoom(String name, ChatRoomStatus chatRoomStatus){
+    ChatRoom createChatRoom(String name, ChatRoomPrivacy chatRoomPrivacy){
         return ChatRoom.builder()
                 .name(name)
-                .chatRoomStatus(chatRoomStatus)
+                .privacy(chatRoomPrivacy)
                 .build();
     }
 }

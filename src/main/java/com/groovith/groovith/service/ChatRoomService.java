@@ -47,7 +47,7 @@ public class ChatRoomService {
         ChatRoom chatRoom = chatRoomRepository.save(
                 ChatRoom.builder()
                         .name(request.getName())
-                        .chatRoomStatus(request.getStatus())
+                        .privacy(request.getStatus())
                         .imageUrl(DEFAULT_IMG_URL)
                         .permission(request.getPermission())
                         .build()
@@ -131,12 +131,12 @@ public class ChatRoomService {
      */
     public ResponseEntity<?> leaveChatRoom(Long userId, Long chatRoomId) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
-        ChatRoomMemberStatus chatRoomMemberStatus = updateChatRoomStatusOnLeave(userId, chatRoom);
+        ChatRoomMemberStatus chatRoomMemberStatus = updateChatRoomMemberStatusOnLeave(userId, chatRoom);
         // 유저 퇴장시, 채팅방이 비어있다면 현재 채팅방 삭제, 방장인 경우 bad Request
-        return validateAndHandleChatRoomStatus(userId, chatRoom, chatRoomMemberStatus);
+        return validateAndHandleChatRoomMemberStatus(userId, chatRoom, chatRoomMemberStatus);
     }
 
-    private ResponseEntity<?> validateAndHandleChatRoomStatus(Long userId, ChatRoom chatRoom, ChatRoomMemberStatus chatRoomMemberStatus) {
+    private ResponseEntity<?> validateAndHandleChatRoomMemberStatus(Long userId, ChatRoom chatRoom, ChatRoomMemberStatus chatRoomMemberStatus) {
         switch (chatRoomMemberStatus) {
             case MASTER_LEAVING -> {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -252,7 +252,7 @@ public class ChatRoomService {
         }
     }
 
-    private ChatRoomMemberStatus updateChatRoomStatusOnLeave(Long userId, ChatRoom chatRoom) {
+    private ChatRoomMemberStatus updateChatRoomMemberStatusOnLeave(Long userId, ChatRoom chatRoom) {
         if (chatRoom.getMasterUserId().equals(userId)) {
             return ChatRoomMemberStatus.MASTER_LEAVING;
         }

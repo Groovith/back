@@ -1,7 +1,7 @@
 package com.groovith.groovith.repository;
 
 import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.enums.ChatRoomStatus;
+import com.groovith.groovith.domain.enums.ChatRoomPrivacy;
 import com.groovith.groovith.exception.ChatRoomNotFoundException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -113,7 +113,7 @@ public class ChatRoomRepositoryTest {
     ChatRoom createChatRoom(String name){
         return ChatRoom.builder()
                 .name(name)
-                .chatRoomStatus(ChatRoomStatus.PUBLIC)
+                .privacy(ChatRoomPrivacy.PUBLIC)
                 //.chatRoomType(ChatRoomType.SONG)
                 .build();
     }

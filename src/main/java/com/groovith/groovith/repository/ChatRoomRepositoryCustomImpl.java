@@ -1,7 +1,7 @@
 package com.groovith.groovith.repository;
 
 import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.enums.ChatRoomStatus;
+import com.groovith.groovith.domain.enums.ChatRoomPrivacy;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ public class ChatRoomRepositoryCustomImpl implements ChatRoomRepositoryCustom{
     private BooleanExpression searchChatRoomCondition(String query, Long lastChatRoomId){
         return chatRoom.name.contains(query)
                 .and(isLastChatRoomId(lastChatRoomId)) // 검색된 채팅방 중 마지막 채팅방 id 이후로, 첫페이지일 경우 null
-                .and(chatRoom.status.eq(ChatRoomStatus.PUBLIC));    // 공개 채팅방만
+                .and(chatRoom.privacy.eq(ChatRoomPrivacy.PUBLIC));    // 공개 채팅방만
     }
 
     // 첫 페이지 일경우(lastChatRoomId == null) 검색 조건 무시
