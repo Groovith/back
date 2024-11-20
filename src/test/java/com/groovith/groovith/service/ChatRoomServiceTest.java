@@ -150,18 +150,21 @@ class ChatRoomServiceTest {
 
         Long chatRoomId = 1L;
         ChatRoom chatRoom = createChatRoom("room", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
-
-        UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
-        UserChatRoom.setUserChatRoom(user1, chatRoom, UserChatRoomStatus.ENTER);
-        UserChatRoom.setUserChatRoom(user2, chatRoom, UserChatRoomStatus.ENTER);
-        UserChatRoom.setUserChatRoom(user3, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom userChatRoom1 = UserChatRoom.setUserChatRoom(user1, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom userChatRoom2 = UserChatRoom.setUserChatRoom(user2, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom userChatRoom3 = UserChatRoom.setUserChatRoom(user3, chatRoom, UserChatRoomStatus.ENTER);
+        List<UserChatRoom> enterUserChatRooms = Arrays.asList(userChatRoom, userChatRoom1, userChatRoom2, userChatRoom3);
 
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
 
         // when
-        when(chatRoomRepository.findById(chatRoomId)).thenReturn(Optional.of(chatRoom));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(friendRepository.findFriendsIdsFromUser(user)).thenReturn(Arrays.asList(1L));
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
+        when(friendRepository.findFriendsIdsFromUser(user))
+                .thenReturn(List.of(1L));
+        when(userChatRoomRepository.findEnterUserChatRoomsByChatRoomId(chatRoomId, UserChatRoomStatus.ENTER))
+                .thenReturn(enterUserChatRooms);
         List<ChatRoomMemberDto> findMembers = chatRoomService.findChatRoomMembers(chatRoomId, user.getId());
 
         // then
@@ -178,6 +181,50 @@ class ChatRoomServiceTest {
         Assertions.assertThat(findMembers.get(index).getUsername()).isEqualTo(user.getUsername());
         Assertions.assertThat(findMembers.get(index).getImageUrl()).isEqualTo(user.getImageUrl());
 
+    }
+
+    @Test
+    @DisplayName("채팅방 멤버 조회 시 UserChatRoom이 Enter 인 멤버만 조회되야함")
+    void findChatRoomMembers_WithStatusEnterOnly(){
+        // given
+        Long userId = 100L;
+        User user = createUser("user", DEFAULT_IMG_URL);
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        Long user1Id = 1L;
+        User user1 = createUser("user1", "imageUrl1");
+        ReflectionTestUtils.setField(user1, "id", user1Id);
+        ReflectionTestUtils.setField(user1, "role", "ROLE_USER");
+
+        Long user2Id = 2L;
+        User user2 = createUser("user2", "imageUrl2");
+        ReflectionTestUtils.setField(user2, "id", user2Id);
+        ReflectionTestUtils.setField(user2, "role", "ROLE_USER");
+
+        Long user3Id = 3L;
+        User user3 = createUser("user3", "imageUrl3");
+        ReflectionTestUtils.setField(user3, "id", user3Id);
+        ReflectionTestUtils.setField(user3, "role", "ROLE_USER");
+
+        Long chatRoomId = 1L;
+        ChatRoom chatRoom = createChatRoom("room", ChatRoomStatus.PUBLIC, ChatRoomPermission.MASTER);
+        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+        UserChatRoom ucr = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom ucr1 = UserChatRoom.setUserChatRoom(user1, chatRoom, UserChatRoomStatus.ENTER);
+        UserChatRoom ucr2 = UserChatRoom.setUserChatRoom(user2, chatRoom, UserChatRoomStatus.LEAVE);
+        UserChatRoom ucr3 = UserChatRoom.setUserChatRoom(user3, chatRoom, UserChatRoomStatus.LEAVE);
+        List<UserChatRoom> enterUserChatRooms = Arrays.asList(ucr, ucr1);
+        // when
+        when(userChatRoomRepository.findEnterUserChatRoomsByChatRoomId(chatRoomId, UserChatRoomStatus.ENTER))
+                .thenReturn(enterUserChatRooms);
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
+        when(friendRepository.findFriendsIdsFromUser(user))
+                .thenReturn(new ArrayList<>()); // 친구 없는 상태
+        List<ChatRoomMemberDto> findMembers = chatRoomService.findChatRoomMembers(chatRoomId, user.getId());
+
+        // then
+        Assertions.assertThat(findMembers.size()).isEqualTo(2);
     }
 
     @Test
@@ -212,8 +259,6 @@ class ChatRoomServiceTest {
         Assertions.assertThat(chatRoomDetailsDto.getMasterUserId()).isEqualTo(user.getId());
         Assertions.assertThat(chatRoomDetailsDto.getImageUrl()).isEqualTo(DEFAULT_IMG_URL);
         Assertions.assertThat(chatRoomDetailsDto.getMasterUserName()).isEqualTo(user.getUsername());
-
-
     }
 
     @Test
