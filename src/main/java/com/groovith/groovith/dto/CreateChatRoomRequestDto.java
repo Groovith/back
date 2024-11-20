@@ -1,9 +1,8 @@
 package com.groovith.groovith.dto;
 
 import com.groovith.groovith.domain.enums.ChatRoomPermission;
-import com.groovith.groovith.domain.enums.ChatRoomStatus;
+import com.groovith.groovith.domain.enums.ChatRoomPrivacy;
 import com.groovith.groovith.domain.enums.ChatRoomType;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -15,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class CreateChatRoomRequestDto {
     //private Long userId;
     private String name;
-    private ChatRoomStatus status;  // "PRIVATE" | "PUBLIC"
+    private ChatRoomPrivacy status;  // "PRIVATE" | "PUBLIC"
     private ChatRoomPermission permission; //
 
 //    private ChatRoomType chatRoomType;     // "song" | "album" | "artist" | "playlist"
@@ -24,10 +23,10 @@ public class CreateChatRoomRequestDto {
 //    private Long artistId;
 //    private Long playlistId;
 
-    public CreateChatRoomRequestDto(Long userId, String name, ChatRoomStatus chatRoomStatus, ChatRoomType chatRoomType, Long typeId) {
+    public CreateChatRoomRequestDto(Long userId, String name, ChatRoomPrivacy chatRoomPrivacy, ChatRoomType chatRoomType, Long typeId) {
         //this.userId = userId;
         this.name = name;
-        this.status = chatRoomStatus;
+        this.status = chatRoomPrivacy;
 //        this.chatRoomType = chatRoomType;
 //
 //        switch (chatRoomType) {

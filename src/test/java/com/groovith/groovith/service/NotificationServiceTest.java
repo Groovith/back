@@ -1,7 +1,7 @@
 package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.*;
-import com.groovith.groovith.domain.enums.ChatRoomStatus;
+import com.groovith.groovith.domain.enums.ChatRoomPrivacy;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.NotificationRepository;
 import com.groovith.groovith.repository.UserRepository;
@@ -56,7 +56,7 @@ class NotificationServiceTest {
         User invitee = createUser(inviteeId, "invitee", "1234");
         User inviter = createUser(inviterId, "inviter", "1234");
 
-        ChatRoom chatRoom = createChatRoom("room", ChatRoomStatus.PUBLIC);
+        ChatRoom chatRoom = createChatRoom("room", ChatRoomPrivacy.PUBLIC);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         // 생성될 알림 메세지
         String data = inviter.getUsername() + " 이(가) " + invitee.getUsername() + " 을(를) " + chatRoom.getName() + " 에 초대했습니다";
@@ -82,10 +82,10 @@ class NotificationServiceTest {
         return data;
     }
 
-    ChatRoom createChatRoom(String name, ChatRoomStatus chatRoomStatus){
+    ChatRoom createChatRoom(String name, ChatRoomPrivacy chatRoomPrivacy){
         return ChatRoom.builder()
                 .name(name)
-                .chatRoomStatus(chatRoomStatus)
+                .privacy(chatRoomPrivacy)
                 .build();
     }
 }

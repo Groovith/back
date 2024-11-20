@@ -1,7 +1,7 @@
 package com.groovith.groovith.domain;
 
 import com.groovith.groovith.domain.enums.ChatRoomPermission;
-import com.groovith.groovith.domain.enums.ChatRoomStatus;
+import com.groovith.groovith.domain.enums.ChatRoomPrivacy;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -43,7 +43,7 @@ public class ChatRoom {
     private String imageUrl;
 
     @Enumerated(EnumType.STRING)
-    private ChatRoomStatus status;
+    private ChatRoomPrivacy privacy;
 
 //    @Enumerated(EnumType.STRING)
 //    private ChatRoomType type;
@@ -58,9 +58,9 @@ public class ChatRoom {
     private ChatRoomPermission permission;
 
     @Builder
-    public ChatRoom(String name, ChatRoomStatus chatRoomStatus, String imageUrl, ChatRoomPermission permission) {
+    public ChatRoom(String name, ChatRoomPrivacy privacy, String imageUrl, ChatRoomPermission permission) {
         this.name = name;
-        this.status = chatRoomStatus;
+        this.privacy = privacy;
         //this.type = chatRoomType;
         this.currentMemberCount = 1; // 채팅방이 생성될때 처음인원 1명
         this.imageUrl = imageUrl;
@@ -94,20 +94,20 @@ public class ChatRoom {
     public void updateName(String name){
         this.name = name;
     }
-    public void updateStatus(ChatRoomStatus newStatus){
-        this.status = newStatus;
+    public void updatePrivacy(ChatRoomPrivacy newPrivacy){
+        this.privacy = newPrivacy;
     }
 
     public void updatePermission(ChatRoomPermission newPermission){
         this.permission = newPermission;
     }
 
-    public void update(String name, ChatRoomStatus status, ChatRoomPermission permission){
+    public void update(String name, ChatRoomPrivacy privacy, ChatRoomPermission permission){
         if (name != null) {
             this.updateName(name);
         }
-        if (status != null) {
-            this.updateStatus(status);
+        if (privacy != null) {
+            this.updatePrivacy(privacy);
         }
         if (permission != null) {
             this.updatePermission(permission);

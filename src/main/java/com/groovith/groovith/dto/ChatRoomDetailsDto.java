@@ -2,6 +2,8 @@ package com.groovith.groovith.dto;
 
 
 import com.groovith.groovith.domain.ChatRoom;
+import com.groovith.groovith.domain.enums.ChatRoomPermission;
+import com.groovith.groovith.domain.enums.ChatRoomPrivacy;
 import lombok.Data;
 
 /**
@@ -31,6 +33,8 @@ public class ChatRoomDetailsDto {
     private String name;
     private String imageUrl;
     private String masterUserName;
+    private ChatRoomPrivacy privacy;
+    private ChatRoomPermission permission;
     /*private int totalUsers;
     private int currentUsers;
     private Long masterId;
@@ -48,6 +52,8 @@ public class ChatRoomDetailsDto {
         this.imageUrl = chatRoom.getImageUrl();
         this.masterUserId = chatRoom.getMasterUserId();
         this.masterUserName = chatRoom.getMasterUserName();
+        this.privacy = chatRoom.getPrivacy();
+        this.permission = chatRoom.getPermission();
         /*this.totalUsers = chatRoom.getTotalMember();
         this.currentUsers = chatRoom.getCurrentMember();
         this.status = chatRoom.getStatus();
