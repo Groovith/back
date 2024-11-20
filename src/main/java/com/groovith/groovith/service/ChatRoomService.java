@@ -76,10 +76,10 @@ public class ChatRoomService {
      */
     @Transactional(readOnly = true)
     public ChatRoomDetailsListDto getChatRoomsById(Long userId) {
-        User user = findUserByUserId(userId);
+        List<ChatRoom> enterUserChatRooms = userChatRoomRepository.findEnterChatRoomsByUserId(userId, UserChatRoomStatus.ENTER);
 
-        return new ChatRoomDetailsListDto(userChatRoomRepository.findByUserId(user.getId()).stream()
-                .map(userChatRoom -> new ChatRoomDetailsDto(userChatRoom.getChatRoom()))
+        return new ChatRoomDetailsListDto(enterUserChatRooms.stream()
+                .map(ChatRoomDetailsDto::new)
                 .toList());
     }
 
@@ -141,11 +141,12 @@ public class ChatRoomService {
      */
     @Transactional(readOnly = true)
     public List<ChatRoomMemberDto> findChatRoomMembers(Long chatRoomId, Long userId) {
-        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
         User user = findUserByUserId(userId);
-        Set<Long> friendsIdsFromUser = getFriendsIdsFromUser(user);
+        Set<Long> friendsIdsFromUser = new HashSet<>(friendRepository.findFriendsIdsFromUser(user));
+        //fetch join
+        List<UserChatRoom> enterUserChatRooms = userChatRoomRepository.findEnterUserChatRoomsByChatRoomId(chatRoomId, UserChatRoomStatus.ENTER);
 
-        return chatRoom.getUserChatRooms().stream()
+        return enterUserChatRooms.stream()
                 .map(userChatRoom -> creatChatRoomMemberDto(user, userChatRoom.getUser(), friendsIdsFromUser))
                 .toList();
     }
