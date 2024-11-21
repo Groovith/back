@@ -48,7 +48,7 @@ public class ChatRoomService {
                 ChatRoom.builder()
                         .name(request.getName())
                         .privacy(request.getStatus())
-                        .imageUrl(DEFAULT_IMG_URL)
+                        .imageUrl(validateImageUrl(request.getImageUrl()))
                         .permission(request.getPermission())
                         .build()
         );
@@ -100,7 +100,7 @@ public class ChatRoomService {
     public void updateChatRoom(Long chatRoomId, Long userId, UpdateChatRoomRequestDto request) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
         validateMasterUser(userId, chatRoom.getMasterUserId(), ERROR_ONLY_MASTER_USER_CAN_UPDATE_CHATROOM);
-        chatRoom.update(request.getName(), request.getStatus(), request.getPermission());
+        chatRoom.update(request.getName(), request.getStatus(), request.getPermission(), request.getImageUrl());
     }
 
     /**
@@ -282,5 +282,12 @@ public class ChatRoomService {
             return UserRelationship.FRIEND;
         }
         return UserRelationship.NOT_FRIEND;
+    }
+
+    private String validateImageUrl(String imageUrl) {
+        if(imageUrl == null){
+            return DEFAULT_IMG_URL;
+        }
+        return imageUrl;
     }
 }
