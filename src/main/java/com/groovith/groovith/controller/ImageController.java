@@ -39,5 +39,4 @@ public class ImageController {
         imageService.chatRoomUpLoadFile(file, chatRoomId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
-
 }
