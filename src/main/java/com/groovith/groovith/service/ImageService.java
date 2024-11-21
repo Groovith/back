@@ -180,7 +180,7 @@ public class ImageService {
         return url;
     }
 
-    private void deleteIfNotDefault(){
+    private void deleteIfNotDefault(String nowImage) {
         if(!nowImage.equals(DEFAULT_USER_IMG_URL)){
             deleteFileFromS3Bucket(nowImage);
         }
