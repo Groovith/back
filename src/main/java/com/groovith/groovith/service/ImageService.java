@@ -56,18 +56,13 @@ public class ImageService {
      *  파일 업로드, url db에 저장
      * */
 
+
     // 유저 이미지 업로드
     public void userUpLoadFile(MultipartFile multipartFile, Long userId){
-        // 파일로 변환
-        File file = convertMultiPartFileToFile(multipartFile);
-        // 파일명 설정
-        String fileName = USER_DIR + UUID.randomUUID()+ "_" + multipartFile.getOriginalFilename();
-        // s3에 업로드 후 url 반환
-        String url = uploadFileToS3Bucket(fileName, file);
-        file.delete();
+        String imageUrl = getImageUrl(USER_DIR, multipartFile);
 
         // 이미지 url 저장
-        Image image = Image.builder().imageUrl(url).build();
+        Image image = Image.builder().imageUrl(imageUrl).build();
 
         // 유저 이미지 url 변경
         User user = userRepository.findById(userId)
@@ -85,12 +80,9 @@ public class ImageService {
 
     // 채팅방 이미지 업로드
     public void chatRoomUpLoadFile(MultipartFile multipartFile, Long chatRoomId){
-        File file = convertMultiPartFileToFile(multipartFile);
-        String fileName = CHATROOM_DIR+ UUID.randomUUID()+ "_" + multipartFile.getOriginalFilename();
-        String url = uploadFileToS3Bucket(fileName, file);
-        file.delete();
+        String imageUrl = getImageUrl(CHATROOM_DIR, multipartFile);
 
-        Image image = Image.builder().imageUrl(url).build();
+        Image image = Image.builder().imageUrl(imageUrl).build();
 
         // 채팅방 이미지 변경
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
@@ -102,7 +94,7 @@ public class ImageService {
             deleteChatRoomFileFromS3Bucket(nowImage);
         }
 
-        chatRoom.updateImageUrl(url);
+        chatRoom.updateImageUrl(imageUrl);
         imageRepository.save(image);
     }
 
@@ -131,14 +123,14 @@ public class ImageService {
     // S3에서 파일 삭제
     public void deleteFileFromS3Bucket(String fileUrl) {
         // 파일 경로 추출
-        String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+        String fileName = extractFileName(fileUrl);
         fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
         amazonS3Client.deleteObject(bucket, USER_DIR + fileName);
     }
 
     // 채팅방 이미지 삭제
     public void deleteChatRoomFileFromS3Bucket(String fileUrl){
-        String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+        String fileName = extractFileName(fileUrl);
         fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
         amazonS3Client.deleteObject(bucket, CHATROOM_DIR + fileName);
     }
@@ -176,4 +168,29 @@ public class ImageService {
         return convertedFile;
     }
 
+
+    private String getImageUrl(String dir, MultipartFile multipartFile) {
+        // 파일로 변환
+        File file = convertMultiPartFileToFile(multipartFile);
+        // 파일명 설정
+        String fileName = generateFileName(dir, multipartFile);
+        // s3에 업로드 후 url 반환
+        String url = uploadFileToS3Bucket(fileName, file);
+        file.delete();
+        return url;
+    }
+
+    private void deleteIfNotDefault(){
+        if(!nowImage.equals(DEFAULT_USER_IMG_URL)){
+            deleteFileFromS3Bucket(nowImage);
+        }
+    }
+
+    private String generateFileName(String dir, MultipartFile multipartFile) {
+        return dir + UUID.randomUUID()+ "_" + multipartFile.getOriginalFilename();
+    }
+
+    private String extractFileName(String fileUrl) {
+        return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+    }
 }
