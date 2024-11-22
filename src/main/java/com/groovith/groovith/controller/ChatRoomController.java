@@ -171,6 +171,10 @@ public class ChatRoomController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+
+    /**
+     * 채팅방 이미지 삭제
+     */
     @DeleteMapping("/chatrooms/{chatRoomId}/image")
     public ResponseEntity<? super DeleteProfilePictureResponseDto> deleteChatRoomImage(@PathVariable("chatRoomId") Long chatRoomId) {
         ResponseEntity<? super DeleteProfilePictureResponseDto> result = chatRoomImageService.deleteImageById(chatRoomId);
