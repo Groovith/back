@@ -3,73 +3,55 @@ package com.groovith.groovith.service.Image;
 import com.groovith.groovith.domain.Image;
 import com.groovith.groovith.domain.User;
 import com.groovith.groovith.domain.enums.S3Directory;
-import com.groovith.groovith.dto.DeleteProfilePictureResponseDto;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.repository.ImageRepository;
 import com.groovith.groovith.repository.UserRepository;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Qualifier("UserImageService")
-@RequiredArgsConstructor
 @Transactional
 @Service
-public class UserImageService implements ImageService {
+public class UserImageService extends AbstractImageService<User> {
 
-    private final S3Service s3Service;
-    private final ImageRepository imageRepository;
     private final UserRepository userRepository;
 
-    @Override
-    public String uploadAndSaveImage(MultipartFile file) {
-        if (file == null) {
-            return S3Directory.USER.getDefaultImageUrl();
-        }
-        String imageUrl = uploadImage(file);
-        saveImage(imageUrl);
-        return imageUrl;
+    public UserImageService(S3Service s3Service, ImageRepository imageRepository, UserRepository userRepository) {
+        super(s3Service, imageRepository);
+        this.userRepository = userRepository;
     }
 
     @Override
-    public String updateImageById(MultipartFile file, Long id) {
-        // 기존 이미지 삭제
-        deleteImageById(id);
-        // 새 이미지 업로드
-        return uploadAndSaveImage(file);
+    protected String getDefaultImageUrl() {
+        return S3Directory.USER.getDefaultImageUrl();
     }
 
     @Override
-    public ResponseEntity<? super DeleteProfilePictureResponseDto> deleteImageById(Long userId) {
-        try {
-            User user = findUserById(userId);
-            deleteImageIfNotDefault(user);
-        }
-        catch (Exception e) {
-            return DeleteProfilePictureResponseDto.databaseError();
-        }
-        return DeleteProfilePictureResponseDto.success();
+    protected String getDirectory() {
+        return S3Directory.USER.getDirectory();
     }
 
-    private String uploadImage(MultipartFile file) {
-        return s3Service.uploadToS3AndGetUrl(file, S3Directory.USER.getDirectory());
+    @Override
+    protected String uploadImage(MultipartFile file) {
+        return s3Service.uploadToS3AndGetUrl(file, this.getDirectory());
     }
 
-    private void deleteImageIfNotDefault(User user){
-        if (!S3Directory.USER.isDefaultImage(user.getImageUrl())){
-            s3Service.deleteFileFromS3Bucket(user.getImageUrl(), S3Directory.USER.getDefaultImageUrl());
+    @Override
+    protected void deleteImageIfNotDefault(User user) {
+        if(!S3Directory.USER.isDefaultImage(user.getImageUrl())){
+            s3Service.deleteFileFromS3Bucket(user.getImageUrl(), this.getDirectory());
         }
     }
 
-    private User findUserById(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+    @Override
+    protected User findEntityById(Long id) {
+        return userRepository.findById(id).orElseThrow(()->new UserNotFoundException(id));
     }
 
-    private void saveImage(String imageUrl) {
+    @Override
+    protected void saveImage(String imageUrl) {
         imageRepository.save(Image.builder()
                 .imageUrl(imageUrl)
                 .build());
