@@ -115,10 +115,10 @@ public class UserController {
     /**
      * 유저 이미지 업로드(프로필 사진 수정, 교체)
      * */
-    @PutMapping("/upload/user")
+    @PutMapping("/users/me/update/profile-picture")
     public ResponseEntity<?> userUploadFile(@RequestParam("file") MultipartFile file,@AuthenticationPrincipal CustomUserDetails userDetails) {
         String imageUrl = userImageService.uploadAndSaveImage(file);
-        userService.updateImageUrl(userDetails.getUserId(), imageUrl);
+        updateImageUrl(userDetails.getUserId(), imageUrl);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -128,7 +128,11 @@ public class UserController {
     @DeleteMapping("/users/me/update/profile-picture")
     public ResponseEntity<? super DeleteProfilePictureResponseDto> deleteProfilePicture(@AuthenticationPrincipal CustomUserDetails userDetails) {
         ResponseEntity<? super DeleteProfilePictureResponseDto> result =  userImageService.deleteImageById(userDetails.getUserId());
-        userService.updateImageUrl(userDetails.getUserId(), S3Directory.USER.getDefaultImageUrl());
+        updateImageUrl(userDetails.getUserId(), S3Directory.USER.getDefaultImageUrl());
         return result;
+    }
+
+    private void updateImageUrl(Long userId, String imageUrl) {
+        userService.updateImageUrl(userId, imageUrl);
     }
 }
