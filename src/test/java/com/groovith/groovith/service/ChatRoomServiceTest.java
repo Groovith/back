@@ -45,9 +45,9 @@ class ChatRoomServiceTest {
         String userName = "masterUserName";
         String imageUrl = "imageUrl";
         CreateChatRoomRequestDto requestDto = new CreateChatRoomRequestDto();
+        ReflectionTestUtils.setField(requestDto, "name", chatRoomName);
         ReflectionTestUtils.setField(requestDto, "status", ChatRoomPrivacy.PUBLIC);
         ReflectionTestUtils.setField(requestDto, "permission", ChatRoomPermission.MASTER);
-        ReflectionTestUtils.setField(requestDto, "imageUrl", imageUrl);
 
 
         User user = new User();
@@ -61,7 +61,7 @@ class ChatRoomServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(currentPlaylistRepository.save(any())).thenReturn(any());
 
-        ChatRoom actualChatRoom = chatRoomService.create(userId, requestDto);
+        ChatRoom actualChatRoom = chatRoomService.create(userId, requestDto, imageUrl);
 
         //then
         Assertions.assertThat(actualChatRoom).isEqualTo(expectedChatRoom);
@@ -92,12 +92,10 @@ class ChatRoomServiceTest {
         ReflectionTestUtils.setField(updateChatRoomRequestDto, "name", updatedChatRoomName);
         ReflectionTestUtils.setField(updateChatRoomRequestDto, "status", ChatRoomPrivacy.PRIVATE);
         ReflectionTestUtils.setField(updateChatRoomRequestDto, "permission", ChatRoomPermission.EVERYONE);
-        ReflectionTestUtils.setField(updateChatRoomRequestDto, "imageUrl", newImageUrl);
-
 
         // when
         when(chatRoomRepository.findById(chatRoomId)).thenReturn(Optional.of(chatRoom));
-        chatRoomService.updateChatRoom(chatRoomId, userId, updateChatRoomRequestDto);
+        chatRoomService.updateChatRoom(chatRoomId, userId, updateChatRoomRequestDto, newImageUrl);
 
         // then
         Assertions.assertThat(chatRoom.getName()).isEqualTo(updatedChatRoomName);
