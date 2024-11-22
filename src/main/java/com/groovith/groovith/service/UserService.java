@@ -1,7 +1,7 @@
 package com.groovith.groovith.service;
 
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.groovith.groovith.domain.*;
+import com.groovith.groovith.domain.enums.S3Directory;
 import com.groovith.groovith.domain.enums.UserRelationship;
 import com.groovith.groovith.domain.enums.UserStatus;
 import com.groovith.groovith.dto.*;
@@ -9,9 +9,9 @@ import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.provider.EmailProvider;
 import com.groovith.groovith.repository.*;
 import com.groovith.groovith.security.JwtUtil;
+import com.groovith.groovith.service.Image.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,11 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
+    private final S3Service s3Service;
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
     private final UserChatRoomRepository userChatRoomRepository;
@@ -34,10 +36,7 @@ public class UserService {
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailProvider emailProvider;
-    private final ImageService imageService;
 
-    @Value("${cloud.aws.s3.defaultUserImageUrl}")
-    private String DEFAULT_IMG_URL;
 
     // 회원가입
     public ResponseEntity<JoinResponseDto> join(JoinRequestDto joinRequestDto) {
@@ -63,7 +62,7 @@ public class UserService {
             user.setPassword(bCryptPasswordEncoder.encode(password));
             user.setEmail(email);
             user.setRole("ROLE_USER");
-            user.setImageUrl(DEFAULT_IMG_URL);
+            user.setImageUrl(S3Directory.USER.getDefaultImageUrl());
             user.setStatus(UserStatus.PUBLIC);
 
             // 유저 저장
@@ -86,8 +85,8 @@ public class UserService {
 
         // 탈퇴 회원이 만든 채팅방이면 채팅방 삭제, 아니면 탈퇴 회원이 속해 있던 채팅방 인원 -1
         List<UserChatRoom> userChatRooms = userChatRoomRepository.findByUserId(user.getId());
-        for(UserChatRoom userChatRoom : userChatRooms){
-            for(Message message: userChatRoom.getMessages()){
+        for (UserChatRoom userChatRoom : userChatRooms) {
+            for (Message message : userChatRoom.getMessages()) {
                 // 탈퇴회원 메세지 처리 - isUserDeleted 된 메세지를 조회할때 username = 알수없음 으로 표시
                 message.setIsUserDeleted();
                 // 메시지와 userchatroom 연관관계 제거(user 탈퇴시에 userchatroom이 같이 삭제될때 메시지는 그대로 두기위함)
@@ -96,20 +95,18 @@ public class UserService {
 
             ChatRoom chatRoom = userChatRoom.getChatRoom();
             // 채팅방 만든사람이 탈퇴 회원 or 채팅방에 탈퇴회원만 있었을 경우 채팅방 삭제
-            if(chatRoom.getMasterUserId().equals(user.getId()) || chatRoom.getCurrentMemberCount() <= 1){
+            if (chatRoom.getMasterUserId().equals(user.getId()) || chatRoom.getCurrentMemberCount() <= 1) {
                 chatRoomRepository.delete(chatRoom);
-            }else{
+            } else {
                 // 채팅방 인원 -1
                 chatRoom.subUser();
             }
-
-
         }
 
         try {
             // 유저 프로필 이미지 있는 경우 삭제
-            if (!user.getImageUrl().equals(DEFAULT_IMG_URL)) {
-                imageService.deleteFileFromS3Bucket(user.getImageUrl());
+            if (!user.getImageUrl().equals(S3Directory.USER.getDefaultImageUrl())) {
+                s3Service.deleteFileFromS3Bucket(user.getImageUrl(), S3Directory.USER.getDirectory());
             }
             // 유저 삭제
             userRepository.delete(user);
@@ -136,11 +133,11 @@ public class UserService {
     // 다른 유저 조회
     public UserDetailsResponseDto getUserByUsername(String username, Long userId) {
         // 현재 로그인중인 유저
-        User user = userRepository.findById(userId).orElseThrow(()-> new UserNotFoundException(userId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         // 조회하려는 유저
         User findUser = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
 
-        UserRelationship relationship = getUserRelationship(friendRepository.findFriendsIdsFromUser(user), user,  findUser);
+        UserRelationship relationship = getUserRelationship(friendRepository.findFriendsIdsFromUser(user), user, findUser);
         UserDetailsResponseDto userDetailsResponseDto = new UserDetailsResponseDto(findUser, relationship);
 
         Optional<Follow> follow = followRepository.findByFollowerIdAndFollowingId(userId, findUser.getId());
@@ -151,9 +148,9 @@ public class UserService {
 
     /**
      * 유저 status 변경
-     * */
+     */
     @Transactional
-    public void updateStatus(Long userId){
+    public void updateStatus(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         user.updateStatus(user.getStatus());
     }
@@ -199,7 +196,7 @@ public class UserService {
     }
 
     // 랜덤 네 자리 숫자 문자열 반환
-    private static String getCertificationNumber () {
+    private static String getCertificationNumber() {
         StringBuilder certificationNumber = new StringBuilder();
         for (int count = 0; count < 4; count++) certificationNumber.append((int) (Math.random() * 10));
         return certificationNumber.toString();
@@ -236,7 +233,8 @@ public class UserService {
         try {
             User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
             // 제공된 비밀번호가 기존 비밀번호와 같지 않으면 오류 메시지 반환
-            if (!bCryptPasswordEncoder.matches(requestDto.getCurrentPassword(), user.getPassword())) return UpdatePasswordResponseDto.wrongPassword();
+            if (!bCryptPasswordEncoder.matches(requestDto.getCurrentPassword(), user.getPassword()))
+                return UpdatePasswordResponseDto.wrongPassword();
 
             user.setPassword(bCryptPasswordEncoder.encode(requestDto.getNewPassword()));
             userRepository.save(user);
@@ -251,7 +249,8 @@ public class UserService {
     public ResponseEntity<? super UpdateUsernameResponseDto> updateUsername(UpdateUsernameRequestDto requestDto, Long userId) {
         try {
             // 이미 있는 유저네임인 경우 오류 메시지 반환
-            if (userRepository.existsByUsername(requestDto.getUsername())) return UpdateUsernameResponseDto.duplicateId();
+            if (userRepository.existsByUsername(requestDto.getUsername()))
+                return UpdateUsernameResponseDto.duplicateId();
 
             User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
             user.setUsername(requestDto.getUsername());
@@ -317,7 +316,8 @@ public class UserService {
         try {
             PasswordResetCertification certification = passwordResetCertificationRepository.findById(requestDto.getEmail()).orElseThrow();
             // 코드가 일치 하지 않는 경우 오류 메시지 반환
-            if (!certification.getCode().equals(requestDto.getCode())) return PasswordResetResponseDto.certificationFail();
+            if (!certification.getCode().equals(requestDto.getCode()))
+                return PasswordResetResponseDto.certificationFail();
             // 코드가 일치 하는 경우 비밀번호 변경 + 인증 객체 삭제
             passwordResetCertificationRepository.delete(certification);
             User user = userRepository.findByEmail(requestDto.getEmail()).orElseThrow();
@@ -329,12 +329,19 @@ public class UserService {
         return PasswordResetResponseDto.success();
     }
 
+    @Transactional
+    // 프로필 사진 변경
+    public void updateImageUrl(Long userId, String imageUrl) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        user.updateImageUrl(imageUrl);
+    }
 
-    private UserRelationship getUserRelationship(List<Long> friendsIdsFromUser,User user, User findUser) {
-        if(friendsIdsFromUser.contains(findUser.getId())){
+
+    private UserRelationship getUserRelationship(List<Long> friendsIdsFromUser, User user, User findUser) {
+        if (friendsIdsFromUser.contains(findUser.getId())) {
             return UserRelationship.FRIEND;
         }
-        if(user.equals(findUser)){
+        if (user.equals(findUser)) {
             return UserRelationship.SELF;
         }
         return UserRelationship.NOT_FRIEND;
