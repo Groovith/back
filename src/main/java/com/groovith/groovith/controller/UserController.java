@@ -1,14 +1,18 @@
 package com.groovith.groovith.controller;
 
+import com.groovith.groovith.domain.enums.S3Directory;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.security.CustomUserDetails;
+import com.groovith.groovith.service.Image.ImageService;
 import com.groovith.groovith.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -16,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    @Qualifier("UserImageService")
+    private final ImageService userImageService;
 
     // 회원가입 요청
     @PostMapping("/join")
@@ -104,5 +110,25 @@ public class UserController {
     @PatchMapping("/auth/reset-password")
     public ResponseEntity<? super PasswordResetResponseDto> resetPassword(@RequestBody @Valid PasswordResetRequestDto requestDto) {
         return userService.resetPassword(requestDto);
+    }
+
+    /**
+     * 유저 이미지 업로드(프로필 사진 수정, 교체)
+     * */
+    @PutMapping("/upload/user")
+    public ResponseEntity<?> userUploadFile(@RequestParam("file") MultipartFile file,@AuthenticationPrincipal CustomUserDetails userDetails) {
+        String imageUrl = userImageService.uploadAndSaveImage(file);
+        userService.updateImageUrl(userDetails.getUserId(), imageUrl);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    /**
+     * 유저 이미지 삭제
+     * */
+    @DeleteMapping("/users/me/update/profile-picture")
+    public ResponseEntity<? super DeleteProfilePictureResponseDto> deleteProfilePicture(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        ResponseEntity<? super DeleteProfilePictureResponseDto> result =  userImageService.deleteImageById(userDetails.getUserId());
+        userService.updateImageUrl(userDetails.getUserId(), S3Directory.USER.getDefaultImageUrl());
+        return result;
     }
 }
