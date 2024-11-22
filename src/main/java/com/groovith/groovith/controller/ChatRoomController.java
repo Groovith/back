@@ -1,23 +1,24 @@
 package com.groovith.groovith.controller;
 
 import com.groovith.groovith.domain.ChatRoom;
-import com.groovith.groovith.domain.enums.ChatRoomMemberStatus;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.ChatRoomService;
-import com.groovith.groovith.service.ImageService;
+import com.groovith.groovith.service.Image.ImageService;
 import com.groovith.groovith.service.MessageService;
 import com.groovith.groovith.service.NotificationService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -25,18 +26,23 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class ChatRoomController {
 
+    @Qualifier("ChatRoomImageService")
+    private final ImageService chatRoomImageService;
     private final ChatRoomService chatRoomService;
     private final NotificationService notificationService;
-    private final ImageService imageService;
     private final SimpMessageSendingOperations template;
     private final MessageService messageService;
-
+    
     /**
      * 채팅방 생성
      */
     @PostMapping("/chatrooms")
-    public ResponseEntity<CreateChatRoomResponseDto> createChatRoom(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestBody CreateChatRoomRequestDto request) {
-        ChatRoom chatRoom = chatRoomService.create(userDetails.getUserId(), request);
+    public ResponseEntity<CreateChatRoomResponseDto> createChatRoom(
+            @RequestPart(value = "dto") CreateChatRoomRequestDto request,
+            @RequestPart(value = "file") MultipartFile file,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        String imageUrl = chatRoomImageService.uploadAndSaveImage(file);
+        ChatRoom chatRoom = chatRoomService.create(userDetails.getUserId(), request, imageUrl);
 
         return new ResponseEntity<>(new CreateChatRoomResponseDto(chatRoom), HttpStatus.OK);
     }
@@ -62,9 +68,11 @@ public class ChatRoomController {
      */
     @PutMapping("/chatrooms/{chatRoomId}")
     public ResponseEntity<?> updateChatRoom(@PathVariable Long chatRoomId,
-                                            @RequestBody UpdateChatRoomRequestDto updateChatRoomRequestDto,
+                                            @RequestPart(value = "dto") UpdateChatRoomRequestDto updateChatRoomRequestDto,
+                                            @RequestPart(value = "file") MultipartFile file,
                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        chatRoomService.updateChatRoom(chatRoomId, userDetails.getUserId(), updateChatRoomRequestDto);
+        String imageUrl = chatRoomImageService.updateImageById(file, chatRoomId);
+        chatRoomService.updateChatRoom(chatRoomId, userDetails.getUserId(), updateChatRoomRequestDto, imageUrl);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -152,13 +160,22 @@ public class ChatRoomController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    /**
+     * 채팅방 이미지 업로드(수정)
+     * */
+    @PutMapping("/upload/chatroom/{chatRoomId}")
+    public ResponseEntity<?> chatRoomUploadFile(@RequestParam("file") MultipartFile file, @PathVariable("chatRoomId")Long chatRoomId) {
+        String url = chatRoomImageService.updateImageById(file, chatRoomId);
+        chatRoomService.updateImageUrl(chatRoomId, url);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
 
     @Data
     @AllArgsConstructor
     static class Result<T> {
         private T data;
     }
-
 
     /**
      * 채팅방 삭제 시
@@ -167,7 +184,7 @@ public class ChatRoomController {
      */
     public void deleteChatRoom(Long chatRoomId) {
         // 기존 채팅방 이미지 삭제
-        imageService.deleteChatRoomImageById(chatRoomId);
+        chatRoomImageService.deleteImageById(chatRoomId);
         // 채팅방 내 탈퇴 메시지 삭제
         messageService.deleteAllMessageInChatRoom(chatRoomId);
         // 채팅방 삭제

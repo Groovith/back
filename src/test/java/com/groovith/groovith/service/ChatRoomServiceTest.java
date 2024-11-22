@@ -43,7 +43,9 @@ class ChatRoomServiceTest {
         Long userId = 1L;
         String chatRoomName = "testRoom";
         String userName = "masterUserName";
+        String imageUrl = "imageUrl";
         CreateChatRoomRequestDto requestDto = new CreateChatRoomRequestDto();
+        ReflectionTestUtils.setField(requestDto, "name", chatRoomName);
         ReflectionTestUtils.setField(requestDto, "status", ChatRoomPrivacy.PUBLIC);
         ReflectionTestUtils.setField(requestDto, "permission", ChatRoomPermission.MASTER);
 
@@ -52,14 +54,14 @@ class ChatRoomServiceTest {
         user.setId(userId);
         user.setUsername(userName);
 
-        ChatRoom expectedChatRoom = createChatRoom(chatRoomName, ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom expectedChatRoom = createChatRoom(chatRoomName, ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
 
         //when
         when(chatRoomRepository.save(any(ChatRoom.class))).thenReturn(expectedChatRoom);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(currentPlaylistRepository.save(any())).thenReturn(any());
 
-        ChatRoom actualChatRoom = chatRoomService.create(userId, requestDto);
+        ChatRoom actualChatRoom = chatRoomService.create(userId, requestDto, imageUrl);
 
         //then
         Assertions.assertThat(actualChatRoom).isEqualTo(expectedChatRoom);
@@ -69,7 +71,6 @@ class ChatRoomServiceTest {
         //masterUser 정보 저장 테스트
         Assertions.assertThat(actualChatRoom.getMasterUserId()).isEqualTo(user.getId());
         Assertions.assertThat(actualChatRoom.getMasterUserName()).isEqualTo(user.getUsername());
-
     }
 
     @Test
@@ -81,11 +82,12 @@ class ChatRoomServiceTest {
         String chatRoomName = "room";
         String updatedChatRoomName = "updatedRoom";
         String userName = "masterUserName";
-        ChatRoom chatRoom =createChatRoom(chatRoomName, ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom chatRoom =createChatRoom(chatRoomName, ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
         User masterUser = createUser(userId, userName, DEFAULT_IMG_URL);
         // masterUser 설정
         chatRoom.setMasterUserInfo(masterUser);
 
+        String newImageUrl = "newImageUrl";
         UpdateChatRoomRequestDto updateChatRoomRequestDto = new UpdateChatRoomRequestDto();
         ReflectionTestUtils.setField(updateChatRoomRequestDto, "name", updatedChatRoomName);
         ReflectionTestUtils.setField(updateChatRoomRequestDto, "status", ChatRoomPrivacy.PRIVATE);
@@ -93,12 +95,13 @@ class ChatRoomServiceTest {
 
         // when
         when(chatRoomRepository.findById(chatRoomId)).thenReturn(Optional.of(chatRoom));
-        chatRoomService.updateChatRoom(chatRoomId, userId, updateChatRoomRequestDto);
+        chatRoomService.updateChatRoom(chatRoomId, userId, updateChatRoomRequestDto, newImageUrl);
 
         // then
         Assertions.assertThat(chatRoom.getName()).isEqualTo(updatedChatRoomName);
         Assertions.assertThat(chatRoom.getPrivacy()).isEqualTo(ChatRoomPrivacy.PRIVATE);
         Assertions.assertThat(chatRoom.getPermission()).isEqualTo(ChatRoomPermission.EVERYONE);
+        Assertions.assertThat(chatRoom.getImageUrl()).isEqualTo(newImageUrl);
     }
 
 
@@ -106,9 +109,9 @@ class ChatRoomServiceTest {
     @DisplayName("채팅방 목록 조회 테스트")
     public void findAllDesc(){
         //given
-        ChatRoom chatRoom1 = createChatRoom("room1", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
-        ChatRoom chatRoom2 = createChatRoom("room2", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
-        ChatRoom chatRoom3 = createChatRoom("room3", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom chatRoom1 = createChatRoom("room1", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
+        ChatRoom chatRoom2 = createChatRoom("room2", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
+        ChatRoom chatRoom3 = createChatRoom("room3", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
 
         List<ChatRoom> data = new ArrayList<>();
         data.add(chatRoom1);
@@ -151,7 +154,7 @@ class ChatRoomServiceTest {
         ReflectionTestUtils.setField(user3, "role", "ROLE_USER");
 
         Long chatRoomId = 1L;
-        ChatRoom chatRoom = createChatRoom("room", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom chatRoom = createChatRoom("room", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
         UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
         UserChatRoom userChatRoom1 = UserChatRoom.setUserChatRoom(user1, chatRoom, UserChatRoomStatus.ENTER);
         UserChatRoom userChatRoom2 = UserChatRoom.setUserChatRoom(user2, chatRoom, UserChatRoomStatus.ENTER);
@@ -208,7 +211,7 @@ class ChatRoomServiceTest {
         ReflectionTestUtils.setField(user3, "role", "ROLE_USER");
 
         Long chatRoomId = 1L;
-        ChatRoom chatRoom = createChatRoom("room", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom chatRoom = createChatRoom("room", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         UserChatRoom ucr = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
         UserChatRoom ucr1 = UserChatRoom.setUserChatRoom(user1, chatRoom, UserChatRoomStatus.ENTER);
@@ -237,7 +240,7 @@ class ChatRoomServiceTest {
         String chatRoomName = "room";
         String masterUserName = "masterUserName";
         User user = createUser(userId,masterUserName,DEFAULT_IMG_URL);
-        ChatRoom chatRoom = createChatRoom(chatRoomName, ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom chatRoom = createChatRoom(chatRoomName, ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
         // ReflectionTestUtils 사용하면 필드값 임의로 지정가능
         ReflectionTestUtils.setField(chatRoom, "id", chatroomId);
         // 유저와 연관관계 설정
@@ -287,7 +290,7 @@ class ChatRoomServiceTest {
         User user = new User();
         user.setId(userId);
         // 입장할 채팅방 - 현재 채팅방 인원 수 now
-        ChatRoom chatRoom = createChatRoom("name", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom chatRoom = createChatRoom("name", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         ReflectionTestUtils.setField(chatRoom, "currentMemberCount", now);
 
@@ -321,7 +324,7 @@ class ChatRoomServiceTest {
         User user = new User();
         user.setId(userId);
         // 입장할 채팅방 - 현재 채팅방 꽉찬 상태
-        ChatRoom chatRoom = createChatRoom("name", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom chatRoom = createChatRoom("name", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         ReflectionTestUtils.setField(chatRoom, "currentMemberCount", now);
 
@@ -349,7 +352,7 @@ class ChatRoomServiceTest {
         User user = new User();
         user.setId(userId);
         // 퇴장할 채팅방
-        ChatRoom chatRoom = createChatRoom("name", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom chatRoom = createChatRoom("name", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         ReflectionTestUtils.setField(chatRoom, "currentMemberCount", now);
         ReflectionTestUtils.setField(chatRoom, "masterUserId", 5L);
@@ -386,7 +389,7 @@ class ChatRoomServiceTest {
         User user = createUser(userId, "user", DEFAULT_IMG_URL);
 
         Long chatRoomId = 1L;
-        ChatRoom chatRoom = createChatRoom("name", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom chatRoom = createChatRoom("name", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         ReflectionTestUtils.setField(chatRoom, "masterUserId", masterId);
         ReflectionTestUtils.setField(chatRoom, "masterUserName", master.getUsername());
@@ -417,7 +420,7 @@ class ChatRoomServiceTest {
         User user = createUser(userId, "user", DEFAULT_IMG_URL);
 
         Long chatRoomId = 1L;
-        ChatRoom chatRoom = createChatRoom("name", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom chatRoom = createChatRoom("name", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         ReflectionTestUtils.setField(chatRoom, "masterUserId", masterId);
         ReflectionTestUtils.setField(chatRoom, "masterUserName", master.getUsername());
@@ -442,7 +445,7 @@ class ChatRoomServiceTest {
         User user = new User();
         user.setId(userId);
         // 퇴장할 채팅방
-        ChatRoom chatRoom = createChatRoom("name", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom chatRoom = createChatRoom("name", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         ReflectionTestUtils.setField(chatRoom, "currentMemberCount", 0);
         ReflectionTestUtils.setField(chatRoom, "masterUserId", 100L);
@@ -473,7 +476,7 @@ class ChatRoomServiceTest {
         Long chatRoomId = 1L;
         int newMemberCount = 5;
         int nowMemberCount = 3;
-        ChatRoom chatRoom = createChatRoom("room", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+        ChatRoom chatRoom = createChatRoom("room", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         ReflectionTestUtils.setField(chatRoom, "currentMemberCount", nowMemberCount);
         List<Long> friendIds = new ArrayList<>();
@@ -520,11 +523,11 @@ class ChatRoomServiceTest {
         return Message.setMessage(content, MessageType.CHAT, userChatRoom, chatRoom.getId(), user.getImageUrl());
     }
 
-    ChatRoom createChatRoom(String name, ChatRoomPrivacy chatRoomPrivacy, ChatRoomPermission permission){
+    ChatRoom createChatRoom(String name, ChatRoomPrivacy chatRoomPrivacy, ChatRoomPermission permission, String imageUrl){
         return ChatRoom.builder()
                 .name(name)
                 .privacy(chatRoomPrivacy)
-                .imageUrl(DEFAULT_IMG_URL)
+                .imageUrl(imageUrl)
                 .permission(permission)
                 .build();
     }

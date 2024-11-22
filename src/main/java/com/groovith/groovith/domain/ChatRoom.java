@@ -97,12 +97,11 @@ public class ChatRoom {
     public void updatePrivacy(ChatRoomPrivacy newPrivacy){
         this.privacy = newPrivacy;
     }
-
     public void updatePermission(ChatRoomPermission newPermission){
         this.permission = newPermission;
     }
 
-    public void update(String name, ChatRoomPrivacy privacy, ChatRoomPermission permission){
+    public void update(String name, ChatRoomPrivacy privacy, ChatRoomPermission permission, String imageUrl){
         if (name != null) {
             this.updateName(name);
         }
@@ -111,6 +110,9 @@ public class ChatRoom {
         }
         if (permission != null) {
             this.updatePermission(permission);
+        }
+        if (imageUrl != null){
+            this.updateImageUrl(imageUrl);
         }
     }
 

@@ -60,6 +60,10 @@ public class User {
         this.status = (userStatus==UserStatus.PUBLIC) ? UserStatus.PRIVATE : UserStatus.PUBLIC;
     }
 
+    public void updateImageUrl(String imageUrl){
+        this.imageUrl = imageUrl;
+    }
+
     public void addFriend(Friend friend){
         this.friends.add(friend);
     }
