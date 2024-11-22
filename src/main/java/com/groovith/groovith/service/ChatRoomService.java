@@ -9,7 +9,6 @@ import com.groovith.groovith.exception.*;
 import com.groovith.groovith.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -50,7 +49,7 @@ public class ChatRoomService {
                         .permission(request.getPermission())
                         .build()
         );
-        User user = findUserByUserId(userId);
+        User user = findUserById(userId);
         //masterUserId, masterUserName 설정
         chatRoom.setMasterUserInfo(user);
         // 유저 - 채팅방 연관관계 생성
@@ -79,7 +78,10 @@ public class ChatRoomService {
         List<UserChatRoom> enterUserChatRooms = userChatRoomRepository.findEnterChatRoomsByUserId(userId, UserChatRoomStatus.ENTER);
 
         return new ChatRoomDetailsListDto(enterUserChatRooms.stream()
-                .map(userChatRoom -> new ChatRoomDetailsDto(userChatRoom.getChatRoom()))
+                .map(userChatRoom -> {
+                    ChatRoom chatRoom = userChatRoom.getChatRoom();
+                    return createChatRoomDetailsDto(chatRoom, chatRoom.getIsMaster(userId));
+                })
                 .toList());
     }
 
@@ -88,15 +90,16 @@ public class ChatRoomService {
      * 채팅방 상세 조회
      */
     @Transactional(readOnly = true)
-    public ChatRoomDetailsDto findChatRoomDetail(Long chatRoomId) {
-        return new ChatRoomDetailsDto(findChatRoomByChatRoomId(chatRoomId));
+    public ChatRoomDetailsDto findChatRoomDetail(Long chatRoomId, Long userId) {
+        ChatRoom chatRoom = findChatRoomById(chatRoomId);
+        return createChatRoomDetailsDto(chatRoom, chatRoom.getIsMaster(userId));
     }
 
     /**
      * 채팅방 수정
      */
     public void updateChatRoom(Long chatRoomId, Long userId, UpdateChatRoomRequestDto request, String imageUrl) {
-        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
+        ChatRoom chatRoom = findChatRoomById(chatRoomId);
         validateMasterUser(userId, chatRoom.getMasterUserId(), ERROR_ONLY_MASTER_USER_CAN_UPDATE_CHATROOM);
         chatRoom.update(request.getName(), request.getStatus(), request.getPermission(), imageUrl);
     }
@@ -114,8 +117,8 @@ public class ChatRoomService {
      */
     public void enterChatRoom(Long userId, Long chatRoomId) {
         // 유저, 채팅방 조회
-        User user = findUserByUserId(userId);
-        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
+        User user = findUserById(userId);
+        ChatRoom chatRoom = findChatRoomById(chatRoomId);
         // 채팅방 인원 제한 : 100명
         validateChatRoomCapacity(chatRoom, SINGLE_NEW_MEMBER);
 
@@ -128,7 +131,7 @@ public class ChatRoomService {
      * 채팅방 퇴장
      */
     public ResponseEntity<?> leaveChatRoom(Long userId, Long chatRoomId) {
-        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
+        ChatRoom chatRoom = findChatRoomById(chatRoomId);
         ChatRoomMemberStatus chatRoomMemberStatus = updateChatRoomMemberStatusOnLeave(userId, chatRoom);
         // 유저 퇴장시, 채팅방이 비어있다면 현재 채팅방 삭제, 방장인 경우 bad Request
         return validateAndHandleChatRoomMemberStatus(userId, chatRoom, chatRoomMemberStatus);
@@ -144,7 +147,7 @@ public class ChatRoomService {
                 break;
             }
             case ACTIVE -> {
-                updateUserChatRoomStatus(findUserByUserId(userId), chatRoom, UserChatRoomStatus.LEAVE);
+                updateUserChatRoomStatus(findUserById(userId), chatRoom, UserChatRoomStatus.LEAVE);
                 chatRoom.subUser();
             }
         }
@@ -156,7 +159,7 @@ public class ChatRoomService {
      */
     @Transactional(readOnly = true)
     public List<ChatRoomMemberDto> findChatRoomMembers(Long chatRoomId, Long userId) {
-        User user = findUserByUserId(userId);
+        User user = findUserById(userId);
         Set<Long> friendsIdsFromUser = new HashSet<>(friendRepository.findFriendsIdsFromUser(user));
         //fetch join
         List<UserChatRoom> enterUserChatRooms = userChatRoomRepository.findEnterUserChatRoomsByChatRoomId(chatRoomId, UserChatRoomStatus.ENTER);
@@ -171,8 +174,8 @@ public class ChatRoomService {
      */
     public void invite(Long inviterId, Long inviteeId, Long chatRoomId) {
         //User inviter = findByUserById(inviterId);
-        User invitee = findUserByUserId(inviteeId);
-        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
+        User invitee = findUserById(inviteeId);
+        ChatRoom chatRoom = findChatRoomById(chatRoomId);
 
         // 초대받은 유저와 채팅방 연관관계 생성
         Optional<UserChatRoom> userChatRoom = findUserChatRoomByUserIdAndChatRoomId(inviteeId, chatRoomId);
@@ -184,12 +187,12 @@ public class ChatRoomService {
      * 채팅방으로 친구 초대
      */
     public void inviteFriends(Long chatRoomId, List<Long> friendsIdList) {
-        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
+        ChatRoom chatRoom = findChatRoomById(chatRoomId);
         // 친구 초대시 최대인원 초과하는지 검증
         validateChatRoomCapacity(chatRoom, friendsIdList.size());
         // 초대받은 각 친구마다 채팅방과 연관관계 생성
         for (Long friendsId : friendsIdList) {
-            updateUserChatRoomStatus(findUserByUserId(friendsId), chatRoom, UserChatRoomStatus.ENTER);
+            updateUserChatRoomStatus(findUserById(friendsId), chatRoom, UserChatRoomStatus.ENTER);
             chatRoom.addUser();
         }
     }
@@ -198,7 +201,7 @@ public class ChatRoomService {
      * 채팅방 권한 변경
      */
     public void updatePermission(Long chatRoomId, Long userId) {
-        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
+        ChatRoom chatRoom = findChatRoomById(chatRoomId);
         // mastUserId == userId 인 경우만 권한 변경 가능
         validateMasterUser(userId, chatRoom.getMasterUserId(), ERROR_ONLY_MASTER_USER_CAN_CHANGE_PERMISSION);
 
@@ -209,16 +212,16 @@ public class ChatRoomService {
      * 채팅방 이미지 변경
      * */
     public void updateImageUrl(Long chatRoomId, String imageUrl) {
-        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
+        ChatRoom chatRoom = findChatRoomById(chatRoomId);
         chatRoom.updateImageUrl(imageUrl);
     }
 
 
-    private ChatRoom findChatRoomByChatRoomId(Long chatRoomId) {
+    private ChatRoom findChatRoomById(Long chatRoomId) {
         return chatRoomRepository.findById(chatRoomId).orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
     }
 
-    private User findUserByUserId(Long userId) {
+    private User findUserById(Long userId) {
         return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
     }
 
@@ -288,5 +291,9 @@ public class ChatRoomService {
             return UserRelationship.FRIEND;
         }
         return UserRelationship.NOT_FRIEND;
+    }
+
+    private ChatRoomDetailsDto createChatRoomDetailsDto(ChatRoom chatRoom, boolean isMaster) {
+        return new ChatRoomDetailsDto(chatRoom, isMaster);
     }
 }

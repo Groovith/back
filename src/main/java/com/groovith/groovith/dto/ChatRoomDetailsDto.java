@@ -35,18 +35,9 @@ public class ChatRoomDetailsDto {
     private String masterUserName;
     private ChatRoomPrivacy privacy;
     private ChatRoomPermission permission;
-    /*private int totalUsers;
-    private int currentUsers;
-    private Long masterId;
-    private Long playListId;
-    private int playListIndex;
-    private int position;
-    private Boolean paused;
-    private ChatRoomType type;
-    private ChatRoomStatus status;*/
-    // position paused
+    private boolean isMaster;
 
-    public ChatRoomDetailsDto(ChatRoom chatRoom){
+    public ChatRoomDetailsDto(ChatRoom chatRoom, boolean isMaster) {
         this.chatRoomId = chatRoom.getId();
         this.name = chatRoom.getName();
         this.imageUrl = chatRoom.getImageUrl();
@@ -54,14 +45,6 @@ public class ChatRoomDetailsDto {
         this.masterUserName = chatRoom.getMasterUserName();
         this.privacy = chatRoom.getPrivacy();
         this.permission = chatRoom.getPermission();
-        /*this.totalUsers = chatRoom.getTotalMember();
-        this.currentUsers = chatRoom.getCurrentMember();
-        this.status = chatRoom.getStatus();
-        this.type = chatRoom.getType();
-        // 채팅방 안에 사람이 있을때만
-        if (totalUsers > 0){
-            this.masterId = chatRoom.getMasterId();
-        }
-        // 플레이리스트 추가 필요*/
+        this.isMaster = isMaster;
     }
 }

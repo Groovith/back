@@ -32,7 +32,6 @@ public class SearchService {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         Set<Long> friendIdsFromUser = new HashSet<>(friendRepository.findFriendsIdsFromUser(user));
 
-
         return new SearchUsersResponseDto(findUsers.stream()
                 .map(findUser -> new UserDetailsResponseDto(
                         findUser,
@@ -40,10 +39,12 @@ public class SearchService {
                 .toList());
     }
 
-    public SearchChatRoomsResponseDto searchChatRooms(String name, Pageable pageable, Long lastChatRoomId) {
+    public SearchChatRoomsResponseDto searchChatRooms(String name, Pageable pageable, Long lastChatRoomId,Long userId) {
         Slice<ChatRoom> chatRooms = chatRoomRepository.searchChatRoom(name, pageable, lastChatRoomId);
 
-        return new SearchChatRoomsResponseDto(chatRooms.stream().map(ChatRoomDetailsDto::new).toList());
+        return new SearchChatRoomsResponseDto(chatRooms.stream().map(chatRoom -> {
+            return new ChatRoomDetailsDto(chatRoom, chatRoom.getIsMaster(userId));
+        }).toList());
     }
 
     private UserRelationship getUserRelationship(Set<Long> friendsIdsFromUser, User user, User findUser) {
