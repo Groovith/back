@@ -31,7 +31,7 @@ public class ChatRoomImageService extends AbstractImageService<ChatRoom> {
 
     @Override
     protected String getDirectory() {
-        return S3Directory.USER.getDirectory();
+        return S3Directory.CHATROOM.getDirectory();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.groovith.groovith.controller;
 
 import com.groovith.groovith.domain.ChatRoom;
+import com.groovith.groovith.domain.enums.S3Directory;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.security.CustomUserDetails;
@@ -32,7 +33,7 @@ public class ChatRoomController {
     private final NotificationService notificationService;
     private final SimpMessageSendingOperations template;
     private final MessageService messageService;
-    
+
     /**
      * 채팅방 생성
      */
@@ -162,14 +163,24 @@ public class ChatRoomController {
 
     /**
      * 채팅방 이미지 업로드(수정)
-     * */
+     */
     @PutMapping("/upload/chatroom/{chatRoomId}")
-    public ResponseEntity<?> chatRoomUploadFile(@RequestParam("file") MultipartFile file, @PathVariable("chatRoomId")Long chatRoomId) {
+    public ResponseEntity<?> chatRoomUploadFile(@RequestParam("file") MultipartFile file, @PathVariable("chatRoomId") Long chatRoomId) {
         String url = chatRoomImageService.updateImageById(file, chatRoomId);
         chatRoomService.updateImageUrl(chatRoomId, url);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+
+    /**
+     * 채팅방 이미지 삭제
+     */
+    @DeleteMapping("/chatrooms/{chatRoomId}/image")
+    public ResponseEntity<? super DeleteProfilePictureResponseDto> deleteChatRoomImage(@PathVariable("chatRoomId") Long chatRoomId) {
+        ResponseEntity<? super DeleteProfilePictureResponseDto> result = chatRoomImageService.deleteImageById(chatRoomId);
+        updateImageUrl(chatRoomId, S3Directory.CHATROOM.getDefaultImageUrl());
+        return result;
+    }
 
     @Data
     @AllArgsConstructor
@@ -177,12 +188,16 @@ public class ChatRoomController {
         private T data;
     }
 
+    private void updateImageUrl(Long chatRoomId, String imageUrl) {
+        chatRoomService.updateImageUrl(chatRoomId, imageUrl);
+    }
+
     /**
      * 채팅방 삭제 시
      * 1. 채팅방 이미지 삭제
      * 2. 메시지 삭제
      */
-    public void deleteChatRoom(Long chatRoomId) {
+    private void deleteChatRoom(Long chatRoomId) {
         // 기존 채팅방 이미지 삭제
         chatRoomImageService.deleteImageById(chatRoomId);
         // 채팅방 내 탈퇴 메시지 삭제
