@@ -9,5 +9,4 @@ public class UpdateChatRoomRequestDto {
     private String name;
     private ChatRoomPrivacy status;
     private ChatRoomPermission permission;
-    private String imageUrl;
 }

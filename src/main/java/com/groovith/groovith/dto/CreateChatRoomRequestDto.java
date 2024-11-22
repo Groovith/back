@@ -14,9 +14,8 @@ import lombok.NoArgsConstructor;
 public class CreateChatRoomRequestDto {
     //private Long userId;
     private String name;
-    private ChatRoomPrivacy status;  // "PRIVATE" | "PUBLIC"
+    private ChatRoomPrivacy privacy;  // "PRIVATE" | "PUBLIC"
     private ChatRoomPermission permission; //
-    private String imageUrl;
 
 //    private ChatRoomType chatRoomType;     // "song" | "album" | "artist" | "playlist"
 //    private Long songId;
