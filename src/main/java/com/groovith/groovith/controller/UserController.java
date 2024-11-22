@@ -115,7 +115,7 @@ public class UserController {
     /**
      * 유저 이미지 업로드(프로필 사진 수정, 교체)
      * */
-    @PutMapping("/users/me/update/profile-picture")
+    @PutMapping("/upload/user")
     public ResponseEntity<?> userUploadFile(@RequestParam("file") MultipartFile file,@AuthenticationPrincipal CustomUserDetails userDetails) {
         String imageUrl = userImageService.updateImageById(file, userDetails.getUserId());
         updateImageUrl(userDetails.getUserId(), imageUrl);
