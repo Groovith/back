@@ -27,8 +27,6 @@ import java.util.stream.Collectors;
 @Service
 public class ChatRoomService {
 
-    @Value("${cloud.aws.s3.defaultChatRoomImageUrl}")
-    private String DEFAULT_IMG_URL;
     private static final int SINGLE_NEW_MEMBER = 1;
     private static final int MAX_MEMBER = 100;
     private static final String ERROR_ONLY_MASTER_USER_CAN_CHANGE_PERMISSION = "권한 변경은 masterUser 만 가능합니다";
@@ -43,12 +41,12 @@ public class ChatRoomService {
     /**
      * 채팅방 생성
      */
-    public ChatRoom create(Long userId, CreateChatRoomRequestDto request) {
+    public ChatRoom create(Long userId, CreateChatRoomRequestDto request, String imageUrl) {
         ChatRoom chatRoom = chatRoomRepository.save(
                 ChatRoom.builder()
                         .name(request.getName())
-                        .privacy(request.getStatus())
-                        .imageUrl(validateImageUrl(request.getImageUrl()))
+                        .privacy(request.getPrivacy())
+                        .imageUrl(imageUrl)
                         .permission(request.getPermission())
                         .build()
         );
@@ -97,10 +95,10 @@ public class ChatRoomService {
     /**
      * 채팅방 수정
      */
-    public void updateChatRoom(Long chatRoomId, Long userId, UpdateChatRoomRequestDto request) {
+    public void updateChatRoom(Long chatRoomId, Long userId, UpdateChatRoomRequestDto request, String imageUrl) {
         ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
         validateMasterUser(userId, chatRoom.getMasterUserId(), ERROR_ONLY_MASTER_USER_CAN_UPDATE_CHATROOM);
-        chatRoom.update(request.getName(), request.getStatus(), request.getPermission(), request.getImageUrl());
+        chatRoom.update(request.getName(), request.getStatus(), request.getPermission(), imageUrl);
     }
 
     /**
@@ -207,6 +205,14 @@ public class ChatRoomService {
         chatRoom.changePermission();
     }
 
+    /**
+     * 채팅방 이미지 변경
+     * */
+    public void updateImageUrl(Long chatRoomId, String imageUrl) {
+        ChatRoom chatRoom = findChatRoomByChatRoomId(chatRoomId);
+        chatRoom.updateImageUrl(imageUrl);
+    }
+
 
     private ChatRoom findChatRoomByChatRoomId(Long chatRoomId) {
         return chatRoomRepository.findById(chatRoomId).orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
@@ -282,12 +288,5 @@ public class ChatRoomService {
             return UserRelationship.FRIEND;
         }
         return UserRelationship.NOT_FRIEND;
-    }
-
-    private String validateImageUrl(String imageUrl) {
-        if(imageUrl == null){
-            return DEFAULT_IMG_URL;
-        }
-        return imageUrl;
     }
 }
