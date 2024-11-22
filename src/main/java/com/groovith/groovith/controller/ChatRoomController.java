@@ -71,7 +71,7 @@ public class ChatRoomController {
                                             @RequestPart(value = "dto") UpdateChatRoomRequestDto updateChatRoomRequestDto,
                                             @RequestPart(value = "file") MultipartFile file,
                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        String imageUrl = chatRoomImageService.uploadAndSaveImage(file);
+        String imageUrl = chatRoomImageService.updateImageById(file, chatRoomId);
         chatRoomService.updateChatRoom(chatRoomId, userDetails.getUserId(), updateChatRoomRequestDto, imageUrl);
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -165,7 +165,7 @@ public class ChatRoomController {
      * */
     @PutMapping("/upload/chatroom/{chatRoomId}")
     public ResponseEntity<?> chatRoomUploadFile(@RequestParam("file") MultipartFile file, @PathVariable("chatRoomId")Long chatRoomId) {
-        String url = chatRoomImageService.uploadAndSaveImage(file);
+        String url = chatRoomImageService.updateImageById(file, chatRoomId);
         chatRoomService.updateImageUrl(chatRoomId, url);
         return new ResponseEntity<>(HttpStatus.OK);
     }

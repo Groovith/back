@@ -25,13 +25,21 @@ public class UserImageService implements ImageService {
     private final UserRepository userRepository;
 
     @Override
-    public String uploadAndSaveImage(MultipartFile multipartFile) {
-        if (multipartFile == null) {
+    public String uploadAndSaveImage(MultipartFile file) {
+        if (file == null) {
             return S3Directory.USER.getDefaultImageUrl();
         }
-        String imageUrl = s3Service.uploadToS3AndGetUrl(S3Directory.USER.getDirectory(), multipartFile);
+        String imageUrl = uploadImage(file);
         saveImage(imageUrl);
         return imageUrl;
+    }
+
+    @Override
+    public String updateImageById(MultipartFile file, Long id) {
+        // 기존 이미지 삭제
+        deleteImageById(id);
+        // 새 이미지 업로드
+        return uploadAndSaveImage(file);
     }
 
     @Override
@@ -44,6 +52,10 @@ public class UserImageService implements ImageService {
             return DeleteProfilePictureResponseDto.databaseError();
         }
         return DeleteProfilePictureResponseDto.success();
+    }
+
+    private String uploadImage(MultipartFile file) {
+        return s3Service.uploadToS3AndGetUrl(file, S3Directory.USER.getDirectory());
     }
 
     private void deleteImageIfNotDefault(User user){

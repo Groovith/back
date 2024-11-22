@@ -117,7 +117,7 @@ public class UserController {
      * */
     @PutMapping("/users/me/update/profile-picture")
     public ResponseEntity<?> userUploadFile(@RequestParam("file") MultipartFile file,@AuthenticationPrincipal CustomUserDetails userDetails) {
-        String imageUrl = userImageService.uploadAndSaveImage(file);
+        String imageUrl = userImageService.updateImageById(file, userDetails.getUserId());
         updateImageUrl(userDetails.getUserId(), imageUrl);
         return new ResponseEntity<>(HttpStatus.OK);
     }

@@ -29,7 +29,7 @@ public class S3Service {
     /**
      * 파일 업로드 후 url 반환
      */
-    public String uploadToS3AndGetUrl(String dir, MultipartFile multipartFile) {
+    public String uploadToS3AndGetUrl(MultipartFile multipartFile, String dir) {
         // 파일로 변환
         File file = convertMultiPartFileToFile(multipartFile);
         // 파일명 설정
@@ -38,15 +38,6 @@ public class S3Service {
         String url = uploadFileToS3Bucket(fileName, file);
         file.delete();
         return url;
-    }
-
-    /**
-     * S3에 파일 업로드
-     */
-    public String uploadFileToS3Bucket(String fileName, File file) {
-        amazonS3Client.putObject(new PutObjectRequest(bucket, fileName, file)
-                .withCannedAcl(CannedAccessControlList.PublicRead));
-        return amazonS3Client.getUrl(bucket, fileName).toString();
     }
 
     /**
@@ -59,10 +50,20 @@ public class S3Service {
         amazonS3Client.deleteObject(bucket, dir + fileName);
     }
 
+
+    /**
+     * S3에 파일 업로드
+     */
+    private String uploadFileToS3Bucket(String fileName, File file) {
+        amazonS3Client.putObject(new PutObjectRequest(bucket, fileName, file)
+                .withCannedAcl(CannedAccessControlList.PublicRead));
+        return amazonS3Client.getUrl(bucket, fileName).toString();
+    }
+
     /**
      * MultipartFile -> File 로 변환
      */
-    public File convertMultiPartFileToFile(MultipartFile file) {
+    private File convertMultiPartFileToFile(MultipartFile file) {
         File convertedFile = new File(Objects.requireNonNull(file.getOriginalFilename()));
         try (FileOutputStream fos = new FileOutputStream(convertedFile)) {
             fos.write(file.getBytes());
@@ -73,11 +74,11 @@ public class S3Service {
     }
 
 
-    public String generateFileName(String dir, MultipartFile multipartFile) {
+    private String generateFileName(String dir, MultipartFile multipartFile) {
         return dir + UUID.randomUUID() + "_" + multipartFile.getOriginalFilename();
     }
 
-    public String extractFileName(String fileUrl) {
+    private String extractFileName(String fileUrl) {
         return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
     }
 }
