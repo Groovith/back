@@ -5,10 +5,8 @@ import com.groovith.groovith.domain.enums.S3Directory;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.security.CustomUserDetails;
-import com.groovith.groovith.service.ChatRoomService;
+import com.groovith.groovith.service.*;
 import com.groovith.groovith.service.Image.ImageService;
-import com.groovith.groovith.service.MessageService;
-import com.groovith.groovith.service.NotificationService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +31,7 @@ public class ChatRoomController {
     private final NotificationService notificationService;
     private final SimpMessageSendingOperations template;
     private final MessageService messageService;
+    private final PlaylistService playlistService;
 
     /**
      * 채팅방 생성
@@ -105,7 +104,7 @@ public class ChatRoomController {
      */
     @DeleteMapping("/chatrooms/{chatRoomId}")
     public ResponseEntity<?> delete(@PathVariable(name = "chatRoomId") Long chatRoomId) {
-        deleteChatRoom(chatRoomId);
+        chatRoomService.deleteChatRoom(chatRoomId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -193,18 +192,17 @@ public class ChatRoomController {
         chatRoomService.updateImageUrl(chatRoomId, imageUrl);
     }
 
-    /**
-     * 채팅방 삭제 시
-     * 1. 채팅방 이미지 삭제
-     * 2. 메시지 삭제
-     */
-    private void deleteChatRoom(Long chatRoomId) {
-        // 기존 채팅방 이미지 삭제
-        chatRoomImageService.deleteImageById(chatRoomId);
-        // 채팅방 내 탈퇴 메시지 삭제
-        messageService.deleteAllMessageInChatRoom(chatRoomId);
-        // 채팅방 삭제
-        chatRoomService.deleteChatRoom(chatRoomId);
-    }
+//    /**
+//     * 채팅방 삭제 시
+//     * 1. 채팅방 이미지 삭제
+//     * 2. 메시지 삭제
+//     * 3. 플레이리스트 삭제
+//     */
+//    private void deleteChatRoom(Long chatRoomId) {
+//        chatRoomImageService.deleteImageById(chatRoomId);
+//        messageService.deleteAllMessageInChatRoom(chatRoomId);
+//        playlistService.deletePlayListByChatRoomId(chatRoomId);
+//        chatRoomService.deleteChatRoom(chatRoomId);
+//    }
 
 }

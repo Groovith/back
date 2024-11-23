@@ -150,11 +150,12 @@ class ChatRoomControllerTest {
         //given
         // chatRoomService.findChatRoomDetail 가 반환할 dto 생성
         Long chatRoomId = 1L;
+        Long userId = 1L;
         ChatRoom chatRoom = createChatRoom("room", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.EVERYONE);
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
-        ChatRoomDetailsDto detailDto = new ChatRoomDetailsDto(chatRoom);
+        ChatRoomDetailsDto detailDto = new ChatRoomDetailsDto(chatRoom, chatRoom.getIsMaster(userId));
         //when
-        when(chatRoomService.findChatRoomDetail(anyLong()))
+        when(chatRoomService.findChatRoomDetail(chatRoomId, userId))
                 .thenReturn(detailDto);
 
         ResultActions actions = mockMvc.perform(

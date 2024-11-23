@@ -7,6 +7,7 @@ import com.groovith.groovith.domain.enums.UserRelationship;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.*;
 import com.groovith.groovith.repository.*;
+import com.groovith.groovith.service.Image.ChatRoomImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -31,11 +32,13 @@ public class ChatRoomService {
     private static final String ERROR_ONLY_MASTER_USER_CAN_CHANGE_PERMISSION = "권한 변경은 masterUser 만 가능합니다";
     private static final String ERROR_ONLY_MASTER_USER_CAN_UPDATE_CHATROOM = "채팅방 수정은 masterUser 만 가능합니다";
 
+    private final ChatRoomImageService chatRoomImageService;
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
     private final UserChatRoomRepository userChatRoomRepository;
     private final CurrentPlaylistRepository currentPlaylistRepository;
     private final FriendRepository friendRepository;
+    private final MessageRepository messageRepository;
 
     /**
      * 채팅방 생성
@@ -108,7 +111,7 @@ public class ChatRoomService {
      * 채팅방 삭제
      */
     public void deleteChatRoom(Long chatRoomId) {
-        chatRoomRepository.deleteById(chatRoomId);
+        deleteChatRoomData(chatRoomId);
     }
 
 
@@ -247,7 +250,7 @@ public class ChatRoomService {
             throw new NotMasterUserException(errorMessage);
         }
     }
-
+    // 입장, 퇴장 시에 userChatRoom 상태 업데이트
     private void updateUserChatRoomStatus(User user, ChatRoom chatRoom, UserChatRoomStatus status) {
         Optional<UserChatRoom> userChatRoom = findUserChatRoomByUserIdAndChatRoomId(user.getId(), chatRoom.getId());
 
@@ -266,8 +269,6 @@ public class ChatRoomService {
             return ChatRoomMemberStatus.MASTER_LEAVING;
         }
         if (chatRoom.getCurrentMemberCount() <= 0) {
-            // 채팅방 플레이리스트 함께 삭제
-            currentPlaylistRepository.deleteByChatRoomId(chatRoom.getId());
             return ChatRoomMemberStatus.EMPTY;
         }
         return ChatRoomMemberStatus.ACTIVE;
@@ -295,5 +296,18 @@ public class ChatRoomService {
 
     private ChatRoomDetailsDto createChatRoomDetailsDto(ChatRoom chatRoom, boolean isMaster) {
         return new ChatRoomDetailsDto(chatRoom, isMaster);
+    }
+
+    /**
+     * 채팅방 삭제 시
+     * 1. 채팅방 이미지 삭제
+     * 2. 메시지 삭제
+     * 3. 플레이리스트 삭제
+     */
+    private void deleteChatRoomData(Long chatRoomId) {
+        chatRoomImageService.deleteImageById(chatRoomId);
+        messageRepository.deleteByChatRoomId(chatRoomId);
+        currentPlaylistRepository.deleteByChatRoomId(chatRoomId);
+        chatRoomRepository.deleteById(chatRoomId);
     }
 }
