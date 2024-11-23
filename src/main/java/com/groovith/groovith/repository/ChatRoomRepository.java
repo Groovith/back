@@ -15,4 +15,5 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long>, ChatR
     @Query("SELECT c FROM ChatRoom c ORDER BY c.id DESC ")
     List<ChatRoom> findAllDesc();
 
+    List<ChatRoom> findAllByMasterUserId(Long masterUserId);
 }

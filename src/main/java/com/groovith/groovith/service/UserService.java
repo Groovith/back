@@ -9,6 +9,7 @@ import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.provider.EmailProvider;
 import com.groovith.groovith.repository.*;
 import com.groovith.groovith.security.JwtUtil;
+import com.groovith.groovith.service.Image.ChatRoomImageService;
 import com.groovith.groovith.service.Image.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,8 @@ public class UserService {
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailProvider emailProvider;
+    private final ChatRoomImageService chatRoomImageService;
+    private final MessageService messageService;
 
 
     // 회원가입
@@ -83,31 +86,29 @@ public class UserService {
         // 비밀번호 확인
         if (!bCryptPasswordEncoder.matches(password, user.getPassword())) return UpdatePasswordResponseDto.wrongPassword();
 
-        // 탈퇴 회원이 만든 채팅방이면 채팅방 삭제, 아니면 탈퇴 회원이 속해 있던 채팅방 인원 -1
-        List<UserChatRoom> userChatRooms = userChatRoomRepository.findByUserId(user.getId());
-        for (UserChatRoom userChatRoom : userChatRooms) {
-            for (Message message : userChatRoom.getMessages()) {
-                // 탈퇴회원 메세지 처리 - isUserDeleted 된 메세지를 조회할때 username = 알수없음 으로 표시
-                message.setIsUserDeleted();
-                // 메시지와 userchatroom 연관관계 제거(user 탈퇴시에 userchatroom이 같이 삭제될때 메시지는 그대로 두기위함)
-                message.setUserChatRoomNull();
-            }
-
-            ChatRoom chatRoom = userChatRoom.getChatRoom();
-            // 채팅방 만든사람이 탈퇴 회원 or 채팅방에 탈퇴회원만 있었을 경우 채팅방 삭제
-            if (chatRoom.getMasterUserId().equals(user.getId()) || chatRoom.getCurrentMemberCount() <= 1) {
-                chatRoomRepository.delete(chatRoom);
-            } else {
-                // 채팅방 인원 -1
-                chatRoom.subUser();
-            }
-        }
-
         try {
+            // 유저가 방장인 채팅방 삭제 -> 추후 하나의 메서드로 통일
+            List<ChatRoom> chatRoomsByUser = chatRoomRepository.findAllByMasterUserId(user.getId());
+            for (ChatRoom chatRoom : chatRoomsByUser) {
+                chatRoomImageService.deleteImageById(chatRoom.getId());
+                messageService.deleteAllMessageInChatRoom(chatRoom.getId());
+            }
+            chatRoomRepository.deleteAll(chatRoomsByUser);
+
             // 유저 프로필 이미지 있는 경우 삭제
             if (!user.getImageUrl().equals(S3Directory.USER.getDefaultImageUrl())) {
                 s3Service.deleteFileFromS3Bucket(user.getImageUrl(), S3Directory.USER.getDirectory());
             }
+
+            // 메시지 연관 관계 해제
+            List<UserChatRoom> userChatRooms = userChatRoomRepository.findByUserId(user.getId());
+            for (UserChatRoom userChatRoom : userChatRooms) {
+                List<Message> messages = userChatRoom.getMessages();
+                for (Message message : messages) {
+                    message.setUserChatRoomNull();
+                }
+            }
+
             // 유저 삭제
             userRepository.delete(user);
         } catch (Exception e) {

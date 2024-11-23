@@ -29,10 +29,10 @@ public class ChatRoom {
 
     private String name;
 
-    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL, orphanRemoval = true)
     private final List<UserChatRoom> userChatRooms = new ArrayList<>();
 
-//    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE)
+//    @OneToMany(fetch = FetchType.LAZY, mappedBy = "chatRoom", cascade = CascadeType.ALL, orphanRemoval = true)
 //    private final List<Message> messages = new ArrayList<>();
 
     // 현재 방에 있는 사람 수

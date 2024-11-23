@@ -42,14 +42,17 @@ public class User {
     @OneToMany(mappedBy = "following", cascade = CascadeType.REMOVE)
     private Set<Follow> followers = new HashSet<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserChatRoom> userChatRoom = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
     private List<Notification> notifications = new ArrayList<>();
 
-    @OneToMany(mappedBy = "fromUser", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "fromUser", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Friend> friends = new ArrayList<>();
+
+    @OneToMany(mappedBy = "toUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Friend> friendsAddedMe = new ArrayList<>();
 
 
     public ChatRoomMemberDto toUserChatRoomDto(UserRelationship userRelationship) {

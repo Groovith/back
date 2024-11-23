@@ -3,6 +3,7 @@ package com.groovith.groovith.service;
 
 import com.groovith.groovith.domain.Message;
 import com.groovith.groovith.domain.UserChatRoom;
+import com.groovith.groovith.domain.enums.S3Directory;
 import com.groovith.groovith.dto.MessageListResponseDto;
 import com.groovith.groovith.dto.MessageResponseDto;
 import com.groovith.groovith.exception.UserChatRoomNotFoundException;
@@ -73,20 +74,26 @@ public class MessageService {
     }
 
     private Long getUserIdByMessage(Message message){
-        if(message.isUserDeleted()){
+        UserChatRoom userChatRoom = message.getUserChatRoom();
+        if(userChatRoom == null){
             return DELETED_USER_ID;
         }
-        return message.getUserChatRoom().getUser().getId();
+        return userChatRoom.getUser().getId();
     }
 
     private String getUsernameByMessage(Message message){
-        if(message.isUserDeleted()){
+        UserChatRoom userChatRoom = message.getUserChatRoom();
+        if(userChatRoom == null){
             return DELETED_USER_USERNAME;
         }
-        return message.getUserChatRoom().getUser().getUsername();
+        return userChatRoom.getUser().getUsername();
     }
 
     private String getUserImageUrlByMessage(Message message){
+        UserChatRoom userChatRoom = message.getUserChatRoom();
+        if(userChatRoom == null) {
+            return S3Directory.USER.getDefaultImageUrl();
+        }
         return message.getUserChatRoom().getUser().getImageUrl();
     }
 

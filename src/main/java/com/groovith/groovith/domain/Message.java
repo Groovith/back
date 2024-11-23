@@ -22,7 +22,7 @@ public class Message extends BaseTime{
     private MessageType messageType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="userchatroom_id")
+    @JoinColumn(name="userChatRoom_id")
     private UserChatRoom userChatRoom;
 
     @Column(name = "chatroom_id")
@@ -30,17 +30,12 @@ public class Message extends BaseTime{
 
     private String imageUrl;
 
-    // 삭제된 유저의 메시지인지
-    @Column(name = "is_user_deleted")
-    private boolean isUserDeleted;
-
 
     @Builder
     public Message(String content, UserChatRoom userChatRoom, MessageType messageType, Long chatRoomId, String imageUrl){
         this.content = content;
         this.userChatRoom = userChatRoom;
         this.messageType = messageType;
-        this.isUserDeleted = false; // 메시지가 처음 생성될때는 당연히 유저 탈퇴 상태x
         this.chatRoomId = chatRoomId;
         this.imageUrl = imageUrl;
     }
@@ -63,10 +58,6 @@ public class Message extends BaseTime{
     /**
      * 비즈니스 메서드
      * */
-    public void setIsUserDeleted(){
-        this.isUserDeleted = true;
-    }
-
     // 유저가 탈퇴될때 메시지 연관관계 삭제
     public void setUserChatRoomNull(){
         this.userChatRoom = null;

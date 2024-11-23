@@ -29,7 +29,7 @@ public class UserChatRoom{
 
     // 채팅방이 삭제될때 메시지들도 같이 삭제 / 유저가 삭제될때는 메시지 유지
     @OneToMany(mappedBy = "userChatRoom")
-    private final List<Message> messages = new ArrayList<>();
+    private List<Message> messages = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     // 현재 채팅방에 속해있는지
