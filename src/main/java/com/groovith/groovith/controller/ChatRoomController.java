@@ -40,7 +40,7 @@ public class ChatRoomController {
     @PostMapping("/chatrooms")
     public ResponseEntity<CreateChatRoomResponseDto> createChatRoom(
             @RequestPart(value = "dto") CreateChatRoomRequestDto request,
-            @RequestPart(value = "file") MultipartFile file,
+            @RequestPart(value = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         String imageUrl = chatRoomImageService.uploadAndSaveImage(file);
         ChatRoom chatRoom = chatRoomService.create(userDetails.getUserId(), request, imageUrl);
@@ -71,7 +71,7 @@ public class ChatRoomController {
     @PutMapping("/chatrooms/{chatRoomId}")
     public ResponseEntity<?> updateChatRoom(@PathVariable Long chatRoomId,
                                             @RequestPart(value = "dto") UpdateChatRoomRequestDto updateChatRoomRequestDto,
-                                            @RequestPart(value = "file") MultipartFile file,
+                                            @RequestPart(value = "file", required = false) MultipartFile file,
                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
         String imageUrl = chatRoomImageService.updateImageById(file, chatRoomId);
         chatRoomService.updateChatRoom(chatRoomId, userDetails.getUserId(), updateChatRoomRequestDto, imageUrl);
