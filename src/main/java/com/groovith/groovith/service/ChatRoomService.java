@@ -101,7 +101,7 @@ public class ChatRoomService {
     public void updateChatRoom(Long chatRoomId, Long userId, UpdateChatRoomRequestDto request, String imageUrl) {
         ChatRoom chatRoom = findChatRoomById(chatRoomId);
         validateMasterUser(userId, chatRoom.getMasterUserId(), ERROR_ONLY_MASTER_USER_CAN_UPDATE_CHATROOM);
-        chatRoom.update(request.getName(), request.getStatus(), request.getPermission(), imageUrl);
+        chatRoom.update(request.getName(), request.getPrivacy(), request.getPermission(), imageUrl);
     }
 
     /**
