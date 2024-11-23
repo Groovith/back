@@ -60,8 +60,9 @@ public class ChatRoomController {
      * 채팅방 상세 조회
      */
     @GetMapping("/chatrooms/{chatRoomId}")
-    public ResponseEntity<ChatRoomDetailsDto> findChatRoomDetail(@PathVariable(name = "chatRoomId") Long chatRoomId) {
-        return new ResponseEntity<>(chatRoomService.findChatRoomDetail(chatRoomId), HttpStatus.OK);
+    public ResponseEntity<ChatRoomDetailsDto> findChatRoomDetail(@PathVariable(name = "chatRoomId") Long chatRoomId,
+                                                                 @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return new ResponseEntity<>(chatRoomService.findChatRoomDetail(chatRoomId, userDetails.getUserId()), HttpStatus.OK);
     }
 
     /**

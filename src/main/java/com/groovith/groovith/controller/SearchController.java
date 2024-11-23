@@ -34,8 +34,9 @@ public class SearchController {
     public ResponseEntity<SearchChatRoomsResponseDto> searchChatRooms(
             @RequestParam String query,
             Pageable pageable,
-            @RequestParam(required = false)Long lastChatRoomId // 첫번째 페이지일 경우 null 값
+            @RequestParam(required = false)Long lastChatRoomId, // 첫번째 페이지일 경우 null 값
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        return new ResponseEntity<>(searchService.searchChatRooms(query, pageable, lastChatRoomId), HttpStatus.OK);
+        return new ResponseEntity<>(searchService.searchChatRooms(query, pageable, lastChatRoomId, userDetails.getUserId()), HttpStatus.OK);
     }
 }

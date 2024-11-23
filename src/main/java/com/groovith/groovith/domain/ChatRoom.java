@@ -121,4 +121,11 @@ public class ChatRoom {
                 ? ChatRoomPermission.EVERYONE
                 : ChatRoomPermission.MASTER;
     }
+
+    public boolean getIsMaster(Long userId){
+        if(this.masterUserId.equals(userId)){
+            return true;
+        }
+        return false;
+    }
 }
