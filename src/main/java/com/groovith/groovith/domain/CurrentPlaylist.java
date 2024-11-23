@@ -1,6 +1,5 @@
 package com.groovith.groovith.domain;
 
-import com.groovith.groovith.dto.TrackDto;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
