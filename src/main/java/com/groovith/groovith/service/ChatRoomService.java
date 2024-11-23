@@ -111,8 +111,14 @@ public class ChatRoomService {
     /**
      * 채팅방 삭제
      */
-    public void deleteChatRoom(Long chatRoomId, Long userId) {
-        deleteChatRoomData(chatRoomId, userId);
+    public ResponseEntity<? super DeleteChatRoomResponseDto> deleteChatRoom(Long chatRoomId, Long userId) {
+        try {
+            ChatRoom chatRoom = findChatRoomById(chatRoomId);
+            deleteChatRoomData(chatRoomId, userId, chatRoom.getMasterUserId());
+        } catch (NotMasterUserException e) {
+            return DeleteChatRoomResponseDto.notMasterUser();
+        }
+        return DeleteChatRoomResponseDto.success();
     }
 
     /**
@@ -302,8 +308,8 @@ public class ChatRoomService {
      * 2. 메시지 삭제
      * 3. 플레이리스트 삭제
      */
-    private void deleteChatRoomData(Long chatRoomId, Long userId) {
-        validateMasterUser(userId, chatRoomId, ERROR_ONLY_MASTER_USER_CAN_DELETE_CHATROOM);
+    private void deleteChatRoomData(Long chatRoomId, Long userId, Long masterUserId) {
+        validateMasterUser(userId, masterUserId, ERROR_ONLY_MASTER_USER_CAN_DELETE_CHATROOM);
         chatRoomImageService.deleteImageById(chatRoomId);
         messageRepository.deleteByChatRoomId(chatRoomId);
         currentPlaylistRepository.deleteByChatRoomId(chatRoomId);

@@ -9,4 +9,5 @@ public interface ResponseCode {
     String MAIL_FAIL = "MF";
     String WRONG_PASSWORD = "WP";
     String NO_SUCH_USER = "NU";
+    String NOT_MASTER_USER = "NMU";
 }

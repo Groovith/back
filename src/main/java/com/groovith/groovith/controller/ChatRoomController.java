@@ -103,10 +103,9 @@ public class ChatRoomController {
      * 채팅방 삭제
      */
     @DeleteMapping("/chatrooms/{chatRoomId}")
-    public ResponseEntity<?> delete(@PathVariable(name = "chatRoomId") Long chatRoomId,
-                                    @AuthenticationPrincipal CustomUserDetails userDetails) {
-        chatRoomService.deleteChatRoom(chatRoomId, userDetails.getUserId());
-        return new ResponseEntity<>(HttpStatus.OK);
+    public ResponseEntity<? super DeleteChatRoomResponseDto> delete(@PathVariable(name = "chatRoomId") Long chatRoomId,
+                                                                    @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return chatRoomService.deleteChatRoom(chatRoomId, userDetails.getUserId());
     }
 
     /**
@@ -116,7 +115,6 @@ public class ChatRoomController {
     public ResponseEntity<Result> findAllUser(@PathVariable(name = "chatRoomId") Long chatRoomId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         return new ResponseEntity<>(new Result(chatRoomService.findChatRoomMembers(chatRoomId, userDetails.getUserId())), HttpStatus.OK);
     }
-
 
     /**
      * 채팅방으로 초대

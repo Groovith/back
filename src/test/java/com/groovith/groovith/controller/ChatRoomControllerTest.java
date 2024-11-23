@@ -176,7 +176,7 @@ class ChatRoomControllerTest {
         //given
         Long chatRoomId = 1L;
         //when
-        doNothing().when(chatRoomService).deleteChatRoom(anyLong());
+        doNothing().when(chatRoomService).deleteChatRoom(anyLong(), 1L);
 
         ResultActions actions = mockMvc.perform(
                 delete("/api/chatroom/{chatRoomId}", chatRoomId)
