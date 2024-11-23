@@ -5,6 +5,7 @@ import com.groovith.groovith.domain.enums.*;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomFullException;
 import com.groovith.groovith.repository.*;
+import com.groovith.groovith.service.Image.ChatRoomImageService;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,8 @@ class ChatRoomServiceTest {
     @Mock private UserChatRoomRepository userChatRoomRepository;
     @Mock private CurrentPlaylistRepository currentPlaylistRepository;
     @Mock private FriendRepository friendRepository;
+    @Mock private ChatRoomImageService chatRoomImageService;
+    @Mock private MessageRepository messageRepository;
 
     @Test
     @DisplayName("채팅방 생성 테스트, 채팅방 생성시 유저와 연관관계 생겨야함")
@@ -248,14 +251,14 @@ class ChatRoomServiceTest {
         // 마스터 유저 설정
         chatRoom.setMasterUserInfo(user);
 
-        ChatRoomDetailsDto dto = new ChatRoomDetailsDto(chatRoom);
+        ChatRoomDetailsDto dto = new ChatRoomDetailsDto(chatRoom, chatRoom.getIsMaster(userId));
         dto.setChatRoomId(chatroomId);
 
         //when
         when(chatRoomRepository.findById(anyLong()))
                 .thenReturn(Optional.of(chatRoom));
 
-        ChatRoomDetailsDto chatRoomDetailsDto = chatRoomService.findChatRoomDetail(chatroomId);
+        ChatRoomDetailsDto chatRoomDetailsDto = chatRoomService.findChatRoomDetail(chatroomId, userId);
 
         //then
         Assertions.assertThat(chatRoomDetailsDto.getChatRoomId()).isEqualTo(chatroomId);
@@ -276,6 +279,9 @@ class ChatRoomServiceTest {
         chatRoomService.deleteChatRoom(id);
 
         //then
+        verify(chatRoomImageService, times(1)).deleteImageById(id);
+        verify(messageRepository, times(1)).deleteByChatRoomId(id);
+        verify(currentPlaylistRepository, times(1)).deleteByChatRoomId(id);
         verify(chatRoomRepository).deleteById(id);
     }
 
