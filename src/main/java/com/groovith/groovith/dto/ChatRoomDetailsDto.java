@@ -35,7 +35,7 @@ public class ChatRoomDetailsDto {
     private String masterUserName;
     private ChatRoomPrivacy privacy;
     private ChatRoomPermission permission;
-    private boolean isMaster;
+    private Boolean isMaster;
 
     public ChatRoomDetailsDto(ChatRoom chatRoom, boolean isMaster) {
         this.chatRoomId = chatRoom.getId();
