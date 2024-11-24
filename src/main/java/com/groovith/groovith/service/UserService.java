@@ -8,8 +8,6 @@ import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.provider.EmailProvider;
 import com.groovith.groovith.repository.*;
-import com.groovith.groovith.security.JwtUtil;
-import com.groovith.groovith.service.Image.ChatRoomImageService;
 import com.groovith.groovith.service.Image.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,10 +34,8 @@ public class UserService {
     private final CertificationRepository certificationRepository;
     private final PasswordResetCertificationRepository passwordResetCertificationRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
-    private final JwtUtil jwtUtil;
     private final EmailProvider emailProvider;
-    private final ChatRoomImageService chatRoomImageService;
-    private final MessageService messageService;
+    private final ChatRoomService chatRoomService;
 
 
     // 회원가입
@@ -137,10 +133,8 @@ public class UserService {
             // 유저가 방장인 채팅방 삭제 -> 추후 하나의 메서드로 통일
             List<ChatRoom> chatRoomsByUser = chatRoomRepository.findAllByMasterUserId(user.getId());
             for (ChatRoom chatRoom : chatRoomsByUser) {
-                chatRoomImageService.deleteImageById(chatRoom.getId());
-                messageService.deleteAllMessageInChatRoom(chatRoom.getId());
+                chatRoomService.deleteChatRoomData(chatRoom.getId(), user.getId(), chatRoom.getMasterUserId());
             }
-            chatRoomRepository.deleteAll(chatRoomsByUser);
 
             // 유저 프로필 이미지 있는 경우 삭제
             if (!user.getImageUrl().equals(S3Directory.USER.getDefaultImageUrl())) {
@@ -162,20 +156,6 @@ public class UserService {
             return DeleteAccountResponseDto.databaseError();
         }
         return DeleteAccountResponseDto.success();
-    }
-
-    /**
-     * Access Token 을 사용해 User 객체 반환
-     *
-     * @param accessToken 서버 Access Token
-     * @return 찾은 User 객체 | User 가 DB에 없으면 UserNotFoundException 발생
-     */
-    public User getUserByAccessToken(String accessToken) {
-
-        Long userId = jwtUtil.getUserId(accessToken);
-
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
     // 다른 유저 조회

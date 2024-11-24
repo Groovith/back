@@ -308,7 +308,7 @@ public class ChatRoomService {
      * 2. 메시지 삭제
      * 3. 플레이리스트 삭제
      */
-    private void deleteChatRoomData(Long chatRoomId, Long userId, Long masterUserId) {
+    public void deleteChatRoomData(Long chatRoomId, Long userId, Long masterUserId) {
         validateMasterUser(userId, masterUserId, ERROR_ONLY_MASTER_USER_CAN_DELETE_CHATROOM);
         chatRoomImageService.deleteImageById(chatRoomId);
         messageRepository.deleteByChatRoomId(chatRoomId);
