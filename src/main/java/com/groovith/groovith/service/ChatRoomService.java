@@ -132,7 +132,7 @@ public class ChatRoomService {
         validateChatRoomCapacity(chatRoom, SINGLE_NEW_MEMBER);
 
         updateUserChatRoomStatus(user, chatRoom, UserChatRoomStatus.ENTER);
-        chatRoom.addUser();
+        chatRoom.increaseMemberCount();
     }
 
 
@@ -157,7 +157,7 @@ public class ChatRoomService {
             }
             case ACTIVE -> {            // 정상적인 경우 userChatRoom 업데이트
                 updateUserChatRoomStatus(findUserById(userId), chatRoom, UserChatRoomStatus.LEAVE);
-                chatRoom.subUser();
+                chatRoom.decreaseMemberCount();
             }
         }
         return new ResponseEntity<>(HttpStatus.OK);
@@ -189,7 +189,7 @@ public class ChatRoomService {
         // 초대받은 유저와 채팅방 연관관계 생성
         Optional<UserChatRoom> userChatRoom = findUserChatRoomByUserIdAndChatRoomId(inviteeId, chatRoomId);
         updateUserChatRoomStatus(invitee, chatRoom, UserChatRoomStatus.ENTER);
-        chatRoom.addUser();
+        chatRoom.increaseMemberCount();
     }
 
     /**
@@ -202,7 +202,7 @@ public class ChatRoomService {
         // 초대받은 각 친구마다 채팅방과 연관관계 생성
         for (Long friendsId : friendsIdList) {
             updateUserChatRoomStatus(findUserById(friendsId), chatRoom, UserChatRoomStatus.ENTER);
-            chatRoom.addUser();
+            chatRoom.increaseMemberCount();
         }
     }
 

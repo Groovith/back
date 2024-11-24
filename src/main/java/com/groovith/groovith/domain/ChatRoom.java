@@ -72,12 +72,12 @@ public class ChatRoom {
      **/
 
     //채팅방에 유저 입장
-    public void addUser(){
+    public void increaseMemberCount(){
         this.currentMemberCount += 1;
     }
 
     //채팅방 유저 퇴장
-    public void subUser(){
+    public void decreaseMemberCount(){
         this.currentMemberCount -= 1;
     }
 
