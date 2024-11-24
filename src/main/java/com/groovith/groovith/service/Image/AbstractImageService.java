@@ -22,7 +22,7 @@ public abstract class AbstractImageService<T> implements ImageService {
      * */
     @Override
     public String uploadAndSaveImage(MultipartFile file) {
-        if (file == null) {
+        if (isFileEmpty(file)) {
             return getDefaultImageUrl();
         }
         String imageUrl = uploadImage(file);
