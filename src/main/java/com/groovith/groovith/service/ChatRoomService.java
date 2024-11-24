@@ -31,6 +31,7 @@ public class ChatRoomService {
     private static final int MAX_MEMBER = 100;
     private static final String ERROR_ONLY_MASTER_USER_CAN_CHANGE_PERMISSION = "권한 변경은 masterUser 만 가능합니다";
     private static final String ERROR_ONLY_MASTER_USER_CAN_UPDATE_CHATROOM = "채팅방 수정은 masterUser 만 가능합니다";
+    private static final String ERROR_ONLY_MASTER_USER_CAN_DELETE_CHATROOM = "채팅방 삭제는 masterUser 만 가능합니다";
 
     private final ChatRoomImageService chatRoomImageService;
     private final ChatRoomRepository chatRoomRepository;
@@ -110,10 +111,15 @@ public class ChatRoomService {
     /**
      * 채팅방 삭제
      */
-    public void deleteChatRoom(Long chatRoomId) {
-        deleteChatRoomData(chatRoomId);
+    public ResponseEntity<? super DeleteChatRoomResponseDto> deleteChatRoom(Long chatRoomId, Long userId) {
+        try {
+            ChatRoom chatRoom = findChatRoomById(chatRoomId);
+            deleteChatRoomData(chatRoomId, userId, chatRoom.getMasterUserId());
+        } catch (NotMasterUserException e) {
+            return DeleteChatRoomResponseDto.notMasterUser();
+        }
+        return DeleteChatRoomResponseDto.success();
     }
-
 
     /**
      * 채팅방 입장
@@ -142,14 +148,14 @@ public class ChatRoomService {
 
     private ResponseEntity<?> validateAndHandleChatRoomMemberStatus(Long userId, ChatRoom chatRoom, ChatRoomMemberStatus chatRoomMemberStatus) {
         switch (chatRoomMemberStatus) {
-            case MASTER_LEAVING -> {
+            case MASTER_LEAVING -> {    // 방장이 나가는 경우
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-            case EMPTY -> {
-                deleteChatRoom(chatRoom.getId());
+            case EMPTY -> {             // 채팅방 비어있을 경우 채팅방 삭제
+                deleteChatRoom(chatRoom.getId(), userId);
                 break;
             }
-            case ACTIVE -> {
+            case ACTIVE -> {            // 정상적인 경우 userChatRoom 업데이트
                 updateUserChatRoomStatus(findUserById(userId), chatRoom, UserChatRoomStatus.LEAVE);
                 chatRoom.subUser();
             }
@@ -213,7 +219,7 @@ public class ChatRoomService {
 
     /**
      * 채팅방 이미지 변경
-     * */
+     */
     public void updateImageUrl(Long chatRoomId, String imageUrl) {
         ChatRoom chatRoom = findChatRoomById(chatRoomId);
         chatRoom.updateImageUrl(imageUrl);
@@ -278,11 +284,9 @@ public class ChatRoomService {
         return findUser.toUserChatRoomDto(validateUserRelationship(user, findUser, friendsIdsFromUser));
     }
 
-
     private Set<Long> getFriendsIdsFromUser(User user) {
         return new HashSet<>(friendRepository.findFriendsIdsFromUser(user));
     }
-
 
     private UserRelationship validateUserRelationship(User user, User findUser, Set<Long> friendsIdsFromUser) {
         if (user == findUser) {
@@ -304,7 +308,8 @@ public class ChatRoomService {
      * 2. 메시지 삭제
      * 3. 플레이리스트 삭제
      */
-    private void deleteChatRoomData(Long chatRoomId) {
+    private void deleteChatRoomData(Long chatRoomId, Long userId, Long masterUserId) {
+        validateMasterUser(userId, masterUserId, ERROR_ONLY_MASTER_USER_CAN_DELETE_CHATROOM);
         chatRoomImageService.deleteImageById(chatRoomId);
         messageRepository.deleteByChatRoomId(chatRoomId);
         currentPlaylistRepository.deleteByChatRoomId(chatRoomId);

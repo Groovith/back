@@ -4,6 +4,7 @@ import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.*;
 import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.ChatRoomFullException;
+import com.groovith.groovith.exception.NotMasterUserException;
 import com.groovith.groovith.repository.*;
 import com.groovith.groovith.service.Image.ChatRoomImageService;
 import org.assertj.core.api.Assertions;
@@ -272,19 +273,40 @@ class ChatRoomServiceTest {
     @DisplayName("채팅방 삭제 테스트")
     public void deleteChatRoom(){
         //given
-        Long id = 1L;
+        Long chatRoomId = 1L;
+        Long userId = 1L;
 
         //when
         doNothing().when(chatRoomRepository).deleteById(anyLong());
-        chatRoomService.deleteChatRoom(id);
+        chatRoomService.deleteChatRoom(chatRoomId, userId);
 
         //then
-        verify(chatRoomImageService, times(1)).deleteImageById(id);
-        verify(messageRepository, times(1)).deleteByChatRoomId(id);
-        verify(currentPlaylistRepository, times(1)).deleteByChatRoomId(id);
-        verify(chatRoomRepository).deleteById(id);
+        verify(chatRoomImageService, times(1)).deleteImageById(chatRoomId);
+        verify(messageRepository, times(1)).deleteByChatRoomId(chatRoomId);
+        verify(currentPlaylistRepository, times(1)).deleteByChatRoomId(chatRoomId);
+        verify(chatRoomRepository).deleteById(chatRoomId);
     }
 
+    @Test
+    @DisplayName("방장이 아닌 유저가 채팅방 삭제 요청 시 예외발생")
+    void deleteChatRoomOnlyCanMasterUser(){
+        // given
+        Long chatRoomId = 1L;
+        Long masterUserId = 1L;
+        Long userId = 2L;
+        ChatRoom chatRoom = createChatRoom("room",
+                ChatRoomPrivacy.PUBLIC,
+                ChatRoomPermission.MASTER,
+                S3Directory.CHATROOM.getDefaultImageUrl());
+        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+        ReflectionTestUtils.setField(chatRoom, "masterUserId", chatRoomId);
+        User user = createUser(masterUserId, "master", DEFAULT_IMG_URL);
+        // when
+        Assertions.assertThatThrownBy(()->chatRoomService.deleteChatRoom(chatRoomId, userId))
+                .isInstanceOf(NotMasterUserException.class);
+
+        // then
+    }
     @Test
     @DisplayName("채팅방 입장 테스트")
     public void enterChatRoomTest1(){
