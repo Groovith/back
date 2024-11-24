@@ -56,9 +56,10 @@ public class SecurityConfig {
                         CorsConfiguration configuration = new CorsConfiguration();
 
                         configuration.setAllowedOriginPatterns(Arrays.asList(
-                                "http://localhost:5173"
-                                //"https://apic.app"
-                                //"https://jiangxy.github.io/websocket-debug-tool"
+                                "http://localhost",
+                                "http://localhost:5173/",
+                                "http://groovith.com",
+                                "https://groovith.com"
                         ));
                         configuration.setAllowedMethods(Collections.singletonList("*"));
                         configuration.setAllowCredentials(true);
