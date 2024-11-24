@@ -29,12 +29,13 @@ import lombok.Data;
 public class ChatRoomDetailsDto {
 
     private Long chatRoomId;
-    private Long masterUserId;
     private String name;
     private String imageUrl;
+    private Long masterUserId;
     private String masterUserName;
     private ChatRoomPrivacy privacy;
     private ChatRoomPermission permission;
+    private Integer currentMemberCount;
     private Boolean isMaster;
 
     public ChatRoomDetailsDto(ChatRoom chatRoom, boolean isMaster) {
@@ -45,6 +46,7 @@ public class ChatRoomDetailsDto {
         this.masterUserName = chatRoom.getMasterUserName();
         this.privacy = chatRoom.getPrivacy();
         this.permission = chatRoom.getPermission();
+        this.currentMemberCount = chatRoom.getCurrentMemberCount();
         this.isMaster = isMaster;
     }
 }
