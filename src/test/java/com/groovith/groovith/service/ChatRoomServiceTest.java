@@ -241,12 +241,14 @@ class ChatRoomServiceTest {
         //given
         Long chatroomId = 1L;
         Long userId = 1L;
+        int currentMemberCount = 3;
         String chatRoomName = "room";
         String masterUserName = "masterUserName";
         User user = createUser(userId,masterUserName,DEFAULT_IMG_URL);
         ChatRoom chatRoom = createChatRoom(chatRoomName, ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER, DEFAULT_IMG_URL);
         // ReflectionTestUtils 사용하면 필드값 임의로 지정가능
         ReflectionTestUtils.setField(chatRoom, "id", chatroomId);
+        ReflectionTestUtils.setField(chatRoom, "currentMemberCount", currentMemberCount);
         // 유저와 연관관계 설정
         UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
         // 마스터 유저 설정
@@ -267,6 +269,7 @@ class ChatRoomServiceTest {
         Assertions.assertThat(chatRoomDetailsDto.getMasterUserId()).isEqualTo(user.getId());
         Assertions.assertThat(chatRoomDetailsDto.getImageUrl()).isEqualTo(DEFAULT_IMG_URL);
         Assertions.assertThat(chatRoomDetailsDto.getMasterUserName()).isEqualTo(user.getUsername());
+        Assertions.assertThat(chatRoomDetailsDto.getCurrentMemberCount()).isEqualTo(currentMemberCount);
     }
 
     @Test
