@@ -1,5 +1,6 @@
 package com.groovith.groovith.domain;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
@@ -26,6 +27,18 @@ public class PlayerSession implements Serializable {
     private Long duration;
 
     private Set<String> sessionIds = new HashSet<>();
+
+    @Builder
+    public PlayerSession(final Long chatRoomId, final Integer index, final Long lastPosition, Boolean paused, final Boolean repeat, final LocalDateTime startedAt, final int userCount, final Long duration) {
+        this.chatRoomId = chatRoomId;
+        this.index = index;
+        this.lastPosition = lastPosition;
+        this.paused = paused;
+        this.repeat = repeat;
+        this.startedAt = startedAt;
+        this.userCount = userCount;
+        this.duration = duration;
+    }
 
     public static PlayerSession pause(PlayerSession playerSession, Long position) {
         playerSession.setPaused(true);
