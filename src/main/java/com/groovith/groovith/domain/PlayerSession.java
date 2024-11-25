@@ -1,19 +1,31 @@
 package com.groovith.groovith.domain;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.HashSet;
+import java.util.Set;
+
 
 @Data
-public class PlayerSession {
+@NoArgsConstructor
+@RedisHash("PlayerSession")
+public class PlayerSession implements Serializable {
+    @Id
+    private Long chatRoomId;
     private Integer index;
     private Long lastPosition;
     private Boolean paused;
     private Boolean repeat;
     private LocalDateTime startedAt;
-    private AtomicInteger userCount;
+    private int userCount;
     private Long duration;
+
+    private Set<String> sessionIds = new HashSet<>();
 
     public static PlayerSession pause(PlayerSession playerSession, Long position) {
         playerSession.setPaused(true);
@@ -55,5 +67,20 @@ public class PlayerSession {
         if (playerSession.getIndex() >= index) {
             playerSession.setIndex(Math.max(0, playerSession.getIndex() - 1));
         }
+    }
+
+    public void addSessionId(String sessionId) {
+        this.sessionIds.add(sessionId);
+    }
+
+    public void removeSessionId(String sessionId) {
+        this.sessionIds.remove(sessionId);
+    }
+    public void increaseUserCount() {
+        this.userCount++;
+    }
+
+    public void decreaseUserCount() {
+        this.userCount--;
     }
 }

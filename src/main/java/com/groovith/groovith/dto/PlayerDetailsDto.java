@@ -56,7 +56,7 @@ public class PlayerDetailsDto {
                 .chatRoomId(chatRoomId)
                 .currentPlaylist(trackDtoList)
                 .currentPlaylistIndex(playerSession.getIndex())
-                .userCount(playerSession.getUserCount().get())
+                .userCount(playerSession.getUserCount())
                 .lastPosition(playerSession.getLastPosition())
                 .startedAt(playerSession.getStartedAt())
                 .paused(playerSession.getPaused())
