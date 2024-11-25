@@ -75,15 +75,15 @@ public class PlayerService {
         // 유저가 이미 어떤 채팅방에 참가 중인지 확인
         Long existingChatRoomId = sessionIdChatRoomId.get(sessionId);
 
-//        // 이미 동일한 채팅방에 참가 중이라면 인원수를 증가시키지 않음
-//        if (chatRoomId.equals(existingChatRoomId)) {
-//            PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
-//            CurrentPlaylist currentPlaylist = getCurrentPlayListByChatRoomId(chatRoomId);
-//            List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
-//                    .map(currentPlaylistTrack -> new TrackDto(currentPlaylistTrack.getTrack()))
-//                    .toList();
-//            return createPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
-//        }
+        // 이미 동일한 채팅방에 참가 중이라면 인원수를 증가시키지 않음
+        if (chatRoomId.equals(existingChatRoomId)) {
+            PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
+            CurrentPlaylist currentPlaylist = getCurrentPlayListByChatRoomId(chatRoomId);
+            List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
+                    .map(currentPlaylistTrack -> new TrackDto(currentPlaylistTrack.getTrack()))
+                    .toList();
+            return createPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
+        }
 
         // sessionId를 sessionIdChatRoomId에 등록한다.
         sessionIdChatRoomId.put(sessionId, chatRoomId);
