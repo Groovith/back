@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class EmailProvider {
     private final JavaMailSender javaMailSender;
-    private final String APP_URL = "http://localhost:5173";
+    private final String APP_URL = "http://groovith.com";
 
     // 인증 메일 전송
     public boolean sendCertificationMail(String email, String certificationNumber) {
