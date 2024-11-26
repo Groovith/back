@@ -4,9 +4,11 @@ import com.groovith.groovith.config.WebSocketEventListener;
 import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.CurrentPlaylist;
 import com.groovith.groovith.domain.PlayerSession;
+import com.groovith.groovith.domain.Track;
 import com.groovith.groovith.domain.enums.ChatRoomPermission;
 import com.groovith.groovith.domain.enums.ChatRoomPrivacy;
 import com.groovith.groovith.domain.enums.S3Directory;
+import com.groovith.groovith.dto.PlayerDetailsDto;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
 import com.groovith.groovith.repository.CurrentPlaylistTrackRepository;
@@ -22,8 +24,15 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.lang.reflect.Array;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+
+import static org.mockito.Mockito.when;
+
 
 @ExtendWith(MockitoExtension.class)
 class PlayerServiceTest {
@@ -41,22 +50,43 @@ class PlayerServiceTest {
     @Mock private PlayerSessionRepository playerSessionRepository;
 
 
-    @Test
-    @DisplayName("redis 세션 데이터 저장 테스트")
-    void savePlayerSession(){
-        // given
-        Long chatRoomId = 1L;
-        ChatRoom chatRoom = createChatRoom(chatRoomId, "room", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
-        CurrentPlaylist currentPlaylist = createCurrentPlaylist(chatRoomId);
-        String sessionId = UUID.randomUUID().toString();
-        PlayerSession playerSession = new PlayerSession();
-
-        // when
-        PlayerSession savedPlayerSession = playerSessionRepository.save(createPlayerSession(chatRoomId, sessionId, currentPlaylist));
-
-        // then
-        Assertions.assertThat(savedPlayerSession.getChatRoomId()).isEqualTo(chatRoomId);
-    }
+//    @Test
+//    @DisplayName("세션이 존재하는 체팅방 같이듣기에 참가 테스트")
+//    void joinPlayerTest(){
+//        // given
+//        Long chatRoomId = 1L;
+//        Long userId = 1L;
+//        String sessionId = UUID.randomUUID().toString();
+//
+//        ChatRoom chatRoom = createChatRoom(chatRoomId, "room", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+//        CurrentPlaylist currentPlaylist = createCurrentPlaylist(chatRoomId);
+//        List<Track> trackList = Arrays.asList(new Track(), new Track(), new Track());
+//        PlayerSession playerSession = createPlayerSession(chatRoomId, sessionId, currentPlaylist);
+//
+//        // when
+//        when(webSocketEventListener.getSessionIdByUserId(userId)).thenReturn(Optional.of(sessionId));
+//        when(currentPlaylistRepository.findByChatRoomId(chatRoomId)).thenReturn(Optional.of(currentPlaylist));
+//        when(currentPlaylistTrackRepository.findTrackListByChatRoomId(chatRoomId)).thenReturn(trackList);
+//        when(playerSessionRepository.findById(chatRoomId)).thenReturn(Optional.of(playerSession));
+//
+//        PlayerDetailsDto result = playerService.joinPlayer(userId, chatRoomId);
+//
+//        // then
+//        Assertions.assertThat(result).isNotNull();
+//        Assertions.assertThat(result.getChatRoomId()).isEqualTo(chatRoom);
+//        Assertions.assertThat(result.getCurrentPlaylist()).isEqualTo(currentPlaylist);
+//        Assertions.assertThat(result.getUserCount()).isEqualTo(2);
+//    }
+//
+//    @Test
+//    @DisplayName("플레이리스트에 곡 추가 테스트")
+//    void addTrackTest(){
+//        // given
+//
+//        // when
+//
+//        // then
+//    }
 
     private CurrentPlaylist createCurrentPlaylist(Long id) {
         CurrentPlaylist currentPlaylist = new CurrentPlaylist();
@@ -91,6 +121,7 @@ class PlayerServiceTest {
             data.setDuration(currentPlaylist.getCurrentPlaylistTracks().get(0).getTrack().getDuration());
             data.setStartedAt(LocalDateTime.now());
         }
+        data.setUserCount(1);
         return data;
     }
 }

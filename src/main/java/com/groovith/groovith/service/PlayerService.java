@@ -62,10 +62,24 @@ public class PlayerService {
 
     public PlayerDetailsDto joinPlayer(Long chatRoomId, Long userId) {
         // 유저의 sessionId를 받아온다.
+        // sessionId를 sessionIdChatRoomId에 등록한다.
+        // 기존의 다른 채팅방 토픽 구독은 이미 해제했을 것을 전제한다.
+        // chatRoomId로 세션 인원을 증가시킨다.
         // chatRoomId로 세션 정보를 찾는다.
         // 없다면 첫 손님이므로 세션을 만들고 초기화 한다.
-        // 세션이 있다면 sessionId를 세션에 추가
+        // * 채팅방 현재 플레이리스트는 이미 가지고 있을 것을 전제한다
         String sessionId = getWebSocketSessionIdByUserId(userId);
+        Long existingChatRoomId = sessionIdChatRoomId.get(sessionId);
+
+        // 이미 동일한 채팅방에 참가 중이라면 인원수를 증가시키지 않음
+        if (chatRoomId.equals(existingChatRoomId)) {
+            PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
+            List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
+            return getPlayerDetailsDtoWithPlayerSession(chatRoomId, trackDtoList, playerSession);
+        }
+
+        // sessionId를 sessionIdChatRoomId에 등록한다.
+        sessionIdChatRoomId.put(sessionId, chatRoomId);
 
         CurrentPlaylist currentPlaylist = getCurrentPlayListByChatRoomId(chatRoomId);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
@@ -93,6 +107,8 @@ public class PlayerService {
     public void leavePlayer(Long chatRoomId, Long userId) {
         // 유저의 sessionId를 받아온다.
         String sessionId = getWebSocketSessionIdByUserId(userId);
+        sessionIdChatRoomId.remove(sessionId);
+
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
 
         PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
@@ -104,10 +120,29 @@ public class PlayerService {
     @Transactional
     public void handleMessage(Long chatRoomId, PlayerRequestDto playerRequestDto, Long userId) throws IOException {
         // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
-        ChatRoom chatRoom = getChatRoomByChatRoomId(chatRoomId);
-        validateUserPermission(chatRoom, userId);
-        handleActionAndSendMessages(playerRequestDto.getAction(), chatRoomId, playerRequestDto);
+        ChatRoomPermission permission = getChatRoomPermission(chatRoomId);
+        boolean isMasterUser = isMasterUser(chatRoomId, userId);
+        if (playerRequestDto.getAction() == PlayerActionRequestType.TRACK_ENDED) {
+            // 트랙 정지의 경우 무조건 처리한다
+            trackEnded(chatRoomId);
+        } else if ((permission.equals(ChatRoomPermission.MASTER) && isMasterUser)
+                || permission.equals(ChatRoomPermission.EVERYONE)) {
+            // masterUser 만 플레이어 조작 가능 or 권한이 모두 인 경우
+            // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
+            handleActionAndSendMessages(playerRequestDto.getAction(), chatRoomId, playerRequestDto);
+        }
     }
+
+    private ChatRoomPermission getChatRoomPermission(Long chatRoomId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
+        return chatRoom.getPermission();
+    }
+
+    private boolean isMasterUser(Long chatRoomId, Long userId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
+        return chatRoom.getMasterUserId().equals(userId);
+    }
+
 
 
     private void handleActionAndSendMessages(PlayerActionRequestType action, Long chatRoomId, PlayerRequestDto playerRequestDto) throws IOException {
@@ -185,13 +220,25 @@ public class PlayerService {
                 }
             }
 
-            playerSessions.put(chatRoomId, playerSession);
-            PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
+            PlayerSession updatedPlayerSession = savePlaySession(playerSession);
+            PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
 
             // 채팅방 정보 전송
             sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void trackEnded(Long chatRoomId) {
+        PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
+
+        String lockKey = "trackEndedLock:" + chatRoomId;
+        Boolean lockAcquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(5));
+
+        if (Boolean.TRUE.equals(lockAcquired)) {
+            nextTrack(playerSession, trackDtoList, chatRoomId);
         }
     }
 
@@ -280,7 +327,7 @@ public class PlayerService {
 
     private PlayerSession addSessionIdToPlayerSession(PlayerSession playerSession, String sessionId) {
         playerSession.addSessionId(sessionId);
-        playerSession.increaseUserCount();
+        playerSession.updateUserCount();
         return savePlaySession(playerSession);
     }
 
@@ -302,14 +349,6 @@ public class PlayerService {
 
     private void deletePlaySession(PlayerSession playerSession) {
         playerSessionRepository.delete(playerSession);
-    }
-
-    private ChatRoomPermission getChatRoomPermission(ChatRoom chatRoom) {
-        return chatRoom.getPermission();
-    }
-
-    private boolean isMasterUser(ChatRoom chatRoom, Long userId) {
-        return chatRoom.getMasterUserId().equals(userId);
     }
 
     private PlayerSession getPlayerSessionByChatRoomId(Long chatRoomId) {
@@ -347,16 +386,16 @@ public class PlayerService {
         return false;
     }
 
-    private void validateUserPermission(ChatRoom chatRoom, Long userId) {
-        ChatRoomPermission permission = getChatRoomPermission(chatRoom);
-
-        boolean isMaster = permission.equals(ChatRoomPermission.MASTER) && isMasterUser(chatRoom, userId);
-        boolean isEveryone = permission.equals(ChatRoomPermission.EVERYONE);
-
-        if (!isMaster && !isEveryone) {
-            throw new NotMasterUserException(userId);
-        }
-    }
+//    private void validateUserPermission(ChatRoom chatRoom, Long userId) {
+//        ChatRoomPermission permission = getChatRoomPermission(chatRoom);
+//
+//        boolean isMaster = permission.equals(ChatRoomPermission.MASTER) && isMasterUser(chatRoom, userId);
+//        boolean isEveryone = permission.equals(ChatRoomPermission.EVERYONE);
+//
+//        if (!isMaster && !isEveryone) {
+//            throw new NotMasterUserException(userId);
+//        }
+//    }
 
     private void validatePlaylistCapacity(CurrentPlaylist currentPlaylist, List<TrackDto> trackDtoList) {
         if (trackDtoList.size() >= MAX_PLAYLIST_ITEMS) {

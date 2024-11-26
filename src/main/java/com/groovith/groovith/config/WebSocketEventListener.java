@@ -31,7 +31,6 @@ import static com.groovith.groovith.service.PlayerService.sessionIdChatRoomId;
 public class WebSocketEventListener {
     private static final ConcurrentHashMap<Long, String> userIdSessionId = new ConcurrentHashMap<>();
     private final SimpMessageSendingOperations template;
-    private final CurrentPlaylistRepository currentPlaylistRepository;
     private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
     private final PlayerSessionRepository playerSessionRepository;
 
@@ -69,17 +68,13 @@ public class WebSocketEventListener {
             Long chatRoomId = sessionIdChatRoomId.remove(sessionId);
             PlayerSession playerSession = playerSessionRepository.findById(chatRoomId)
                     .orElseThrow(()->new PlayerSessionNotFoundException(chatRoomId));
-
             if (chatRoomId != null) {
                 // chatRoomId로 현재 인원 수를 줄인다.
                 int count = playerSession.getUserCount();
-                if (count != 0) {
-
                     // 인원이 0명이 된 경우, 해당 채팅방 세션 정보를 삭제한다. -> 해당 채팅방에 알린다
                     if (count <= 0) {
                         playerSessionRepository.delete(playerSession);
 
-                        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
                         List<Track> trackList = currentPlaylistTrackRepository.findTrackListByChatRoomId(chatRoomId);
                         List<TrackDto> trackDtoList = trackList.stream()
                                 .map(TrackDto::new)
@@ -93,7 +88,6 @@ public class WebSocketEventListener {
 
                         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
                     }
-                }
             }
         }
     }

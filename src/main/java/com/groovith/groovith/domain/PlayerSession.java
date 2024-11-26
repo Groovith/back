@@ -90,11 +90,16 @@ public class PlayerSession implements Serializable {
         this.sessionIds.remove(sessionId);
     }
 
-    public void increaseUserCount() {
+    public void increaseUserCount(){
         this.userCount++;
     }
 
-    public void decreaseUserCount() {
+    public void decreaseUserCount(){
         this.userCount--;
+    }
+
+
+    public void updateUserCount(){
+        this.userCount = this.sessionIds.size();
     }
 }
