@@ -164,38 +164,34 @@ public class PlayerService {
 
     @Transactional(readOnly = true)
     public void nextTrack(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId) {
-        String lockKey = "nextTrackLock:" + chatRoomId;
-        Boolean lockAcquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(5));
+        try {
+            PlayerCommandDto playerCommandDto;
 
-        if (Boolean.TRUE.equals(lockAcquired)) {
-            try {
-                PlayerCommandDto playerCommandDto;
-
-                int nextIndex = playerSession.getIndex() + 1;
-                if (nextIndex < trackDtoList.size()) {
-                    // 다음 곡이 있는 경우
-                    PlayerSession.changeTrack(playerSession, nextIndex, trackDtoList.get(nextIndex).getDuration());
-                    playerCommandDto = PlayerCommandDto.playTrackAtIndex(nextIndex, trackDtoList.get(nextIndex).getVideoId());
+            int nextIndex = playerSession.getIndex() + 1;
+            if (nextIndex < trackDtoList.size()) {
+                // 다음 곡이 있는 경우
+                log.info("Play Next Track: {}", nextIndex);
+                PlayerSession.changeTrack(playerSession, nextIndex, trackDtoList.get(nextIndex).getDuration());
+                playerCommandDto = PlayerCommandDto.playTrackAtIndex(nextIndex, trackDtoList.get(nextIndex).getVideoId());
+            } else {
+                // 다음 곡이 없는 경우
+                if (playerSession.getRepeat()) {
+                    // 반복 재생이 설정되어 있는 경우
+                    PlayerSession.returnToStart(playerSession, trackDtoList.get(0).getDuration());
+                    playerCommandDto = PlayerCommandDto.playTrackAtIndex(0, trackDtoList.get(0).getVideoId());
                 } else {
-                    // 다음 곡이 없는 경우
-                    if (playerSession.getRepeat()) {
-                        // 반복 재생이 설정되어 있는 경우
-                        PlayerSession.returnToStart(playerSession, trackDtoList.get(0).getDuration());
-                        playerCommandDto = PlayerCommandDto.playTrackAtIndex(0, trackDtoList.get(0).getVideoId());
-                    } else {
-                        // 반복 재생이 설정되어 있지 않은 경우 -> 딱히 뭐 하지 않음
-                        playerCommandDto = PlayerCommandDto.builder()
-                                .build();
-                    }
+                    // 반복 재생이 설정되어 있지 않은 경우 -> 플레이어 정지
+                    playerCommandDto = PlayerCommandDto.stop();
                 }
-                PlayerSession updatedPlayerSession = savePlaySession(playerSession);
-                PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
-
-                // 채팅방 정보 전송
-                sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
-            } catch (Exception e) {
-                e.printStackTrace();
             }
+
+            playerSessions.put(chatRoomId, playerSession);
+            PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
+
+            // 채팅방 정보 전송
+            sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -235,6 +231,7 @@ public class PlayerService {
         if (requestedIndex == null || requestedIndex < 0 || requestedIndex >= trackDtoList.size()) {
             throw new RuntimeException("Requested index: " + requestedIndex + " is out of range: " + (trackDtoList.size() - 1));
         }
+
         // 플레이어 세션 수정
         PlayerSession.changeTrack(playerSession, requestedIndex, trackDtoList.get(requestedIndex).getDuration());
         PlayerSession updatedPlayerSession = savePlaySession(playerSession);
@@ -242,6 +239,7 @@ public class PlayerService {
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
         // 플레이 트랙 액션 전송
         PlayerCommandDto playerCommandDto = PlayerCommandDto.playTrackAtIndex(requestedIndex, trackDtoList.get(requestedIndex).getVideoId());
+
         // 채팅방 정보 전송
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }

@@ -3,6 +3,7 @@ package com.groovith.groovith.config;
 import com.groovith.groovith.domain.CurrentPlaylist;
 import com.groovith.groovith.domain.PlayerSession;
 import com.groovith.groovith.domain.Track;
+import com.groovith.groovith.domain.PlayerSession;
 import com.groovith.groovith.dto.PlayerDetailsDto;
 import com.groovith.groovith.dto.TrackDto;
 import com.groovith.groovith.exception.PlayerSessionNotFoundException;
@@ -21,7 +22,6 @@ import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.groovith.groovith.service.PlayerService.sessionIdChatRoomId;
 
@@ -41,7 +41,6 @@ public class WebSocketEventListener {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
         String sessionId = accessor.getSessionId();
         Long userId = (Long) Objects.requireNonNull(accessor.getSessionAttributes()).get("userId");
-        log.info("사용자 연결 됨: userId = " + userId + ", sessionId = " + sessionId);
         userIdSessionId.put(userId, Objects.requireNonNull(sessionId));
     }
 
@@ -66,8 +65,6 @@ public class WebSocketEventListener {
 
         if (userId != null) {
             userIdSessionId.remove(userId);
-            log.info("사용자 연결 해제 됨: sessionId = " + sessionId + ", userId = " + userId);
-
             // sessionId로 chatRoomId를 찾는다.
             Long chatRoomId = sessionIdChatRoomId.remove(sessionId);
             PlayerSession playerSession = playerSessionRepository.findById(chatRoomId)
@@ -76,13 +73,11 @@ public class WebSocketEventListener {
             if (chatRoomId != null) {
                 // chatRoomId로 현재 인원 수를 줄인다.
                 int count = playerSession.getUserCount();
-                if (count > 0) {
-                    log.info("채팅방 " + chatRoomId + " 플레이어 세션에 현재 " + count + " 명 참여 중입니다.");
+                if (count != 0) {
 
                     // 인원이 0명이 된 경우, 해당 채팅방 세션 정보를 삭제한다. -> 해당 채팅방에 알린다
                     if (count <= 0) {
                         playerSessionRepository.delete(playerSession);
-                        log.info("채팅방 " + chatRoomId + " 의 플레이어에 참가자가 없어서 세션이 삭제되었습니다.");
 
                         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
                         List<Track> trackList = currentPlaylistTrackRepository.findTrackListByChatRoomId(chatRoomId);
@@ -100,8 +95,6 @@ public class WebSocketEventListener {
                     }
                 }
             }
-        } else {
-            log.info("해당 sessionId에 대응하는 userId가 없습니다. sessionId = " + sessionId);
         }
     }
 

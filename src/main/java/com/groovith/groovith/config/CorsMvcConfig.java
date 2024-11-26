@@ -17,7 +17,8 @@ public class CorsMvcConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .allowedOriginPatterns(
                         "http://localhost",
-                        "http://localhost:5173/",
+                        "http://localhost:5173",
+                        "http://3.38.237.6",
                         "http://groovith.com",
                         "https://groovith.com"
                 )
