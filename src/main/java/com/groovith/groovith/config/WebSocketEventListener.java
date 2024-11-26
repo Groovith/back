@@ -2,10 +2,12 @@ package com.groovith.groovith.config;
 
 import com.groovith.groovith.domain.CurrentPlaylist;
 import com.groovith.groovith.domain.PlayerSession;
+import com.groovith.groovith.domain.Track;
 import com.groovith.groovith.dto.PlayerDetailsDto;
 import com.groovith.groovith.dto.TrackDto;
 import com.groovith.groovith.exception.PlayerSessionNotFoundException;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
+import com.groovith.groovith.repository.CurrentPlaylistTrackRepository;
 import com.groovith.groovith.repository.PlayerSessionRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +32,7 @@ public class WebSocketEventListener {
     private static final ConcurrentHashMap<Long, String> userIdSessionId = new ConcurrentHashMap<>();
     private final SimpMessageSendingOperations template;
     private final CurrentPlaylistRepository currentPlaylistRepository;
+    private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
     private final PlayerSessionRepository playerSessionRepository;
 
     @EventListener
@@ -82,9 +85,10 @@ public class WebSocketEventListener {
                         log.info("채팅방 " + chatRoomId + " 의 플레이어에 참가자가 없어서 세션이 삭제되었습니다.");
 
                         CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
-                        List<TrackDto> trackDtoList = new ArrayList<>(currentPlaylist.getCurrentPlaylistTracks().stream()
-                                .map(c -> new TrackDto(c.getTrack()))
-                                .toList());
+                        List<Track> trackList = currentPlaylistTrackRepository.findTrackListByChatRoomId(chatRoomId);
+                        List<TrackDto> trackDtoList = trackList.stream()
+                                .map(TrackDto::new)
+                                .toList();
 
                         // 채팅방에 알린다
                         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()

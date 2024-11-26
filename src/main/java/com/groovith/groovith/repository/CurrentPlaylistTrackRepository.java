@@ -15,7 +15,7 @@ public interface CurrentPlaylistTrackRepository extends JpaRepository<CurrentPla
     CurrentPlaylistTrack findByCurrentPlaylistAndTrack(CurrentPlaylist currentPlaylist, Track track);
 
     @Query("SELECT t FROM CurrentPlaylistTrack cpt " +
-            "JOIN FETCH cpt.track t " +
+            "JOIN cpt.track t " +
             "WHERE cpt.currentPlaylist.chatRoomId = :chatRoomId")
     List<Track> findTrackListByChatRoomId(Long chatRoomId);
 }

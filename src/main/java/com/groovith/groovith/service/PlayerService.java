@@ -65,34 +65,13 @@ public class PlayerService {
 
     public PlayerDetailsDto joinPlayer(Long chatRoomId, Long userId) {
         // 유저의 sessionId를 받아온다.
-        // sessionId를 sessionIdChatRoomId에 등록한다.
-        // 기존의 다른 채팅방 토픽 구독은 이미 해제했을 것을 전제한다.
-        // chatRoomId로 세션 인원을 증가시킨다.
         // chatRoomId로 세션 정보를 찾는다.
         // 없다면 첫 손님이므로 세션을 만들고 초기화 한다.
-        // * 채팅방 현재 플레이리스트는 이미 가지고 있을 것을 전제한다.
+        // 세션이 있다면 sessionId를 세션에 추가
         String sessionId = getWebSocketSessionIdByUserId(userId);
-        // 유저가 이미 어떤 채팅방에 참가 중인지 확인
-        Long existingChatRoomId = sessionIdChatRoomId.get(sessionId);
 
-        // 이미 동일한 채팅방에 참가 중이라면 인원수를 증가시키지 않음
-        if (chatRoomId.equals(existingChatRoomId)) {
-            PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
-            CurrentPlaylist currentPlaylist = getCurrentPlayListByChatRoomId(chatRoomId);
-            List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
-                    .map(currentPlaylistTrack -> new TrackDto(currentPlaylistTrack.getTrack()))
-                    .toList();
-            return createPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
-        }
-
-        // sessionId를 sessionIdChatRoomId에 등록한다.
-        sessionIdChatRoomId.put(sessionId, chatRoomId);
-
-        // 플레이어 세션을 불러온다. 없다면 새로 생성한다. 있다면 현재 인원을 증가시킨다.
         CurrentPlaylist currentPlaylist = getCurrentPlayListByChatRoomId(chatRoomId);
-        List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
-                .map(currentPlaylistTrack -> new TrackDto(currentPlaylistTrack.getTrack()))
-                .toList();
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
 
         PlayerDetailsDto playerDetailsDto = getOptionalPlayerSessionByChatRoomId(chatRoomId)
                 .map(playerSession -> {
@@ -121,28 +100,23 @@ public class PlayerService {
         // 유저의 sessionId를 받아온다.
         String sessionId = getWebSocketSessionIdByUserId(userId);
         CurrentPlaylist currentPlaylist = getCurrentPlayListByChatRoomId(chatRoomId);
-        List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
-                .map(currentPlaylistTrack -> new TrackDto(currentPlaylistTrack.getTrack()))
-                .toList();
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
+
         PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
 
         // sessionIdChatRoomId 에서 sessionId를 삭제한다.
-        playerSession.removeSessionId(sessionId);
-        //sessionIdChatRoomId.remove(sessionId);
+        deleteUserFromPlayerSession(playerSession, sessionId);
 
-        // chatRoomId로 세션 인원을 감소시킨다.
+        // 세션이 비었을 경우 삭제
         if (playerSession.getSessionIds().isEmpty()) {
-            //playerSessions.remove(chatRoomId);
             playerSessionRepository.delete(playerSession);
-            System.out.println("채팅방 " + chatRoomId + " 의 플레이어에 참가자가 없어서 세션이 삭제되었습니다.");
 
             // 채팅방에 알린다
             PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
                     .chatRoomId(chatRoomId)
                     .currentPlaylist(trackDtoList)
                     .build();
-
-            template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
+            sendPlayerDetailsToChatRoom(chatRoomId, playerDetailsDto);
         }
     }
 
@@ -236,7 +210,6 @@ public class PlayerService {
                 int nextIndex = playerSession.getIndex() + 1;
                 if (nextIndex < trackDtoList.size()) {
                     // 다음 곡이 있는 경우
-                    log.info("Play Next Track: {}", nextIndex);
                     PlayerSession.changeTrack(playerSession, nextIndex, trackDtoList.get(nextIndex).getDuration());
                     playerCommandDto = PlayerCommandDto.playTrackAtIndex(nextIndex, trackDtoList.get(nextIndex).getVideoId());
                 } else {
@@ -343,12 +316,18 @@ public class PlayerService {
 
         PlayerSession.removeTrack(playerSession, index);
         playerSessionRepository.save(playerSession);
+        // 재생목록에서 현재 재생중인 트랙 삭제했을때 로직 필요
 
         // 채팅방 정보 갱신
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
 
         // 플레이리스트 업데이트 알림 전송
         sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList, playerSession.getIndex()));
+    }
+
+    private List<Track> getTrackDtoListByChatRoomId(Long chatRoomId) {
+        return currentPlaylistTrackRepository.findTrackListByChatRoomId(chatRoomId);
+
     }
 
     private PlayerSession getPlayerSessionByChatRoomId(Long chatRoomId) {
@@ -368,6 +347,12 @@ public class PlayerService {
     private ChatRoom getChatRoomByChatRoomId(Long chatRoomId) {
         return chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
+    }
+
+    private void deleteUserFromPlayerSession(PlayerSession playerSession, String sessionId) {
+        playerSession.removeSessionId(sessionId);
+        playerSession.decreaseUserCount();
+        playerSessionRepository.save(playerSession);
     }
 
 
@@ -401,10 +386,17 @@ public class PlayerService {
                 .repeat(INITIAL_REPEAT_SETTING)
                 .startedAt(LocalDateTime.now())
                 .userCount(INITIAL_USER_COUNT)
-                .duration(currentPlaylist.getCurrentPlaylistTracks().get(INITIAL_INDEX).getTrack().getDuration())
+                .duration(getDurationByCurrentPlayList(currentPlaylist))
                 .build();
         playerSession.addSessionId(sessionId);
         return playerSession;
+    }
+
+    private Long getDurationByCurrentPlayList(CurrentPlaylist currentPlaylist) {
+        if (currentPlaylist.getCurrentPlaylistTracks().isEmpty()) {
+            return null;
+        }
+        return currentPlaylist.getCurrentPlaylistTracks().get(0).getTrack().getDuration();
     }
 
     private boolean isCurrentPlaylistEmpty(CurrentPlaylist currentPlaylist) {
