@@ -76,15 +76,12 @@ public class PlayerService {
         PlayerDetailsDto playerDetailsDto = getOptionalPlayerSessionByChatRoomId(chatRoomId)
                 .map(playerSession -> {
                     // 플레이어 세션이 존재 할 경우: sessionId를 세션에 추가, 인원 추가
-                    playerSession.addSessionId(sessionId);
-                    playerSession.increaseUserCount();
-                    PlayerSession updatedSession = savePlaySession(playerSession);
-                    return createPlayerDetailsDto(chatRoomId, updatedSession, trackDtoList);
+                    PlayerSession updatedSession = updatePlayerSession(playerSession, sessionId);
+                    return getPlayerDetailsDtoWithPlayerSession(chatRoomId, trackDtoList, updatedSession);
                 })
                 .orElseGet(() -> {
                     // 존재하지 않을 경우: 세션 생성, 메시지 전달
-                    PlayerSession newSession = createPlayerSession(chatRoomId, sessionId, currentPlaylist);
-                    savePlaySession(newSession);
+                    PlayerSession newSession = initializeNewPlayerSession(chatRoomId, sessionId, currentPlaylist);
                     PlayerDetailsDto dto = createPlayerDetailsDto(chatRoomId, newSession, trackDtoList);
                     sendPlayerDetailsToChatRoom(chatRoomId, dto);
                     return dto;
@@ -99,25 +96,13 @@ public class PlayerService {
     public void leavePlayer(Long chatRoomId, Long userId) {
         // 유저의 sessionId를 받아온다.
         String sessionId = getWebSocketSessionIdByUserId(userId);
-        CurrentPlaylist currentPlaylist = getCurrentPlayListByChatRoomId(chatRoomId);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
 
         PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
-
-        // sessionIdChatRoomId 에서 sessionId를 삭제한다.
         deleteUserFromPlayerSession(playerSession, sessionId);
 
         // 세션이 비었을 경우 삭제
-        if (playerSession.getSessionIds().isEmpty()) {
-            playerSessionRepository.delete(playerSession);
-
-            // 채팅방에 알린다
-            PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                    .chatRoomId(chatRoomId)
-                    .currentPlaylist(trackDtoList)
-                    .build();
-            sendPlayerDetailsToChatRoom(chatRoomId, playerDetailsDto);
-        }
+        handleEmptyPlayerSession(playerSession, chatRoomId, trackDtoList);
     }
 
     @Transactional
@@ -179,9 +164,9 @@ public class PlayerService {
 
     @Transactional(readOnly = true)
     public void resume(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        playerSessionRepository.save(PlayerSession.resume(playerSession, playerRequestDto.getPosition()));
+        PlayerSession updatedSession = savePlaySession(PlayerSession.resume(playerSession, playerRequestDto.getPosition()));
 
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedSession, trackDtoList);
         PlayerCommandDto playerCommandDto = PlayerCommandDto.resume(playerRequestDto.getPosition());
 
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
@@ -189,7 +174,7 @@ public class PlayerService {
 
     @Transactional(readOnly = true)
     public void seek(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        PlayerSession updatedPlayerSession = playerSessionRepository.save(PlayerSession.seek(playerSession, playerRequestDto.getPosition()));
+        PlayerSession updatedPlayerSession = savePlaySession(PlayerSession.seek(playerSession, playerRequestDto.getPosition()));
 
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
         PlayerCommandDto playerCommandDto = PlayerCommandDto.seek(playerRequestDto.getPosition());
@@ -224,7 +209,7 @@ public class PlayerService {
                                 .build();
                     }
                 }
-                PlayerSession updatedPlayerSession = playerSessionRepository.save(playerSession);
+                PlayerSession updatedPlayerSession = savePlaySession(playerSession);
                 PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
 
                 // 채팅방 정보 전송
@@ -325,10 +310,34 @@ public class PlayerService {
         sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList, playerSession.getIndex()));
     }
 
-    private List<Track> getTrackDtoListByChatRoomId(Long chatRoomId) {
-        return currentPlaylistTrackRepository.findTrackListByChatRoomId(chatRoomId);
-
+    private PlayerSession initializeNewPlayerSession(Long chatRoomId, String sessionId, CurrentPlaylist currentPlaylist) {
+        PlayerSession playerSession = createPlayerSession(chatRoomId, sessionId, currentPlaylist);
+        playerSession.addSessionId(sessionId);
+        savePlaySession(playerSession);
+        return playerSession;
     }
+
+    private PlayerSession updatePlayerSession(PlayerSession playerSession, String sessionId) {
+        playerSession.addSessionId(sessionId);
+        playerSession.increaseUserCount();
+        return savePlaySession(playerSession);
+    }
+
+    private void deleteUserFromPlayerSession(PlayerSession playerSession, String sessionId) {
+        playerSession.removeSessionId(sessionId);
+        playerSession.decreaseUserCount();
+        playerSessionRepository.save(playerSession);
+    }
+
+
+    private PlayerSession savePlaySession(PlayerSession playerSession) {
+        return playerSessionRepository.save(playerSession);
+    }
+
+    private void deletePlaySession(PlayerSession playerSession) {
+        playerSessionRepository.delete(playerSession);
+    }
+
 
     private PlayerSession getPlayerSessionByChatRoomId(Long chatRoomId) {
         return playerSessionRepository.findById(chatRoomId)
@@ -349,15 +358,13 @@ public class PlayerService {
                 .orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
     }
 
-    private void deleteUserFromPlayerSession(PlayerSession playerSession, String sessionId) {
-        playerSession.removeSessionId(sessionId);
-        playerSession.decreaseUserCount();
-        playerSessionRepository.save(playerSession);
-    }
 
-
-    private PlayerSession savePlaySession(PlayerSession playerSession) {
-        return playerSessionRepository.save(playerSession);
+    private void handleEmptyPlayerSession(PlayerSession playerSession, Long chatRoomId, List<TrackDto> trackDtoList) {
+        if (playerSession.getSessionIds().isEmpty()) {
+            deletePlaySession(playerSession);
+            // 채팅방에 알린다
+            sendPlayerDetailsToChatRoom(chatRoomId, getPlayerDetailsDtoWithoutPlayerSession(chatRoomId, trackDtoList));
+        }
     }
 
     private PlayerDetailsDto createPlayerDetailsDto(Long chatRoomId, PlayerSession playerSession, List<TrackDto> trackDtoList) {
@@ -388,7 +395,6 @@ public class PlayerService {
                 .userCount(INITIAL_USER_COUNT)
                 .duration(getDurationByCurrentPlayList(currentPlaylist))
                 .build();
-        playerSession.addSessionId(sessionId);
         return playerSession;
     }
 
