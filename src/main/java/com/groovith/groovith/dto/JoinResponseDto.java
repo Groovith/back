@@ -17,6 +17,10 @@ public class JoinResponseDto {
         return ResponseEntity.ok(responseDto);
     }
 
+    public static ResponseEntity<JoinResponseDto> validationFail() {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new JoinResponseDto(ResponseCode.VALIDATION_FAIL, ResponseMessage.VALIDATION_FAIL));
+    }
+
     public static ResponseEntity<JoinResponseDto> certificationFail() {
         JoinResponseDto responseDto = new JoinResponseDto(ResponseCode.CERTIFICATION_FAIL, ResponseMessage.CERTIFICATION_FAIL);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseDto);

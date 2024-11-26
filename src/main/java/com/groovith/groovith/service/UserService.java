@@ -8,11 +8,10 @@ import com.groovith.groovith.dto.*;
 import com.groovith.groovith.exception.UserNotFoundException;
 import com.groovith.groovith.provider.EmailProvider;
 import com.groovith.groovith.repository.*;
-import com.groovith.groovith.security.JwtUtil;
-import com.groovith.groovith.service.Image.ChatRoomImageService;
 import com.groovith.groovith.service.Image.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,10 +34,8 @@ public class UserService {
     private final CertificationRepository certificationRepository;
     private final PasswordResetCertificationRepository passwordResetCertificationRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
-    private final JwtUtil jwtUtil;
     private final EmailProvider emailProvider;
-    private final ChatRoomImageService chatRoomImageService;
-    private final MessageService messageService;
+    private final ChatRoomService chatRoomService;
 
 
     // 회원가입
@@ -57,6 +54,10 @@ public class UserService {
             // 이메일 인증 여부 확인
             Certification certification = certificationRepository.findById(email).orElse(null);
             if (certification == null || !certification.isCertificated()) return JoinResponseDto.certificationFail();
+
+            if (!isPasswordValid(password) || !isUsernameValid(username)) {
+                return JoinResponseDto.validationFail();
+            }
 
             // 새 유저 생성
             User user = new User();
@@ -78,22 +79,62 @@ public class UserService {
         return JoinResponseDto.success();
     }
 
+    private static boolean isPasswordValid(String password) {
+        if (password == null || password.length() < 8 || password.length() > 64) return false;
+
+        boolean hasLetter = false;
+        boolean hasDigit = false;
+        boolean hasSpecial = false;
+
+        for (char c : password.toCharArray()) {
+            if (Character.isLetter(c)) {
+                hasLetter = true;
+            } else if (Character.isDigit(c)) {
+                hasDigit = true;
+            } else if (!Character.isLetterOrDigit(c)) {
+                hasSpecial = true;
+            }
+
+            // 필요한 두 가지 조건을 만족하면 더 이상 확인할 필요 없음
+            if ((hasLetter && hasDigit) || (hasLetter && hasSpecial) || (hasDigit && hasSpecial)) {
+                return true;
+            }
+        }
+
+        // 두 가지 이상 조합을 만족하지 못한 경우
+        return false;
+    }
+
+    /**
+     * 2자 이상, 30자 이하.
+     * 영문 소문자, 숫자, 밑줄(_), 마침표(.)만 허용.
+     * 연속된 마침표(.) 사용 불가
+     * 시작과 끝에는 마침표(.) 사용 불가.
+     */
+    private static boolean isUsernameValid(String username) {
+        if (username == null || username.length() < 2 || username.length() > 30) {
+            return false;
+        }
+
+        String regex = "^[a-z0-9_](?!.*\\.{2})[a-z0-9._]*[a-z0-9_]$";
+        return username.matches(regex);
+    }
+
     // 회원탈퇴
     @Transactional
     public ResponseEntity<? super DeleteAccountResponseDto> deleteAccount(String password, Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
         // 비밀번호 확인
-        if (!bCryptPasswordEncoder.matches(password, user.getPassword())) return UpdatePasswordResponseDto.wrongPassword();
+        if (!bCryptPasswordEncoder.matches(password, user.getPassword()))
+            return UpdatePasswordResponseDto.wrongPassword();
 
         try {
             // 유저가 방장인 채팅방 삭제 -> 추후 하나의 메서드로 통일
             List<ChatRoom> chatRoomsByUser = chatRoomRepository.findAllByMasterUserId(user.getId());
             for (ChatRoom chatRoom : chatRoomsByUser) {
-                chatRoomImageService.deleteImageById(chatRoom.getId());
-                messageService.deleteAllMessageInChatRoom(chatRoom.getId());
+                chatRoomService.deleteChatRoomData(chatRoom.getId(), user.getId(), chatRoom.getMasterUserId());
             }
-            chatRoomRepository.deleteAll(chatRoomsByUser);
 
             // 유저 프로필 이미지 있는 경우 삭제
             if (!user.getImageUrl().equals(S3Directory.USER.getDefaultImageUrl())) {
@@ -115,20 +156,6 @@ public class UserService {
             return DeleteAccountResponseDto.databaseError();
         }
         return DeleteAccountResponseDto.success();
-    }
-
-    /**
-     * Access Token 을 사용해 User 객체 반환
-     *
-     * @param accessToken 서버 Access Token
-     * @return 찾은 User 객체 | User 가 DB에 없으면 UserNotFoundException 발생
-     */
-    public User getUserByAccessToken(String accessToken) {
-
-        Long userId = jwtUtil.getUserId(accessToken);
-
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
     // 다른 유저 조회
@@ -252,6 +279,11 @@ public class UserService {
             // 이미 있는 유저네임인 경우 오류 메시지 반환
             if (userRepository.existsByUsername(requestDto.getUsername()))
                 return UpdateUsernameResponseDto.duplicateId();
+
+            // 유저네임 규칙에 맞는지 확인
+            if (!isUsernameValid(requestDto.getUsername())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
 
             User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
             user.setUsername(requestDto.getUsername());

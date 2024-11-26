@@ -22,7 +22,7 @@ public abstract class AbstractImageService<T> implements ImageService {
      * */
     @Override
     public String uploadAndSaveImage(MultipartFile file) {
-        if (file == null) {
+        if (isFileEmpty(file)) {
             return getDefaultImageUrl();
         }
         String imageUrl = uploadImage(file);
@@ -35,6 +35,10 @@ public abstract class AbstractImageService<T> implements ImageService {
      * */
     @Override
     public String updateImageById(MultipartFile file, Long id) {
+        // 파일이 비어있을 경우
+        if (isFileEmpty(file)) {
+            return null;
+        }
         deleteImageById(id);
         return uploadAndSaveImage(file);
     }
@@ -53,6 +57,10 @@ public abstract class AbstractImageService<T> implements ImageService {
         return DeleteProfilePictureResponseDto.success();
     }
 
+    private boolean isFileEmpty(MultipartFile file) {
+        return file == null || file.isEmpty();
+    }
+
     protected abstract String getDefaultImageUrl();
 
     protected abstract String getDirectory();
@@ -64,5 +72,4 @@ public abstract class AbstractImageService<T> implements ImageService {
     protected abstract T findEntityById(Long id);
 
     protected abstract void saveImage(String imageUrl);
-
 }

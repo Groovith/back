@@ -36,10 +36,38 @@ public class EmailProvider {
 
     // 인증 메일 본문 생성 (+인증번호 포함)
     private String getCertificationMessage(String certificationNumber) {
-        String certificationMessage = "";
-        certificationMessage += "<h1 style='text-align: center;'>[Groovith] 인증 메일</h1>";
-        certificationMessage += "<h3 style='text-align: center;'>인증코드: <strong style='font-size: 32px; letter-spacing: 8px;'>" + certificationNumber + "</strong></h3>";
-        return certificationMessage;
+        StringBuilder message = new StringBuilder();
+        message.append("<!DOCTYPE html>");
+        message.append("<html lang=\"ko\">");
+        message.append("<head>");
+        message.append("<meta charset='UTF-8'>");
+        message.append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
+        message.append("<style>");
+        message.append("body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }");
+        message.append(".container { max-width: 600px; margin: 50px auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }");
+        message.append(".header { text-align: center; padding-bottom: 20px; border-bottom: 1px solid #ddd; }");
+        message.append(".content { margin: 20px 0; }");
+        message.append(".content a.button { display: inline-block; padding: 10px 20px; background-color: #007bff; text-decoration: none; border-radius: 5px; color: #fff !important; font-weight: bold; }"); // 구체적인 선택자 사용 및 !important 추가
+        message.append(".footer { text-align: center; margin-top: 30px; color: #888; font-size: 12px; }");
+        message.append("</style>");
+        message.append("</head>");
+        message.append("<body>");
+        message.append("<div class='container'>");
+        message.append("<div class='header'>");
+        message.append("<h2>이메일 인증</h2>");
+        message.append("</div>");
+        message.append("<div class='content'>");
+        message.append("<p>아래의 인증번호를 입력하여 이메일 인증을 완료해주세요.</p>");
+        message.append("<h3 style='text-align: center;'>인증번호: <strong style='font-size: 32px; letter-spacing: 4px;'>").append(certificationNumber).append("</strong></h3>");
+        message.append("</div>");
+        message.append("<div class='footer'>");
+        message.append("<p>&copy; 2024 Groovith. All rights reserved.</p>");
+        message.append("</div>");
+        message.append("</div>");
+        message.append("</body>");
+        message.append("</html>");
+
+        return message.toString();
     }
 
     // 비밀번호 변경 메일 전송
