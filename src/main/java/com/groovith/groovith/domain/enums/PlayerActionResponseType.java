@@ -4,6 +4,7 @@ public enum PlayerActionResponseType {
     PLAY_TRACK,
     PAUSE,
     RESUME,
+    STOP,
     SEEK,
     UPDATE,
 }

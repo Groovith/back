@@ -207,9 +207,12 @@ public class PlayerService {
         // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
         ChatRoomPermission permission = getChatRoomPermission(chatRoomId);
         boolean isMasterUser = isMasterUser(chatRoomId, userId);
-        // masterUser 만 플레이어 조작 가능 or 권한이 모두 인 경우
-        if ((permission.equals(ChatRoomPermission.MASTER) && isMasterUser)
+        if (playerRequestDto.getAction() == PlayerActionRequestType.TRACK_ENDED) {
+            // 트랙 정지의 경우 무조건 처리한다
+            trackEnded(chatRoomId);
+        } else if ((permission.equals(ChatRoomPermission.MASTER) && isMasterUser)
                 || permission.equals(ChatRoomPermission.EVERYONE)) {
+            // masterUser 만 플레이어 조작 가능 or 권한이 모두 인 경우
             // 채팅방 플레이어 세션에 메시지를 받으면 채팅방을 조회하는 유저들과 같이 듣기를 하고 있는 유저들에게 각각 따로 메시지를 전달한다.
             handleActionAndSendMessages(playerRequestDto.getAction(), chatRoomId, playerRequestDto);
         }
@@ -251,6 +254,18 @@ public class PlayerService {
         }
     }
 
+    private void trackEnded(Long chatRoomId) {
+        PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
+
+        String lockKey = "trackEndedLock:" + chatRoomId;
+        Boolean lockAcquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(5));
+
+        if (Boolean.TRUE.equals(lockAcquired)) {
+            nextTrack(playerSession, trackDtoList, chatRoomId);
+        }
+    }
+
     @Transactional(readOnly = true)
     public void pause(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
         playerSessions.put(chatRoomId, PlayerSession.pause(playerSession, playerRequestDto.getPosition()));
@@ -284,40 +299,34 @@ public class PlayerService {
 
     @Transactional(readOnly = true)
     public void nextTrack(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId) {
-        String lockKey = "nextTrackLock:" + chatRoomId;
-        Boolean lockAcquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(5));
+        try {
+            PlayerCommandDto playerCommandDto;
 
-        if (Boolean.TRUE.equals(lockAcquired)) {
-            try {
-                PlayerCommandDto playerCommandDto;
-
-                int nextIndex = playerSession.getIndex() + 1;
-                if (nextIndex < trackDtoList.size()) {
-                    // 다음 곡이 있는 경우
-                    log.info("Play Next Track: {}", nextIndex);
-                    PlayerSession.changeTrack(playerSession, nextIndex, trackDtoList.get(nextIndex).getDuration());
-                    playerCommandDto = PlayerCommandDto.playTrackAtIndex(nextIndex, trackDtoList.get(nextIndex).getVideoId());
+            int nextIndex = playerSession.getIndex() + 1;
+            if (nextIndex < trackDtoList.size()) {
+                // 다음 곡이 있는 경우
+                log.info("Play Next Track: {}", nextIndex);
+                PlayerSession.changeTrack(playerSession, nextIndex, trackDtoList.get(nextIndex).getDuration());
+                playerCommandDto = PlayerCommandDto.playTrackAtIndex(nextIndex, trackDtoList.get(nextIndex).getVideoId());
+            } else {
+                // 다음 곡이 없는 경우
+                if (playerSession.getRepeat()) {
+                    // 반복 재생이 설정되어 있는 경우
+                    PlayerSession.returnToStart(playerSession, trackDtoList.get(0).getDuration());
+                    playerCommandDto = PlayerCommandDto.playTrackAtIndex(0, trackDtoList.get(0).getVideoId());
                 } else {
-                    // 다음 곡이 없는 경우
-                    if (playerSession.getRepeat()) {
-                        // 반복 재생이 설정되어 있는 경우
-                        PlayerSession.returnToStart(playerSession, trackDtoList.get(0).getDuration());
-                        playerCommandDto = PlayerCommandDto.playTrackAtIndex(0, trackDtoList.get(0).getVideoId());
-                    } else {
-                        // 반복 재생이 설정되어 있지 않은 경우 -> 딱히 뭐 하지 않음
-                        playerCommandDto = PlayerCommandDto.builder()
-                                .build();
-                    }
+                    // 반복 재생이 설정되어 있지 않은 경우 -> 플레이어 정지
+                    playerCommandDto = PlayerCommandDto.stop();
                 }
-
-                playerSessions.put(chatRoomId, playerSession);
-                PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
-
-                // 채팅방 정보 전송
-                sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
-            } catch (Exception e) {
-                e.printStackTrace();
             }
+
+            playerSessions.put(chatRoomId, playerSession);
+            PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
+
+            // 채팅방 정보 전송
+            sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

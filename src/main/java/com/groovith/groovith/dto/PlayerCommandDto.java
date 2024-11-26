@@ -42,6 +42,12 @@ public class PlayerCommandDto {
                 .build();
     }
 
+    public static PlayerCommandDto stop() {
+        return PlayerCommandDto.builder()
+                .action(PlayerActionResponseType.STOP)
+                .build();
+    }
+
     public static PlayerCommandDto seek(Long position) {
         return PlayerCommandDto.builder()
                 .action(PlayerActionResponseType.SEEK)
