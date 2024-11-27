@@ -261,7 +261,7 @@ class ChatRoomServiceTest {
         when(chatRoomRepository.findById(anyLong()))
                 .thenReturn(Optional.of(chatRoom));
 
-        ChatRoomDetailsDto chatRoomDetailsDto = chatRoomService.findChatRoomDetail(chatroomId, userId);
+        ChatRoomDetailsDto chatRoomDetailsDto = chatRoomService.findChatRoomDetails(chatroomId, userId);
 
         //then
         Assertions.assertThat(chatRoomDetailsDto.getChatRoomId()).isEqualTo(chatroomId);

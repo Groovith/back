@@ -33,6 +33,7 @@ public class MessageService {
 
     private final MessageRepository messageRepository;
     private final UserChatRoomRepository userChatRoomRepository;
+    private final ChatRoomService chatRoomService;
 
     public MessageResponseDto saveMessage(MessageDto messageDto){
         Long userId = messageDto.getUserId();
@@ -57,17 +58,13 @@ public class MessageService {
      * */
     @Transactional(readOnly = true)
     public ResponseEntity<MessageListResponseDto> findMessages(Long chatRoomId, Long lastMessageId, Long userId){
-        if (!isMember(chatRoomId, userId)) {
+        if (!chatRoomService.isMember(chatRoomId, userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         Slice<Message> messages = messageRepository.findMessages(chatRoomId, lastMessageId);
 
         return ResponseEntity.ok().body(new MessageListResponseDto(messages.stream()
                 .map(this::createMessageResponseDto).toList()));
-    }
-
-    private boolean isMember(Long chatRoomId, Long userId) {
-        return userChatRoomRepository.existsByChatRoomIdAndUserId(chatRoomId, userId);
     }
 
     private MessageResponseDto createMessageResponseDto(Message message){
