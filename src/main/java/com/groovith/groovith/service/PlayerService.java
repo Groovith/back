@@ -14,6 +14,8 @@ import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class PlayerService {
     private final WebSocketEventListener webSocketEventListener;
     private final CurrentPlaylistRepository currentPlaylistRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final ChatRoomService chatRoomService;
     private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
     private final YoutubeService youtubeService;
     private final TrackService trackService;
@@ -47,18 +50,22 @@ public class PlayerService {
     public static final ConcurrentHashMap<String, Long> sessionIdChatRoomId = new ConcurrentHashMap<>(); // 각 유저 아이디의 플레이어 참가 여부
 
     @Transactional(readOnly = true)
-    public PlayerDetailsDto getPlayerDetails(Long chatRoomId) {
+    public ResponseEntity<PlayerDetailsDto> getPlayerDetails(Long chatRoomId, Long userId) {
+        if (!chatRoomService.isMember(chatRoomId, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         PlayerSession playerSession = playerSessions.get(chatRoomId);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
         if (playerSession == null) {
             // 현재 세션이 없는 경우
-            return PlayerDetailsDto.builder()
+            return ResponseEntity.ok().body(PlayerDetailsDto.builder()
                     .chatRoomId(chatRoomId)
                     .currentPlaylist(trackDtoList)
-                    .build();
+                    .build());
         } else {
             // 현재 세션이 있는 경우
-            return PlayerDetailsDto.builder()
+            return ResponseEntity.ok().body(PlayerDetailsDto.builder()
                     .chatRoomId(chatRoomId)
                     .currentPlaylist(trackDtoList)
                     .currentPlaylistIndex(playerSession.getIndex())
@@ -67,7 +74,7 @@ public class PlayerService {
                     .startedAt(playerSession.getStartedAt())
                     .paused(playerSession.getPaused())
                     .repeat(playerSession.getRepeat())
-                    .build();
+                    .build());
         }
     }
 

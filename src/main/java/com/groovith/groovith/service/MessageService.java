@@ -40,7 +40,7 @@ public class MessageService {
         Long chatRoomId = messageDto.getChatRoomId();
 
         UserChatRoom userChatRoom = userChatRoomRepository.findByUserIdAndChatRoomId(userId, chatRoomId)
-                .orElseThrow(()->new UserChatRoomNotFoundException(userId, chatRoomId));
+                .orElseThrow(()-> new UserChatRoomNotFoundException(userId, chatRoomId));
 
         // 메세지 생성
         Message message = Message.setMessage(
