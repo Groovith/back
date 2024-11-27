@@ -6,6 +6,7 @@ import com.groovith.groovith.dto.MessageListResponseDto;
 import com.groovith.groovith.dto.MessageRequestDto;
 import com.groovith.groovith.dto.MessageResponseDto;
 import com.groovith.groovith.repository.UserRepository;
+import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.MessageService;
 import com.groovith.groovith.dto.MessageDto;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -65,8 +67,10 @@ public class MessageController {
     @GetMapping("/api/chat/{chatRoomId}")
     public ResponseEntity<MessageListResponseDto> messages(
             @PathVariable(name = "chatRoomId") Long chatRoomId,
-            @RequestParam(required = false) Long lastMessageId) {
-        return new ResponseEntity<>(messageService.findMessages(chatRoomId, lastMessageId), HttpStatus.OK);
+            @RequestParam(required = false) Long lastMessageId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+            ) {
+        return messageService.findMessages(chatRoomId, lastMessageId, userDetails.getUserId());
     }
 
     private MessageDto createMessageDto(Long chatRoomId, Long userId, Optional<User> user, MessageRequestDto messageRequestDto) {

@@ -1,6 +1,7 @@
 package com.groovith.groovith.service;
 
 
+import com.groovith.groovith.domain.ChatRoom;
 import com.groovith.groovith.domain.Message;
 import com.groovith.groovith.domain.UserChatRoom;
 import com.groovith.groovith.domain.enums.S3Directory;
@@ -15,6 +16,8 @@ import com.groovith.groovith.repository.UserChatRoomRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Slice;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,11 +56,18 @@ public class MessageService {
      * 채팅방 채팅 조회
      * */
     @Transactional(readOnly = true)
-    public MessageListResponseDto findMessages(Long chatRoomId, Long lastMessageId){
+    public ResponseEntity<MessageListResponseDto> findMessages(Long chatRoomId, Long lastMessageId, Long userId){
+        if (!isMember(chatRoomId, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         Slice<Message> messages = messageRepository.findMessages(chatRoomId, lastMessageId);
 
-        return new MessageListResponseDto(messages.stream()
-                .map(this::createMessageResponseDto).toList());
+        return ResponseEntity.ok().body(new MessageListResponseDto(messages.stream()
+                .map(this::createMessageResponseDto).toList()));
+    }
+
+    private boolean isMember(Long chatRoomId, Long userId) {
+        return userChatRoomRepository.existsByChatRoomIdAndUserId(chatRoomId, userId);
     }
 
     private MessageResponseDto createMessageResponseDto(Message message){
