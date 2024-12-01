@@ -74,24 +74,22 @@ public class PlayerService {
                 .orElseGet(() -> getPlayerDetailsDtoWithoutPlayerSession(chatRoomId, trackDtoList));
     }
 
+    /*   유저의 sessionId를 받아온다.
+         sessionId를 sessionIdChatRoomId에 등록한다.
+         기존의 다른 채팅방 토픽 구독은 이미 해제했을 것을 전제한다.
+         chatRoomId로 세션 인원을 증가시킨다.
+         chatRoomId로 세션 정보를 찾는다.
+         없다면 첫 손님이므로 세션을 만들고 초기화 한다.
+         * 채팅방 현재 플레이리스트는 이미 가지고 있을 것을 전제한다*/
     public PlayerDetailsDto joinPlayer(Long chatRoomId, Long userId) {
-        // 유저의 sessionId를 받아온다.
-        // sessionId를 sessionIdChatRoomId에 등록한다.
-        // 기존의 다른 채팅방 토픽 구독은 이미 해제했을 것을 전제한다.
-        // chatRoomId로 세션 인원을 증가시킨다.
-        // chatRoomId로 세션 정보를 찾는다.
-        // 없다면 첫 손님이므로 세션을 만들고 초기화 한다.
-        // * 채팅방 현재 플레이리스트는 이미 가지고 있을 것을 전제한다
         String sessionId = getWebSocketSessionIdByUserId(userId);
         Long existingChatRoomId = sessionIdChatRoomId.get(sessionId);
-
         // 이미 동일한 채팅방에 참가 중이라면 인원수를 증가시키지 않음
         if (chatRoomId.equals(existingChatRoomId)) {
             PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
             List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
             return getPlayerDetailsDtoWithPlayerSession(chatRoomId, trackDtoList, playerSession);
         }
-
         // sessionId를 sessionIdChatRoomId에 등록한다.
         sessionIdChatRoomId.put(sessionId, chatRoomId);
 
@@ -155,7 +153,6 @@ public class PlayerService {
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
         return chatRoom.getMasterUserId().equals(userId);
     }
-
 
     private void handleActionAndSendMessages(PlayerActionRequestType action, Long chatRoomId, PlayerRequestDto playerRequestDto) throws IOException {
         PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
