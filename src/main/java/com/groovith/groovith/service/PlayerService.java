@@ -343,7 +343,7 @@ public class PlayerService {
 
     private void deleteUserFromPlayerSession(PlayerSession playerSession, String sessionId) {
         playerSession.removeSessionId(sessionId);
-        playerSession.decreaseUserCount();
+        playerSession.updateUserCount();
         playerSessionRepository.save(playerSession);
     }
 
