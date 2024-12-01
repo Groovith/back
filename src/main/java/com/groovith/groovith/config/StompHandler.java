@@ -39,7 +39,6 @@ public class StompHandler implements ChannelInterceptor {
 
             // userId 를 토큰에서부터 받아오게끔 수정
             Long userId = jwtUtil.getUserId(token);
-            log.info("userId : {}", userId);
 
             jwtUtil.validateToken(token);
 

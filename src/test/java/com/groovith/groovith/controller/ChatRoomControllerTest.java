@@ -18,7 +18,6 @@ import com.groovith.groovith.service.MessageService;
 import com.groovith.groovith.service.NotificationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
@@ -30,10 +29,6 @@ import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequ
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
@@ -155,7 +150,7 @@ class ChatRoomControllerTest {
         ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         ChatRoomDetailsDto detailDto = new ChatRoomDetailsDto(chatRoom, chatRoom.getIsMaster(userId));
         //when
-        when(chatRoomService.findChatRoomDetail(chatRoomId, userId))
+        when(chatRoomService.findChatRoomDetails(chatRoomId, userId))
                 .thenReturn(detailDto);
 
         ResultActions actions = mockMvc.perform(

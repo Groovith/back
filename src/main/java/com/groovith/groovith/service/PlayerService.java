@@ -14,6 +14,8 @@ import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 @Service
@@ -41,24 +44,45 @@ public class PlayerService {
     private final WebSocketEventListener webSocketEventListener;
     private final CurrentPlaylistRepository currentPlaylistRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final ChatRoomService chatRoomService;
     private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
     private final YoutubeService youtubeService;
     private final TrackService trackService;
     private final PlaylistService playlistService;
     private final StringRedisTemplate redisTemplate;
-    private final PlayerSessionRepository playerSessionRepository;
+    private static final int MAX_PLAYLIST_ITEMS = 100;
 
+    public static final ConcurrentHashMap<Long, PlayerSession> playerSessions = new ConcurrentHashMap<>(); // 채팅방 플레이어 정보 (chatRoomId, PlayerSessionDto)
     public static final ConcurrentHashMap<String, Long> sessionIdChatRoomId = new ConcurrentHashMap<>(); // 각 유저 아이디의 플레이어 참가 여부
 
     @Transactional(readOnly = true)
-    public PlayerDetailsDto getPlayerDetails(Long chatRoomId) {
+    public ResponseEntity<PlayerDetailsDto> getPlayerDetails(Long chatRoomId, Long userId) {
+        if (!chatRoomService.isMember(chatRoomId, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        PlayerSession playerSession = playerSessions.get(chatRoomId);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
-
-        return getOptionalPlayerSessionByChatRoomId(chatRoomId)
-                .map(playerSession -> getPlayerDetailsDtoWithPlayerSession(chatRoomId, trackDtoList, playerSession))
-                .orElseGet(() -> getPlayerDetailsDtoWithoutPlayerSession(chatRoomId, trackDtoList));
+        if (playerSession == null) {
+            // 현재 세션이 없는 경우
+            return ResponseEntity.ok().body(PlayerDetailsDto.builder()
+                    .chatRoomId(chatRoomId)
+                    .currentPlaylist(trackDtoList)
+                    .build());
+        } else {
+            // 현재 세션이 있는 경우
+            return ResponseEntity.ok().body(PlayerDetailsDto.builder()
+                    .chatRoomId(chatRoomId)
+                    .currentPlaylist(trackDtoList)
+                    .currentPlaylistIndex(playerSession.getIndex())
+                    .userCount(playerSession.getUserCount().get())
+                    .lastPosition(playerSession.getLastPosition())
+                    .startedAt(playerSession.getStartedAt())
+                    .paused(playerSession.getPaused())
+                    .repeat(playerSession.getRepeat())
+                    .build());
+        }
     }
-
 
     public PlayerDetailsDto joinPlayer(Long chatRoomId, Long userId) {
         // 유저의 sessionId를 받아온다.
@@ -102,7 +126,6 @@ public class PlayerService {
         return playerDetailsDto;
     }
 
-
     @Transactional(readOnly = true)
     public void leavePlayer(Long chatRoomId, Long userId) {
         // 유저의 sessionId를 받아온다.
@@ -142,7 +165,6 @@ public class PlayerService {
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
         return chatRoom.getMasterUserId().equals(userId);
     }
-
 
 
     private void handleActionAndSendMessages(PlayerActionRequestType action, Long chatRoomId, PlayerRequestDto playerRequestDto) throws IOException {
@@ -194,6 +216,7 @@ public class PlayerService {
         PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
         PlayerCommandDto playerCommandDto = PlayerCommandDto.seek(playerRequestDto.getPosition());
 
+        // 채팅방 정보 전송
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
 
@@ -470,7 +493,7 @@ public class PlayerService {
 
     private void sendMessages(Long chatRoomId, PlayerDetailsDto playerDetailsDto, PlayerCommandDto playerCommandDto) {
         // 채팅방 정보 전송
-        sendPlayerDetailsToChatRoom(chatRoomId, playerDetailsDto);
+        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
         // 같이 듣기 액션 전송
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
     }

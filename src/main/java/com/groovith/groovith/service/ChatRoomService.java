@@ -94,9 +94,16 @@ public class ChatRoomService {
      * 채팅방 상세 조회
      */
     @Transactional(readOnly = true)
-    public ChatRoomDetailsDto findChatRoomDetail(Long chatRoomId, Long userId) {
+    public ResponseEntity<ChatRoomDetailsDto> findChatRoomDetails(Long chatRoomId, Long userId) {
+        if (!isMember(chatRoomId, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         ChatRoom chatRoom = findChatRoomById(chatRoomId);
-        return createChatRoomDetailsDto(chatRoom, chatRoom.getIsMaster(userId));
+        return ResponseEntity.ok().body(createChatRoomDetailsDto(chatRoom, chatRoom.getIsMaster(userId)));
+    }
+
+    public boolean isMember(Long chatRoomId, Long userId) {
+        return userChatRoomRepository.existsByChatRoomIdAndUserId(chatRoomId, userId);
     }
 
     /**

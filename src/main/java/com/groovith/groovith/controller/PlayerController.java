@@ -2,12 +2,8 @@ package com.groovith.groovith.controller;
 
 import com.groovith.groovith.dto.PlayerRequestDto;
 import com.groovith.groovith.dto.PlayerDetailsDto;
-import com.groovith.groovith.dto.TrackDto;
-import com.groovith.groovith.repository.TrackRepository;
 import com.groovith.groovith.security.CustomUserDetails;
 import com.groovith.groovith.service.PlayerService;
-import com.groovith.groovith.service.TrackService;
-import com.groovith.groovith.service.YoutubeService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -39,8 +35,8 @@ public class PlayerController {
     }
 
     @GetMapping
-    public ResponseEntity<PlayerDetailsDto> getPlayerDetails(@PathVariable Long chatRoomId) {
-        return ResponseEntity.ok(playerService.getPlayerDetails(chatRoomId));
+    public ResponseEntity<PlayerDetailsDto> getPlayerDetails(@PathVariable Long chatRoomId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return playerService.getPlayerDetails(chatRoomId, userDetails.getUserId());
     }
 
     @MessageMapping({"/api/chatrooms/{chatRoomId}/player/listen-together"})
