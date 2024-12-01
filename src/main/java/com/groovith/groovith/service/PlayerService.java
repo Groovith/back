@@ -26,7 +26,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 @Service
@@ -43,16 +42,15 @@ public class PlayerService {
     private final SimpMessageSendingOperations template;
     private final WebSocketEventListener webSocketEventListener;
     private final CurrentPlaylistRepository currentPlaylistRepository;
+    private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
+    private final PlayerSessionRepository playerSessionRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatRoomService chatRoomService;
-    private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
     private final YoutubeService youtubeService;
     private final TrackService trackService;
     private final PlaylistService playlistService;
     private final StringRedisTemplate redisTemplate;
-    private static final int MAX_PLAYLIST_ITEMS = 100;
 
-    public static final ConcurrentHashMap<Long, PlayerSession> playerSessions = new ConcurrentHashMap<>(); // 채팅방 플레이어 정보 (chatRoomId, PlayerSessionDto)
     public static final ConcurrentHashMap<String, Long> sessionIdChatRoomId = new ConcurrentHashMap<>(); // 각 유저 아이디의 플레이어 참가 여부
 
     @Transactional(readOnly = true)
@@ -60,28 +58,20 @@ public class PlayerService {
         if (!chatRoomService.isMember(chatRoomId, userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
-        if (playerSession == null) {
-            // 현재 세션이 없는 경우
-            return ResponseEntity.ok().body(PlayerDetailsDto.builder()
-                    .chatRoomId(chatRoomId)
-                    .currentPlaylist(trackDtoList)
-                    .build());
-        } else {
-            // 현재 세션이 있는 경우
-            return ResponseEntity.ok().body(PlayerDetailsDto.builder()
-                    .chatRoomId(chatRoomId)
-                    .currentPlaylist(trackDtoList)
-                    .currentPlaylistIndex(playerSession.getIndex())
-                    .userCount(playerSession.getUserCount().get())
-                    .lastPosition(playerSession.getLastPosition())
-                    .startedAt(playerSession.getStartedAt())
-                    .paused(playerSession.getPaused())
-                    .repeat(playerSession.getRepeat())
-                    .build());
-        }
+
+        return getOptionalPlayerSessionByChatRoomId(chatRoomId)
+                .map(playerSession -> ResponseEntity.ok().body(getPlayerDetailsDtoWithPlayerSession(chatRoomId, trackDtoList, playerSession)))
+                .orElseGet(() -> ResponseEntity.ok().body(getPlayerDetailsDtoWithoutPlayerSession(chatRoomId, trackDtoList)));
+    }
+
+    @Transactional(readOnly = true)
+    public PlayerDetailsDto getPlayerDetails(Long chatRoomId) {
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
+
+        return getOptionalPlayerSessionByChatRoomId(chatRoomId)
+                .map(playerSession -> getPlayerDetailsDtoWithPlayerSession(chatRoomId, trackDtoList, playerSession))
+                .orElseGet(() -> getPlayerDetailsDtoWithoutPlayerSession(chatRoomId, trackDtoList));
     }
 
     public PlayerDetailsDto joinPlayer(Long chatRoomId, Long userId) {
@@ -343,7 +333,7 @@ public class PlayerService {
     }
 
     private PlayerSession initializeNewPlayerSession(Long chatRoomId, String sessionId, CurrentPlaylist currentPlaylist) {
-        PlayerSession playerSession = createPlayerSession(chatRoomId, sessionId, currentPlaylist);
+        PlayerSession playerSession = createPlayerSession(chatRoomId, currentPlaylist);
         playerSession.addSessionId(sessionId);
         return savePlaySession(playerSession);
     }
@@ -449,7 +439,7 @@ public class PlayerService {
         return currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow(() -> new PlayListNotFoundException(chatRoomId));
     }
 
-    private PlayerSession createPlayerSession(Long chatRoomId, String sessionId, CurrentPlaylist currentPlaylist) {
+    private PlayerSession createPlayerSession(Long chatRoomId, CurrentPlaylist currentPlaylist) {
         PlayerSession playerSession = PlayerSession.builder()
                 .chatRoomId(chatRoomId)
                 .index(INITIAL_INDEX)
