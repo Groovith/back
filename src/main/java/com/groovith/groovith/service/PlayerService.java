@@ -5,11 +5,11 @@ import com.groovith.groovith.domain.*;
 import com.groovith.groovith.domain.enums.ChatRoomPermission;
 import com.groovith.groovith.domain.enums.PlayerActionRequestType;
 import com.groovith.groovith.dto.*;
-import com.groovith.groovith.exception.ChatRoomNotFoundException;
-import com.groovith.groovith.exception.CurrentPlayListFullException;
+import com.groovith.groovith.exception.*;
 import com.groovith.groovith.repository.ChatRoomRepository;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
 import com.groovith.groovith.repository.CurrentPlaylistTrackRepository;
+import com.groovith.groovith.repository.PlayerSessionRepository;
 import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +17,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,28 +24,33 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 @Service
 @AllArgsConstructor
 @Slf4j
 public class PlayerService {
+
+    private static final int MAX_PLAYLIST_ITEMS = 100;
+    private static final int INITIAL_INDEX = 0;
+    private static final long INITIAL_POSITION = 0L;
+    private static final boolean INITIAL_REPEAT_SETTING = true;
+    private static final int INITIAL_USER_COUNT = 1;
+
     private final SimpMessageSendingOperations template;
     private final WebSocketEventListener webSocketEventListener;
     private final CurrentPlaylistRepository currentPlaylistRepository;
+    private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
+    private final PlayerSessionRepository playerSessionRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatRoomService chatRoomService;
-    private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
     private final YoutubeService youtubeService;
     private final TrackService trackService;
     private final PlaylistService playlistService;
     private final StringRedisTemplate redisTemplate;
-    private static final int MAX_PLAYLIST_ITEMS = 100;
 
-    public static final ConcurrentHashMap<Long, PlayerSession> playerSessions = new ConcurrentHashMap<>(); // 채팅방 플레이어 정보 (chatRoomId, PlayerSessionDto)
     public static final ConcurrentHashMap<String, Long> sessionIdChatRoomId = new ConcurrentHashMap<>(); // 각 유저 아이디의 플레이어 참가 여부
 
     @Transactional(readOnly = true)
@@ -54,159 +58,84 @@ public class PlayerService {
         if (!chatRoomService.isMember(chatRoomId, userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
-        if (playerSession == null) {
-            // 현재 세션이 없는 경우
-            return ResponseEntity.ok().body(PlayerDetailsDto.builder()
-                    .chatRoomId(chatRoomId)
-                    .currentPlaylist(trackDtoList)
-                    .build());
-        } else {
-            // 현재 세션이 있는 경우
-            return ResponseEntity.ok().body(PlayerDetailsDto.builder()
-                    .chatRoomId(chatRoomId)
-                    .currentPlaylist(trackDtoList)
-                    .currentPlaylistIndex(playerSession.getIndex())
-                    .userCount(playerSession.getUserCount().get())
-                    .lastPosition(playerSession.getLastPosition())
-                    .startedAt(playerSession.getStartedAt())
-                    .paused(playerSession.getPaused())
-                    .repeat(playerSession.getRepeat())
-                    .build());
-        }
+
+        return getOptionalPlayerSessionByChatRoomId(chatRoomId)
+                .map(playerSession -> ResponseEntity.ok().body(getPlayerDetailsDtoWithPlayerSession(chatRoomId, trackDtoList, playerSession)))
+                .orElseGet(() -> ResponseEntity.ok().body(getPlayerDetailsDtoWithoutPlayerSession(chatRoomId, trackDtoList)));
     }
 
+    @Transactional(readOnly = true)
+    public PlayerDetailsDto getPlayerDetails(Long chatRoomId) {
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
+
+        return getOptionalPlayerSessionByChatRoomId(chatRoomId)
+                .map(playerSession -> getPlayerDetailsDtoWithPlayerSession(chatRoomId, trackDtoList, playerSession))
+                .orElseGet(() -> getPlayerDetailsDtoWithoutPlayerSession(chatRoomId, trackDtoList));
+    }
+
+    /*   유저의 sessionId를 받아온다.
+         sessionId를 sessionIdChatRoomId에 등록한다.
+         기존의 다른 채팅방 토픽 구독은 이미 해제했을 것을 전제한다.
+         chatRoomId로 세션 인원을 증가시킨다.
+         chatRoomId로 세션 정보를 찾는다.
+         없다면 첫 손님이므로 세션을 만들고 초기화 한다.
+         * 채팅방 현재 플레이리스트는 이미 가지고 있을 것을 전제한다*/
     public PlayerDetailsDto joinPlayer(Long chatRoomId, Long userId) {
-        // 유저의 sessionId를 받아온다.
-        // sessionId를 sessionIdChatRoomId에 등록한다.
-        // 기존의 다른 채팅방 토픽 구독은 이미 해제했을 것을 전제한다.
-        // chatRoomId로 세션 인원을 증가시킨다.
-        // chatRoomId로 세션 정보를 찾는다.
-        // 없다면 첫 손님이므로 세션을 만들고 초기화 한다.
-        // * 채팅방 현재 플레이리스트는 이미 가지고 있을 것을 전제한다.
-        String sessionId = webSocketEventListener.getSessionIdByUserId(userId).orElseThrow(() -> new RuntimeException("웹소켓 세션에 등록되지 않은 userId 입니다. userId: " + userId));
-        // 유저가 이미 어떤 채팅방에 참가 중인지 확인
+        String sessionId = getWebSocketSessionIdByUserId(userId);
         Long existingChatRoomId = sessionIdChatRoomId.get(sessionId);
+        handleExistingPlayerSession(existingChatRoomId, sessionId);
 
         // 이미 동일한 채팅방에 참가 중이라면 인원수를 증가시키지 않음
         if (chatRoomId.equals(existingChatRoomId)) {
-            PlayerSession playerSession = playerSessions.get(chatRoomId);
-            CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
-            List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
-                    .map(currentPlaylistTrack -> new TrackDto(currentPlaylistTrack.getTrack()))
-                    .toList();
-            return PlayerDetailsDto.builder()
-                    .chatRoomId(chatRoomId)
-                    .currentPlaylistIndex(playerSession.getIndex())
-                    .lastPosition(playerSession.getLastPosition())
-                    .startedAt(playerSession.getStartedAt())
-                    .repeat(playerSession.getRepeat())
-                    .paused(playerSession.getPaused())
-                    .userCount(playerSession.getUserCount().get())
-                    .currentPlaylist(trackDtoList)
-                    .build();
+            PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
+            List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
+            return getPlayerDetailsDtoWithPlayerSession(chatRoomId, trackDtoList, playerSession);
         }
 
         // sessionId를 sessionIdChatRoomId에 등록한다.
         sessionIdChatRoomId.put(sessionId, chatRoomId);
 
-        // 플레이어 세션을 불러온다. 없다면 새로 생성한다. 있다면 현재 인원을 증가시킨다.
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
-        List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
-                .map(currentPlaylistTrack -> new TrackDto(currentPlaylistTrack.getTrack()))
-                .toList();
+        CurrentPlaylist currentPlaylist = getCurrentPlayListByChatRoomId(chatRoomId);
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
 
-        if (playerSession == null) {
-            PlayerSession newSession = new PlayerSession();
-            // 현재 플레이리스트에 곡이 있다면 처음 곡으로 설정한다. 없다면 그대로 둔다.
-            if (currentPlaylist.getCurrentPlaylistTracks().isEmpty()) {
-                // 세션 생성시에 반복재생 설정
-                newSession.setPaused(true);
-                newSession.setRepeat(true);
-                newSession.setIndex(0);
-            } else {
-                newSession.setIndex(0);
-                newSession.setPaused(false);
-                newSession.setLastPosition(0L);
-                newSession.setRepeat(true);
-                newSession.setDuration(currentPlaylist.getCurrentPlaylistTracks().get(0).getTrack().getDuration());
-                newSession.setStartedAt(LocalDateTime.now());
-            }
-            playerSessions.put(chatRoomId, newSession);
+        PlayerDetailsDto playerDetailsDto = getOptionalPlayerSessionByChatRoomId(chatRoomId)
+                .map(playerSession -> {
+                    // 플레이어 세션이 존재 할 경우: sessionId를 세션에 추가, 인원 추가
+                    PlayerSession updatedSession = addSessionIdToPlayerSession(playerSession, sessionId);
+                    return getPlayerDetailsDtoWithPlayerSession(chatRoomId, trackDtoList, updatedSession);
+                })
+                .orElseGet(() -> {
+                    // 존재하지 않을 경우: 세션 생성, 메시지 전달
+                    PlayerSession newSession = initializeNewPlayerSession(chatRoomId, sessionId, currentPlaylist);
+                    PlayerDetailsDto dto = createPlayerDetailsDto(chatRoomId, newSession, trackDtoList);
+                    sendPlayerDetailsToChatRoom(chatRoomId, dto);
+                    return dto;
+                });
 
-            newSession.setUserCount(new AtomicInteger(1));
-
-            PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                    .chatRoomId(chatRoomId)
-                    .currentPlaylistIndex(newSession.getIndex())
-                    .lastPosition(newSession.getLastPosition())
-                    .startedAt(newSession.getStartedAt())
-                    .repeat(newSession.getRepeat())
-                    .paused(newSession.getPaused())
-                    .userCount(newSession.getUserCount().get())
-                    .currentPlaylist(trackDtoList)
-                    .build();
-
-            // 채팅방에 알린다
-            template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
-
-            return playerDetailsDto;
-
-        } else {
-            playerSession.getUserCount().incrementAndGet();
-        }
-
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                .chatRoomId(chatRoomId)
-                .currentPlaylistIndex(playerSession.getIndex())
-                .lastPosition(playerSession.getLastPosition())
-                .startedAt(playerSession.getStartedAt())
-                .repeat(playerSession.getRepeat())
-                .paused(playerSession.getPaused())
-                .userCount(playerSession.getUserCount().get())
-                .currentPlaylist(trackDtoList)
-                .build();
-
-        // 채팅방에 알린다
-        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
-
+        sendPlayerDetailsToChatRoom(chatRoomId, playerDetailsDto);
         return playerDetailsDto;
+    }
+
+    private void handleExistingPlayerSession(Long existingChatRoomId, String sessionId) {
+        if(existingChatRoomId != null) {
+            getOptionalPlayerSessionByChatRoomId(existingChatRoomId)
+                    .ifPresent(playerSession -> deleteUserFromPlayerSession(playerSession, sessionId));
+        }
     }
 
     @Transactional(readOnly = true)
     public void leavePlayer(Long chatRoomId, Long userId) {
         // 유저의 sessionId를 받아온다.
-        String sessionId = webSocketEventListener.getSessionIdByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("웹소켓 세션에 등록되지 않은 userId 입니다. userId: " + userId));
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId)
-                .orElseThrow(() -> new RuntimeException(chatRoomId + "의 현재 플레이리스트가 없습니다."));
-        List<TrackDto> trackDtoList = currentPlaylist.getCurrentPlaylistTracks().stream()
-                .map(currentPlaylistTrack -> new TrackDto(currentPlaylistTrack.getTrack()))
-                .toList();
-        // sessionIdChatRoomId 에서 sessionId를 삭제한다.
+        String sessionId = getWebSocketSessionIdByUserId(userId);
         sessionIdChatRoomId.remove(sessionId);
 
-        // chatRoomId로 세션 인원을 감소시킨다.
-        AtomicInteger count = playerSessions.get(chatRoomId).getUserCount();
-        if (count != null) {
-            int currentUserCount = count.decrementAndGet();
-            if (currentUserCount <= 0) {
-                // 인원이 0명이 된 경우 해당 세션을 삭제한다.
-                playerSessions.remove(chatRoomId);
-                System.out.println("채팅방 " + chatRoomId + " 의 플레이어에 참가자가 없어서 세션이 삭제되었습니다.");
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
 
-                // 채팅방에 알린다
-                PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.builder()
-                        .chatRoomId(chatRoomId)
-                        .currentPlaylist(trackDtoList)
-                        .build();
-
-                template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
-            }
-        }
+        PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
+        deleteUserFromPlayerSession(playerSession, sessionId);
+        // 세션이 비었을 경우 삭제
+        handleEmptyPlayerSession(playerSession, chatRoomId, trackDtoList);
     }
 
     @Transactional
@@ -247,8 +176,7 @@ public class PlayerService {
             case PLAY_AT_INDEX -> playAtIndex(playerSession, trackDtoList, chatRoomId, playerRequestDto);
             case ADD_TO_CURRENT_PLAYLIST -> {
                 if (playerRequestDto.getVideoId() != null) {
-                    TrackDto trackDto = youtubeService.getVideo(playerRequestDto.getVideoId());
-                    trackService.save(trackDto);
+                    TrackDto trackDto = saveTrack(playerRequestDto.getVideoId());
                     addToCurrentPlaylist(playerSession, trackDtoList, chatRoomId, trackDto);
                 }
             }
@@ -261,23 +189,10 @@ public class PlayerService {
         }
     }
 
-    private void trackEnded(Long chatRoomId) {
-        PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
-        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
-
-        String lockKey = "trackEndedLock:" + chatRoomId;
-        Boolean lockAcquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(5));
-
-        if (Boolean.TRUE.equals(lockAcquired)) {
-            nextTrack(playerSession, trackDtoList, chatRoomId);
-        }
-    }
-
     @Transactional(readOnly = true)
     public void pause(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        playerSessions.put(chatRoomId, PlayerSession.pause(playerSession, playerRequestDto.getPosition()));
-
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
+        PlayerSession updatedPlayerSession = savePlaySession(PlayerSession.pause(playerSession, playerRequestDto.getPosition()));
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
         PlayerCommandDto playerCommandDto = PlayerCommandDto.pause(playerRequestDto.getPosition());
 
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
@@ -285,9 +200,8 @@ public class PlayerService {
 
     @Transactional(readOnly = true)
     public void resume(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        playerSessions.put(chatRoomId, PlayerSession.resume(playerSession, playerRequestDto.getPosition()));
-
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
+        PlayerSession updatedPlayerSession = savePlaySession(PlayerSession.resume(playerSession, playerRequestDto.getPosition()));
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
         PlayerCommandDto playerCommandDto = PlayerCommandDto.resume(playerRequestDto.getPosition());
 
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
@@ -295,9 +209,8 @@ public class PlayerService {
 
     @Transactional(readOnly = true)
     public void seek(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        playerSessions.put(chatRoomId, PlayerSession.seek(playerSession, playerRequestDto.getPosition()));
-
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
+        PlayerSession updatedPlayerSession = savePlaySession(PlayerSession.seek(playerSession, playerRequestDto.getPosition()));
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
         PlayerCommandDto playerCommandDto = PlayerCommandDto.seek(playerRequestDto.getPosition());
 
         // 채팅방 정보 전송
@@ -327,13 +240,25 @@ public class PlayerService {
                 }
             }
 
-            playerSessions.put(chatRoomId, playerSession);
-            PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
+            PlayerSession updatedPlayerSession = savePlaySession(playerSession);
+            PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
 
             // 채팅방 정보 전송
             sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void trackEnded(Long chatRoomId) {
+        PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
+        List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
+
+        String lockKey = "trackEndedLock:" + chatRoomId;
+        Boolean lockAcquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(5));
+
+        if (Boolean.TRUE.equals(lockAcquired)) {
+            nextTrack(playerSession, trackDtoList, chatRoomId);
         }
     }
 
@@ -360,9 +285,8 @@ public class PlayerService {
             }
         }
 
-        playerSessions.put(chatRoomId, playerSession);
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
-
+        PlayerSession updatedPlayerSession = savePlaySession(playerSession);
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
         // 채팅방 정보 전송
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
@@ -377,11 +301,9 @@ public class PlayerService {
 
         // 플레이어 세션 수정
         PlayerSession.changeTrack(playerSession, requestedIndex, trackDtoList.get(requestedIndex).getDuration());
-        playerSessions.put(chatRoomId, playerSession);
-
+        PlayerSession updatedPlayerSession = savePlaySession(playerSession);
         // 현재 플레이리스트 정보 갱신
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
-
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
         // 플레이 트랙 액션 전송
         PlayerCommandDto playerCommandDto = PlayerCommandDto.playTrackAtIndex(requestedIndex, trackDtoList.get(requestedIndex).getVideoId());
 
@@ -391,23 +313,16 @@ public class PlayerService {
 
     @Transactional
     public void addToCurrentPlaylist(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, TrackDto trackDto) {
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow();
+        CurrentPlaylist currentPlaylist = getCurrentPlayListByChatRoomId(chatRoomId);
         // 플레이리스트가 다 찼을 경우(100곡)
-        if (trackDtoList.size() >= MAX_PLAYLIST_ITEMS) {
-            throw new CurrentPlayListFullException(currentPlaylist.getId());
-        }
-
+        validatePlaylistCapacity(currentPlaylist, trackDtoList);
         // 플레이리스트에 새로운 트랙 추가(새 연관관계 생성)
-        Track track = new Track(trackDto);
-        CurrentPlaylistTrack currentPlaylistTrack = CurrentPlaylistTrack.setPlaylistTrack(currentPlaylist, track);
-        currentPlaylistTrackRepository.save(currentPlaylistTrack);
+        saveTrackToCurrentPlayList(currentPlaylist, trackDto);
         trackDtoList = getTrackDtoList(chatRoomId);
-
-        // 채팅방 정보 갱신
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
-
-        // 플레이리스트 업데이트 알림 전송
-        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList, playerSession.getIndex()));
+        // 플레이리스트 업데이트 알림 전송: 갱신된 채팅방 정보
+        sendMessages(chatRoomId
+                , PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList)
+                , PlayerCommandDto.updatePlaylist(trackDtoList, playerSession.getIndex()));
     }
 
     @Transactional
@@ -415,15 +330,162 @@ public class PlayerService {
         // 플레이리스트에서 해당 인덱스의 트랙 삭제
         playlistService.deleteTrackByIndex(chatRoomId, index);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
-
         PlayerSession.removeTrack(playerSession, index);
-        playerSessions.put(chatRoomId, playerSession);
-
+        PlayerSession updatedPlayerSession = savePlaySession(playerSession);
+        // 재생목록에서 현재 재생중인 트랙 삭제했을때 로직 필요
         // 채팅방 정보 갱신
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
-
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
         // 플레이리스트 업데이트 알림 전송
-        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList, playerSession.getIndex()));
+        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList, updatedPlayerSession.getIndex()));
+    }
+
+    private PlayerSession initializeNewPlayerSession(Long chatRoomId, String sessionId, CurrentPlaylist currentPlaylist) {
+        PlayerSession playerSession = createPlayerSession(chatRoomId, currentPlaylist);
+        playerSession.addSessionId(sessionId);
+        return savePlaySession(playerSession);
+    }
+
+    private PlayerSession addSessionIdToPlayerSession(PlayerSession playerSession, String sessionId) {
+        playerSession.addSessionId(sessionId);
+        playerSession.updateUserCount();
+        return savePlaySession(playerSession);
+    }
+
+    private void deleteUserFromPlayerSession(PlayerSession playerSession, String sessionId) {
+        playerSession.removeSessionId(sessionId);
+        playerSession.updateUserCount();
+        playerSessionRepository.save(playerSession);
+    }
+
+    private TrackDto saveTrack(String videoId) throws IOException {
+        TrackDto trackDto = youtubeService.getVideo(videoId);
+        trackService.save(trackDto);
+        return trackDto;
+    }
+
+    private PlayerSession savePlaySession(PlayerSession playerSession) {
+        return playerSessionRepository.save(playerSession);
+    }
+
+    private void deletePlaySession(PlayerSession playerSession) {
+        playerSessionRepository.delete(playerSession);
+    }
+
+    private PlayerSession getPlayerSessionByChatRoomId(Long chatRoomId) {
+        return playerSessionRepository.findById(chatRoomId)
+                .orElseThrow(() -> new PlayerSessionNotFoundException(chatRoomId));
+    }
+
+    private Optional<PlayerSession> getOptionalPlayerSessionByChatRoomId(Long chatRoomId) {
+        return playerSessionRepository.findById(chatRoomId);
+    }
+
+    private String getWebSocketSessionIdByUserId(Long userId) {
+        return webSocketEventListener.getSessionIdByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("웹소켓 세션에 등록되지 않은 userId 입니다. userId: " + userId));
+    }
+
+    private ChatRoom getChatRoomByChatRoomId(Long chatRoomId) {
+        return chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
+    }
+
+
+    private void handleEmptyPlayerSession(PlayerSession playerSession, Long chatRoomId, List<TrackDto> trackDtoList) {
+        if (playerSession.getSessionIds().isEmpty()) {
+            deletePlaySession(playerSession);
+            // 채팅방에 알린다
+            sendPlayerDetailsToChatRoom(chatRoomId, getPlayerDetailsDtoWithoutPlayerSession(chatRoomId, trackDtoList));
+        }
+    }
+
+    private boolean isCurrentPlaylistEmpty(CurrentPlaylist currentPlaylist) {
+        if (currentPlaylist.getCurrentPlaylistTracks().isEmpty()) {
+            return true;
+        }
+        return false;
+    }
+
+//    private void validateUserPermission(ChatRoom chatRoom, Long userId) {
+//        ChatRoomPermission permission = getChatRoomPermission(chatRoom);
+//
+//        boolean isMaster = permission.equals(ChatRoomPermission.MASTER) && isMasterUser(chatRoom, userId);
+//        boolean isEveryone = permission.equals(ChatRoomPermission.EVERYONE);
+//
+//        if (!isMaster && !isEveryone) {
+//            throw new NotMasterUserException(userId);
+//        }
+//    }
+
+    private void validatePlaylistCapacity(CurrentPlaylist currentPlaylist, List<TrackDto> trackDtoList) {
+        if (trackDtoList.size() >= MAX_PLAYLIST_ITEMS) {
+            throw new CurrentPlayListFullException(currentPlaylist.getId());
+        }
+    }
+
+    private void saveTrackToCurrentPlayList(CurrentPlaylist currentPlaylist, TrackDto trackDto) {
+        Track track = new Track(trackDto);
+        CurrentPlaylistTrack currentPlaylistTrack = CurrentPlaylistTrack.setPlaylistTrack(currentPlaylist, track);
+        currentPlaylistTrackRepository.save(currentPlaylistTrack);
+    }
+
+    private PlayerDetailsDto createPlayerDetailsDto(Long chatRoomId, PlayerSession playerSession, List<TrackDto> trackDtoList) {
+        return PlayerDetailsDto.builder()
+                .chatRoomId(chatRoomId)
+                .currentPlaylistIndex(playerSession.getIndex())
+                .lastPosition(playerSession.getLastPosition())
+                .startedAt(playerSession.getStartedAt())
+                .repeat(playerSession.getRepeat())
+                .paused(playerSession.getPaused())
+                .userCount(playerSession.getUserCount())
+                .currentPlaylist(trackDtoList)
+                .build();
+    }
+
+    private CurrentPlaylist getCurrentPlayListByChatRoomId(Long chatRoomId) {
+        return currentPlaylistRepository.findByChatRoomId(chatRoomId).orElseThrow(() -> new PlayListNotFoundException(chatRoomId));
+    }
+
+    private PlayerSession createPlayerSession(Long chatRoomId, CurrentPlaylist currentPlaylist) {
+        PlayerSession playerSession = PlayerSession.builder()
+                .chatRoomId(chatRoomId)
+                .index(INITIAL_INDEX)
+                .lastPosition(INITIAL_POSITION)
+                .paused(isCurrentPlaylistEmpty(currentPlaylist))
+                .repeat(INITIAL_REPEAT_SETTING)
+                .startedAt(LocalDateTime.now())
+                .userCount(INITIAL_USER_COUNT)
+                .duration(getDurationByCurrentPlayList(currentPlaylist))
+                .build();
+        return playerSession;
+    }
+
+    private Long getDurationByCurrentPlayList(CurrentPlaylist currentPlaylist) {
+        if (currentPlaylist.getCurrentPlaylistTracks().isEmpty()) {
+            return null;
+        }
+        return currentPlaylist.getCurrentPlaylistTracks().get(0).getTrack().getDuration();
+    }
+
+
+    private PlayerDetailsDto getPlayerDetailsDtoWithoutPlayerSession(Long chatRoomId, List<TrackDto> trackDtoList) {
+        return PlayerDetailsDto.builder()
+                .chatRoomId(chatRoomId)
+                .currentPlaylist(trackDtoList)
+                .build();
+    }
+
+    private PlayerDetailsDto getPlayerDetailsDtoWithPlayerSession(Long chatRoomId, List<TrackDto> trackDtoList, PlayerSession playerSession) {
+        return PlayerDetailsDto.builder()
+                .chatRoomId(chatRoomId)
+                .currentPlaylist(trackDtoList)
+                .currentPlaylistIndex(playerSession.getIndex())
+                .userCount(playerSession.getUserCount())
+                .lastPosition(playerSession.getLastPosition())
+                .startedAt(playerSession.getStartedAt())
+                .paused(playerSession.getPaused())
+                .repeat(playerSession.getRepeat())
+                .build();
     }
 
     private void sendMessages(Long chatRoomId, PlayerDetailsDto playerDetailsDto, PlayerCommandDto playerCommandDto) {
@@ -433,19 +495,18 @@ public class PlayerService {
         template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player/listen-together", playerCommandDto);
     }
 
-    private PlayerSession getPlayerSessionByChatRoomId(Long chatRoomId) {
-        PlayerSession playerSession = playerSessions.get(chatRoomId);
-        if (playerSession == null) throw new RuntimeException("No Session with chatRoomId: " + chatRoomId);
-        return playerSession;
+    private void sendPlayerDetailsToChatRoom(Long chatRoomId, PlayerDetailsDto playerDetailsDto) {
+        template.convertAndSend("/sub/api/chatrooms/" + chatRoomId + "/player", playerDetailsDto);
     }
 
-    @Transactional
-    public List<TrackDto> getTrackDtoList(Long chatRoomId) {
-        CurrentPlaylist currentPlaylist = currentPlaylistRepository.findByChatRoomId(chatRoomId)
-                .orElseThrow(() -> new RuntimeException("Playlist not found"));
+    private List<Track> getTracksByChatRoomId(Long chatRoomId) {
+        return currentPlaylistTrackRepository.findTrackListByChatRoomId(chatRoomId);
+    }
 
-        return currentPlaylist.getCurrentPlaylistTracks().stream()
-                .map(c -> new TrackDto(c.getTrack()))
+    public List<TrackDto> getTrackDtoList(Long chatRoomId) {
+        List<Track> trackList = getTracksByChatRoomId(chatRoomId);
+        return trackList.stream()
+                .map(TrackDto::new)
                 .toList();
     }
 }

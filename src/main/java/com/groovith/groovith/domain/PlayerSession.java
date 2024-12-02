@@ -1,19 +1,44 @@
 package com.groovith.groovith.domain;
 
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.HashSet;
+import java.util.Set;
+
 
 @Data
-public class PlayerSession {
+@NoArgsConstructor
+@RedisHash("PlayerSession")
+public class PlayerSession implements Serializable {
+    @Id
+    private Long chatRoomId;
     private Integer index;
     private Long lastPosition;
     private Boolean paused;
     private Boolean repeat;
     private LocalDateTime startedAt;
-    private AtomicInteger userCount;
+    private int userCount;
     private Long duration;
+
+    private Set<String> sessionIds = new HashSet<>();
+
+    @Builder
+    public PlayerSession(final Long chatRoomId, final Integer index, final Long lastPosition, Boolean paused, final Boolean repeat, final LocalDateTime startedAt, final int userCount, final Long duration) {
+        this.chatRoomId = chatRoomId;
+        this.index = index;
+        this.lastPosition = lastPosition;
+        this.paused = paused;
+        this.repeat = repeat;
+        this.startedAt = startedAt;
+        this.userCount = userCount;
+        this.duration = duration;
+    }
 
     public static PlayerSession pause(PlayerSession playerSession, Long position) {
         playerSession.setPaused(true);
@@ -55,5 +80,26 @@ public class PlayerSession {
         if (playerSession.getIndex() >= index) {
             playerSession.setIndex(Math.max(0, playerSession.getIndex() - 1));
         }
+    }
+
+    public void addSessionId(String sessionId) {
+        this.sessionIds.add(sessionId);
+    }
+
+    public void removeSessionId(String sessionId) {
+        this.sessionIds.remove(sessionId);
+    }
+
+    public void increaseUserCount(){
+        this.userCount++;
+    }
+
+    public void decreaseUserCount(){
+        this.userCount--;
+    }
+
+
+    public void updateUserCount(){
+        this.userCount = this.sessionIds.size();
     }
 }

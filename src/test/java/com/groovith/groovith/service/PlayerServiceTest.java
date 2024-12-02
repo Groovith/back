@@ -1,150 +1,127 @@
-////package com.groovith.groovith.service;
-////
-////import com.groovith.groovith.config.WebSocketEventListener;
-////import com.groovith.groovith.domain.CurrentPlaylist;
-////import com.groovith.groovith.domain.PlayerSession;
-////import com.groovith.groovith.dto.PlayerDetailsDto;
-//<<<<<<< HEAD
-////import com.groovith.groovith.repository.CurrentPlaylistRepository;
-////import org.junit.jupiter.api.DisplayName;
-//=======
-////import com.groovith.groovith.repository.ChatRoomRepository;
-////import com.groovith.groovith.repository.CurrentPlaylistRepository;
-////import com.groovith.groovith.service.PlayerService;
-////import org.junit.jupiter.api.BeforeEach;
-//>>>>>>> origin/main
-////import org.junit.jupiter.api.Test;
-////import org.junit.jupiter.api.extension.ExtendWith;
-////import org.mockito.InjectMocks;
-////import org.mockito.Mock;
-//<<<<<<< HEAD
-//=======
-////import org.mockito.MockitoAnnotations;
-//>>>>>>> origin/main
-////import org.mockito.junit.jupiter.MockitoExtension;
-////import org.springframework.messaging.simp.SimpMessageSendingOperations;
-////
-////import java.util.Optional;
-//<<<<<<< HEAD
-////import java.util.concurrent.ConcurrentHashMap;
-////
-////import static org.junit.jupiter.api.Assertions.*;
-////import static org.mockito.Mockito.*;
-////
-////@ExtendWith(MockitoExtension.class)
-////
-////class PlayerServiceTest {
-////
-////    @InjectMocks PlayerService playerService;
-////    @Mock CurrentPlaylistRepository currentPlaylistRepository;
-////    @Mock SimpMessageSendingOperations template;
-////    @Mock WebSocketEventListener webSocketEventListener;
-////
-////    @Test
-////    @DisplayName("플레이어 세션 참가 테스트")
-////    public void joinPlayer(){
-////        //given
-////        Long chatRoomId = 1L;
-////        Long userId = 1L;
-////
-////        final ConcurrentHashMap<Long, PlayerSession> playerSessions = new ConcurrentHashMap<>(); // 채팅방 플레이어 정보 (chatRoomId, PlayerSessionDto)
-////        final ConcurrentHashMap<String, Long> sessionIdChatRoomId = new ConcurrentHashMap<>(); // 각 유저 아이디의 플레이어 참가 여부
-////
-////        PlayerSession newSession = new PlayerSession();
-////        CurrentPlaylist currentPlaylist = new CurrentPlaylist();
-////
-//////        PlayerDetailsDto dto = PlayerDetailsDto.builder()
-//////                .chatRoomId(chatRoomId)
-//////                .currentPlaylistIndex(newSession.getIndex())
-//////                .lastPosition(newSession.getLastPosition())
-//////                .startedAt(newSession.getStartedAt())
-//////                .repeat(newSession.getRepeat())
-//////                .paused(newSession.getPaused())
-//////                .userCount(newSession.getUserCount().get())
-//////                .videoList(currentPlaylist.getVideoList())
-//////                .build();
-////
-////
-////        //when
-////        when(webSocketEventListener.getSessionIdByUserId(userId))
-////                .thenReturn(Optional.of("1L"));
-////        when(currentPlaylistRepository.findByChatRoomId(anyLong()))
-////                .thenReturn(Optional.of(currentPlaylist));
-////        PlayerDetailsDto result = playerService.joinPlayer(chatRoomId, userId);
-////        //then
-////        System.out.println(result);
-////
-////    }
-////
-////
-////}
-//=======
-////import java.util.concurrent.atomic.AtomicInteger;
-////
-////import static org.junit.jupiter.api.Assertions.assertEquals;
-////import static org.mockito.ArgumentMatchers.anyLong;
-////import static org.mockito.Mockito.*;
-////
-////@ExtendWith(MockitoExtension.class)
-////class PlayerServiceTest {
-////
-////    @Mock private WebSocketEventListener webSocketEventListener;
-////    @Mock private SimpMessageSendingOperations template;
-////    @Mock private CurrentPlaylistRepository currentPlaylistRepository;
-////    @Mock private ChatRoomRepository chatRoomRepository;
-////    @InjectMocks private PlayerService playerService;
-////
-////    @BeforeEach
-////    void setUp() {
-////        MockitoAnnotations.openMocks(this);
-////        playerService.playerSessions.clear();
-////    }
-////
-////    @Test
-////    void testJoinPlayer_NewSession() {
-////        // Given
-////        Long chatRoomId = 1L;
-////        Long userId = 2L;
-////        String sessionId = "sessionId";
-////        CurrentPlaylist currentPlaylist = new CurrentPlaylist();
-////
-////
-////        // When
-////        when(currentPlaylistRepository.findByChatRoomId(anyLong())).thenReturn(Optional.of(currentPlaylist));
-////        when(webSocketEventListener.getSessionIdByUserId(anyLong())).thenReturn(Optional.of(sessionId));
-////        PlayerDetailsDto result = playerService.joinPlayer(chatRoomId, userId);
-////
-////        // Then
-////        assertEquals(chatRoomId, result.getChatRoomId());
-////        assertEquals(1, result.getUserCount());
-////
-////        PlayerSession playerSession = playerService.playerSessions.get(chatRoomId);
-////        assertEquals(1, playerSession.getUserCount().get());
-////        assertEquals(0, playerSession.getIndex());
-////    }
-////
-////    @Test
-////    void testJoinPlayer_ExistingSession() {
-////        // Given
-////        Long chatRoomId = 1L;
-////        Long userId = 2L;
-////        CurrentPlaylist currentPlaylist = new CurrentPlaylist();
-////
-////        PlayerSession existingSession = new PlayerSession();
-////        existingSession.setUserCount(new AtomicInteger(1));
-////
-////        // When
-////        playerService.playerSessions.put(chatRoomId, existingSession);
-////        when(currentPlaylistRepository.findByChatRoomId(anyLong())).thenReturn(Optional.of(currentPlaylist));
-////
-////        PlayerDetailsDto result = playerService.joinPlayer(chatRoomId, userId);
-////
-////        // Then
-////        assertEquals(chatRoomId, result.getChatRoomId());
-////        assertEquals(2, result.getUserCount());
-////
-////        PlayerSession playerSession = playerService.playerSessions.get(chatRoomId);
-////        assertEquals(2, playerSession.getUserCount().get());
-////    }
-////}
-//>>>>>>> origin/main
+package com.groovith.groovith.service;
+
+import com.groovith.groovith.config.WebSocketEventListener;
+import com.groovith.groovith.domain.ChatRoom;
+import com.groovith.groovith.domain.CurrentPlaylist;
+import com.groovith.groovith.domain.PlayerSession;
+import com.groovith.groovith.domain.Track;
+import com.groovith.groovith.domain.enums.ChatRoomPermission;
+import com.groovith.groovith.domain.enums.ChatRoomPrivacy;
+import com.groovith.groovith.domain.enums.S3Directory;
+import com.groovith.groovith.dto.PlayerDetailsDto;
+import com.groovith.groovith.repository.ChatRoomRepository;
+import com.groovith.groovith.repository.CurrentPlaylistRepository;
+import com.groovith.groovith.repository.CurrentPlaylistTrackRepository;
+import com.groovith.groovith.repository.PlayerSessionRepository;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.lang.reflect.Array;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.mockito.Mockito.when;
+
+
+@ExtendWith(MockitoExtension.class)
+class PlayerServiceTest {
+
+    @InjectMocks private  PlayerService playerService;
+    @Mock private  SimpMessageSendingOperations template;
+    @Mock private WebSocketEventListener webSocketEventListener;
+    @Mock private CurrentPlaylistRepository currentPlaylistRepository;
+    @Mock private ChatRoomRepository chatRoomRepository;
+    @Mock private CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
+    @Mock private YoutubeService youtubeService;
+    @Mock private TrackService trackService;
+    @Mock private PlaylistService playlistService;
+    @Mock private StringRedisTemplate redisTemplate;
+    @Mock private PlayerSessionRepository playerSessionRepository;
+
+
+//    @Test
+//    @DisplayName("세션이 존재하는 체팅방 같이듣기에 참가 테스트")
+//    void joinPlayerTest(){
+//        // given
+//        Long chatRoomId = 1L;
+//        Long userId = 1L;
+//        String sessionId = UUID.randomUUID().toString();
+//
+//        ChatRoom chatRoom = createChatRoom(chatRoomId, "room", ChatRoomPrivacy.PUBLIC, ChatRoomPermission.MASTER);
+//        CurrentPlaylist currentPlaylist = createCurrentPlaylist(chatRoomId);
+//        List<Track> trackList = Arrays.asList(new Track(), new Track(), new Track());
+//        PlayerSession playerSession = createPlayerSession(chatRoomId, sessionId, currentPlaylist);
+//
+//        // when
+//        when(webSocketEventListener.getSessionIdByUserId(userId)).thenReturn(Optional.of(sessionId));
+//        when(currentPlaylistRepository.findByChatRoomId(chatRoomId)).thenReturn(Optional.of(currentPlaylist));
+//        when(currentPlaylistTrackRepository.findTrackListByChatRoomId(chatRoomId)).thenReturn(trackList);
+//        when(playerSessionRepository.findById(chatRoomId)).thenReturn(Optional.of(playerSession));
+//
+//        PlayerDetailsDto result = playerService.joinPlayer(userId, chatRoomId);
+//
+//        // then
+//        Assertions.assertThat(result).isNotNull();
+//        Assertions.assertThat(result.getChatRoomId()).isEqualTo(chatRoom);
+//        Assertions.assertThat(result.getCurrentPlaylist()).isEqualTo(currentPlaylist);
+//        Assertions.assertThat(result.getUserCount()).isEqualTo(2);
+//    }
+//
+//    @Test
+//    @DisplayName("플레이리스트에 곡 추가 테스트")
+//    void addTrackTest(){
+//        // given
+//
+//        // when
+//
+//        // then
+//    }
+
+    private CurrentPlaylist createCurrentPlaylist(Long id) {
+        CurrentPlaylist currentPlaylist = new CurrentPlaylist();
+        currentPlaylist.setId(id);
+        return currentPlaylist;
+    }
+
+    private ChatRoom createChatRoom(Long chatRoomId, String name, ChatRoomPrivacy chatRoomPrivacy, ChatRoomPermission permission){
+        ChatRoom chatRoom = ChatRoom.builder()
+                .name(name)
+                .privacy(chatRoomPrivacy)
+                .imageUrl( S3Directory.CHATROOM.getDefaultImageUrl())
+                .permission(permission)
+                .build();
+        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
+        return chatRoom;
+    }
+
+    private PlayerSession createPlayerSession(Long chatRoomId, String sessionId, CurrentPlaylist currentPlaylist) {
+        PlayerSession data = new PlayerSession();
+        data.setChatRoomId(chatRoomId);
+        data.addSessionId(sessionId);
+        if (currentPlaylist.getCurrentPlaylistTracks().isEmpty()) {
+            data.setPaused(true);
+            data.setRepeat(true);
+            data.setIndex(0);
+        } else {
+            data.setIndex(0);
+            data.setPaused(false);
+            data.setLastPosition(0L);
+            data.setRepeat(true);
+            data.setDuration(currentPlaylist.getCurrentPlaylistTracks().get(0).getTrack().getDuration());
+            data.setStartedAt(LocalDateTime.now());
+        }
+        data.setUserCount(1);
+        return data;
+    }
+}
