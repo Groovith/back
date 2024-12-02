@@ -84,12 +84,15 @@ public class PlayerService {
     public PlayerDetailsDto joinPlayer(Long chatRoomId, Long userId) {
         String sessionId = getWebSocketSessionIdByUserId(userId);
         Long existingChatRoomId = sessionIdChatRoomId.get(sessionId);
+        handleExistingPlayerSession(existingChatRoomId, sessionId);
+
         // 이미 동일한 채팅방에 참가 중이라면 인원수를 증가시키지 않음
         if (chatRoomId.equals(existingChatRoomId)) {
             PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
             List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
             return getPlayerDetailsDtoWithPlayerSession(chatRoomId, trackDtoList, playerSession);
         }
+
         // sessionId를 sessionIdChatRoomId에 등록한다.
         sessionIdChatRoomId.put(sessionId, chatRoomId);
 
@@ -112,6 +115,13 @@ public class PlayerService {
 
         sendPlayerDetailsToChatRoom(chatRoomId, playerDetailsDto);
         return playerDetailsDto;
+    }
+
+    private void handleExistingPlayerSession(Long existingChatRoomId, String sessionId) {
+        if(existingChatRoomId != null) {
+            getOptionalPlayerSessionByChatRoomId(existingChatRoomId)
+                    .ifPresent(playerSession -> deleteUserFromPlayerSession(playerSession, sessionId));
+        }
     }
 
     @Transactional(readOnly = true)
