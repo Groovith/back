@@ -70,12 +70,12 @@ public class WebSocketEventListener {
                     .orElseThrow(()->new PlayerSessionNotFoundException(chatRoomId));
             if (chatRoomId != null) {
                 // chatRoomId로 현재 인원 수를 줄인다.
-                int count = playerSession.getUserCount();
                 // playerSession의 sessionIds 에서 sessionId 제거
                 playerSession.removeSessionId(sessionId);
                 playerSession.updateUserCount();
+                playerSessionRepository.save(playerSession);
                     // 인원이 0명이 된 경우, 해당 채팅방 세션 정보를 삭제한다. -> 해당 채팅방에 알린다
-                    if (count <= 0) {
+                    if (playerSession.getUserCount() <= 0) {
                         playerSessionRepository.delete(playerSession);
 
                         List<Track> trackList = currentPlaylistTrackRepository.findTrackListByChatRoomId(chatRoomId);
