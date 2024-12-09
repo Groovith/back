@@ -39,6 +39,7 @@ public class PlayerService {
     private static final boolean INITIAL_REPEAT_SETTING = true;
     private static final int INITIAL_USER_COUNT = 1;
 
+    private final PlayerSessionService playerSessionService;
     private final SimpMessageSendingOperations template;
     private final WebSocketEventListener webSocketEventListener;
     private final CurrentPlaylistRepository currentPlaylistRepository;
@@ -191,8 +192,8 @@ public class PlayerService {
 
     @Transactional(readOnly = true)
     public void pause(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        PlayerSession updatedPlayerSession = savePlaySession(PlayerSession.pause(playerSession, playerRequestDto.getPosition()));
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
+        savePlayerSession(PlayerSession.pause(playerSession, playerRequestDto.getPosition()));
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
         PlayerCommandDto playerCommandDto = PlayerCommandDto.pause(playerRequestDto.getPosition());
 
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
@@ -200,8 +201,8 @@ public class PlayerService {
 
     @Transactional(readOnly = true)
     public void resume(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        PlayerSession updatedPlayerSession = savePlaySession(PlayerSession.resume(playerSession, playerRequestDto.getPosition()));
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
+        savePlayerSession(PlayerSession.resume(playerSession, playerRequestDto.getPosition()));
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
         PlayerCommandDto playerCommandDto = PlayerCommandDto.resume(playerRequestDto.getPosition());
 
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
@@ -209,8 +210,8 @@ public class PlayerService {
 
     @Transactional(readOnly = true)
     public void seek(PlayerSession playerSession, List<TrackDto> trackDtoList, Long chatRoomId, PlayerRequestDto playerRequestDto) {
-        PlayerSession updatedPlayerSession = savePlaySession(PlayerSession.seek(playerSession, playerRequestDto.getPosition()));
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
+        savePlayerSession(PlayerSession.seek(playerSession, playerRequestDto.getPosition()));
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
         PlayerCommandDto playerCommandDto = PlayerCommandDto.seek(playerRequestDto.getPosition());
 
         // 채팅방 정보 전송
@@ -240,8 +241,8 @@ public class PlayerService {
                 }
             }
 
-            PlayerSession updatedPlayerSession = savePlaySession(playerSession);
-            PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
+            savePlayerSession(playerSession);
+            PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
 
             // 채팅방 정보 전송
             sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
@@ -285,8 +286,8 @@ public class PlayerService {
             }
         }
 
-        PlayerSession updatedPlayerSession = savePlaySession(playerSession);
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
+        savePlayerSession(playerSession);
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
         // 채팅방 정보 전송
         sendMessages(chatRoomId, playerDetailsDto, playerCommandDto);
     }
@@ -301,9 +302,9 @@ public class PlayerService {
 
         // 플레이어 세션 수정
         PlayerSession.changeTrack(playerSession, requestedIndex, trackDtoList.get(requestedIndex).getDuration());
-        PlayerSession updatedPlayerSession = savePlaySession(playerSession);
+        savePlayerSession(playerSession);
         // 현재 플레이리스트 정보 갱신
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
         // 플레이 트랙 액션 전송
         PlayerCommandDto playerCommandDto = PlayerCommandDto.playTrackAtIndex(requestedIndex, trackDtoList.get(requestedIndex).getVideoId());
 
@@ -331,30 +332,38 @@ public class PlayerService {
         playlistService.deleteTrackByIndex(chatRoomId, index);
         List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
         PlayerSession.removeTrack(playerSession, index);
-        PlayerSession updatedPlayerSession = savePlaySession(playerSession);
+        savePlayerSession(playerSession);
         // 재생목록에서 현재 재생중인 트랙 삭제했을때 로직 필요
         // 채팅방 정보 갱신
-        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, updatedPlayerSession, trackDtoList);
+        PlayerDetailsDto playerDetailsDto = PlayerDetailsDto.toPlayerDetailsDto(chatRoomId, playerSession, trackDtoList);
         // 플레이리스트 업데이트 알림 전송
-        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList, updatedPlayerSession.getIndex()));
+        sendMessages(chatRoomId, playerDetailsDto, PlayerCommandDto.updatePlaylist(trackDtoList, playerSession.getIndex()));
+    }
+
+    private void savePlayerSession(PlayerSession playerSession) {
+//        playerSessionService.savePlayerSession(playerSession);
+        playerSessionRepository.save(playerSession);
+        addPlayerSessionToZSet(playerSession);
     }
 
     private PlayerSession initializeNewPlayerSession(Long chatRoomId, String sessionId, CurrentPlaylist currentPlaylist) {
         PlayerSession playerSession = createPlayerSession(chatRoomId, currentPlaylist);
         playerSession.addSessionId(sessionId);
-        return savePlaySession(playerSession);
+        savePlayerSession(playerSession);
+        return playerSession;
     }
 
     private PlayerSession addSessionIdToPlayerSession(PlayerSession playerSession, String sessionId) {
         playerSession.addSessionId(sessionId);
         playerSession.updateUserCount();
-        return savePlaySession(playerSession);
+        savePlayerSession(playerSession);
+        return playerSession;
     }
 
     private void deleteUserFromPlayerSession(PlayerSession playerSession, String sessionId) {
         playerSession.removeSessionId(sessionId);
         playerSession.updateUserCount();
-        playerSessionRepository.save(playerSession);
+        savePlayerSession(playerSession);
     }
 
     private TrackDto saveTrack(String videoId) throws IOException {
@@ -363,12 +372,18 @@ public class PlayerService {
         return trackDto;
     }
 
-    private PlayerSession savePlaySession(PlayerSession playerSession) {
-        return playerSessionRepository.save(playerSession);
+
+    public void addPlayerSessionToZSet(PlayerSession playerSession) {
+        playerSessionService.addPlayerSessionToZSet(playerSession);
+    }
+
+    public void removePlayerSessionFromZSet(PlayerSession playerSession) {
+        playerSessionService.removePlayerSessionFromZSet(playerSession);
     }
 
     private void deletePlaySession(PlayerSession playerSession) {
         playerSessionRepository.delete(playerSession);
+        removePlayerSessionFromZSet(playerSession);
     }
 
     private PlayerSession getPlayerSessionByChatRoomId(Long chatRoomId) {

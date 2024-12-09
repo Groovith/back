@@ -32,6 +32,7 @@ public class ChatRoomController {
     private final SimpMessageSendingOperations template;
     private final MessageService messageService;
     private final PlaylistService playlistService;
+    private final PlayerSessionService playerSessionService;
 
     /**
      * 채팅방 생성
@@ -179,6 +180,14 @@ public class ChatRoomController {
         ResponseEntity<? super DeleteProfilePictureResponseDto> result = chatRoomImageService.deleteImageById(chatRoomId);
         updateImageUrl(chatRoomId, S3Directory.CHATROOM.getDefaultImageUrl());
         return result;
+    }
+
+    /**
+     * 현재 인기있는 채팅방 조회: 같이 듣기 참가중인 유저 내림차순 10개
+     * */
+    @GetMapping("/chatrooms/popular")
+    public ResponseEntity<ChatRoomDetailsListDto> getPopularChatRooms(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return new ResponseEntity<>(chatRoomService.getTopChatRoomDetailsByUserCount(userDetails.getUserId()), HttpStatus.OK);
     }
 
     @Data
