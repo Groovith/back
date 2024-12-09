@@ -85,13 +85,13 @@ public class PlayerService {
     public PlayerDetailsDto joinPlayer(Long chatRoomId, Long userId) {
         String sessionId = getWebSocketSessionIdByUserId(userId);
         Long existingChatRoomId = sessionIdChatRoomId.get(sessionId);
-        handleExistingPlayerSession(existingChatRoomId, sessionId);
+        List<TrackDto> exixstingTrackDtoList = getTrackDtoList(existingChatRoomId);
+        handleExistingPlayerSession(existingChatRoomId, sessionId, exixstingTrackDtoList);
 
         // 이미 동일한 채팅방에 참가 중이라면 인원수를 증가시키지 않음
         if (chatRoomId.equals(existingChatRoomId)) {
             PlayerSession playerSession = getPlayerSessionByChatRoomId(chatRoomId);
-            List<TrackDto> trackDtoList = getTrackDtoList(chatRoomId);
-            return getPlayerDetailsDtoWithPlayerSession(chatRoomId, trackDtoList, playerSession);
+            return getPlayerDetailsDtoWithPlayerSession(chatRoomId, exixstingTrackDtoList, playerSession);
         }
 
         // sessionId를 sessionIdChatRoomId에 등록한다.
@@ -118,10 +118,13 @@ public class PlayerService {
         return playerDetailsDto;
     }
 
-    private void handleExistingPlayerSession(Long existingChatRoomId, String sessionId) {
+    private void handleExistingPlayerSession(Long existingChatRoomId, String sessionId, List<TrackDto> trackDtoList) {
         if(existingChatRoomId != null) {
             getOptionalPlayerSessionByChatRoomId(existingChatRoomId)
-                    .ifPresent(playerSession -> deleteUserFromPlayerSession(playerSession, sessionId));
+                    .ifPresent(playerSession -> {
+                        deleteUserFromPlayerSession(playerSession, sessionId);
+                        handleEmptyPlayerSession(playerSession, existingChatRoomId, trackDtoList);
+                    });
         }
     }
 
