@@ -10,15 +10,13 @@ import com.groovith.groovith.repository.*;
 import com.groovith.groovith.service.Image.ChatRoomImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -27,6 +25,8 @@ import java.util.stream.Collectors;
 @Service
 public class ChatRoomService {
 
+    private static final int ZSet_INDEX_START = 0;
+    private static final int ZSet_INDEX_END = 10;
     private static final int SINGLE_NEW_MEMBER = 1;
     private static final int MAX_MEMBER = 100;
     private static final String ERROR_ONLY_MASTER_USER_CAN_CHANGE_PERMISSION = "권한 변경은 masterUser 만 가능합니다";
@@ -40,6 +40,7 @@ public class ChatRoomService {
     private final CurrentPlaylistRepository currentPlaylistRepository;
     private final FriendRepository friendRepository;
     private final MessageRepository messageRepository;
+    private final PlayerSessionService playerSessionService;
 
     /**
      * 채팅방 생성
@@ -232,6 +233,17 @@ public class ChatRoomService {
         chatRoom.updateImageUrl(imageUrl);
     }
 
+    /**
+     * 현재 인기있는 채팅방 조회 : 같이 듣기 참가중인 참가자 수 상위 10개 채팅방 chatRoomDetails 반환
+     */
+    public ChatRoomDetailsListDto getTopChatRoomDetailsByUserCount(Long userId) {
+        Set<ZSetOperations.TypedTuple<Object>> topChatRoomIds = playerSessionService.getTopChatRoomIdsByUserCountWithScores(ZSet_INDEX_START, ZSet_INDEX_END);
+        return new ChatRoomDetailsListDto(topChatRoomIds.stream().map(tuple->{
+            ChatRoom chatRoom = findChatRoomById(((Integer) Objects.requireNonNull(tuple.getValue())).longValue());
+            return new ChatRoomDetailsDto(chatRoom, chatRoom.getIsMaster(userId));
+        }).toList());
+    }
+
 
     private ChatRoom findChatRoomById(Long chatRoomId) {
         return chatRoomRepository.findById(chatRoomId).orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
@@ -263,6 +275,7 @@ public class ChatRoomService {
             throw new NotMasterUserException(errorMessage);
         }
     }
+
     // 입장, 퇴장 시에 userChatRoom 상태 업데이트
     private void updateUserChatRoomStatus(User user, ChatRoom chatRoom, UserChatRoomStatus status) {
         Optional<UserChatRoom> userChatRoom = findUserChatRoomByUserIdAndChatRoomId(user.getId(), chatRoom.getId());

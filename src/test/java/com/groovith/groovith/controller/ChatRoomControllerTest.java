@@ -22,6 +22,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -151,7 +152,7 @@ class ChatRoomControllerTest {
         ChatRoomDetailsDto detailDto = new ChatRoomDetailsDto(chatRoom, chatRoom.getIsMaster(userId));
         //when
         when(chatRoomService.findChatRoomDetails(chatRoomId, userId))
-                .thenReturn(detailDto);
+                .thenReturn(ResponseEntity.ok(detailDto));
 
         ResultActions actions = mockMvc.perform(
                 get("/api/chatrooms/{chatRoomId}", chatRoomId)

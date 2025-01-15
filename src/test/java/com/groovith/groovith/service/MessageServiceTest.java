@@ -17,6 +17,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
@@ -37,6 +39,9 @@ class MessageServiceTest {
     @Mock
     private UserChatRoomRepository userChatRoomRepository;
 
+    @Mock
+    private ChatRoomService chatRoomService;
+
     @Value("${cloud.aws.s3.defaultUserImageUrl}")
     private String DEFAULT_IMG_URL;
 
@@ -53,9 +58,9 @@ class MessageServiceTest {
 
         UserChatRoom userChatRoom = UserChatRoom.setUserChatRoom(user, chatRoom, UserChatRoomStatus.ENTER);
 
-        MessageDto messageDto = createMessageDto(user, chatRoom, content);
 
         Message message = Message.setMessage(content, MessageType.CHAT, userChatRoom, chatRoomId, DEFAULT_IMG_URL);
+        MessageDto messageDto = createMessageDto(message);
 
         //when
         when(userChatRoomRepository.findByUserIdAndChatRoomId(user.getId(), chatRoom.getId()))
@@ -71,8 +76,12 @@ class MessageServiceTest {
     @Test
     public void findMessages() {
         //given
+        Long userId = 1L;
+        Long chatRoomId = 1L;
         ChatRoom chatRoom = createChatRoom();
+        ReflectionTestUtils.setField(chatRoom, "id", chatRoomId);
         User user = createUser(DEFAULT_IMG_URL);
+        ReflectionTestUtils.setField(user, "id", userId);
 
         List<Message> data = new ArrayList<>();
         List<MessageResponseDto> savedMessages = new ArrayList<>();
@@ -82,6 +91,8 @@ class MessageServiceTest {
             Message message = createMessage(user, chatRoom, "message" + i);
             MessageResponseDto dto = MessageResponseDto.builder()
                     .messageId(message.getId())
+                    .userId(message.getUserChatRoom().getUser().getId())
+                    .chatRoomId(message.getChatRoomId())
                     .content(message.getContent())
                     .type(message.getMessageType())
                     .createdAt(message.getCreatedAt())
@@ -95,11 +106,13 @@ class MessageServiceTest {
         MessageListResponseDto messageListResponseDto = new MessageListResponseDto(savedMessages);
 
         //when
+        when(chatRoomService.isMember(chatRoomId, userId)).thenReturn(true);
         when(messageRepository.findMessages(chatRoom.getId(), null)).thenReturn(new SliceImpl<>(data));
-        MessageListResponseDto findList = messageService.findMessages(chatRoom.getId(), null);
+        ResponseEntity<MessageListResponseDto> findList = messageService.findMessages(chatRoom.getId(), null, user.getId());
 
         //then
-        Assertions.assertThat(findList).isEqualTo(messageListResponseDto);
+        Assertions.assertThat(findList.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Assertions.assertThat(findList.getBody()).isEqualTo(messageListResponseDto);
 
     }
 
@@ -115,22 +128,22 @@ class MessageServiceTest {
         List<Message> massages = new ArrayList<>();
 
         //when
-        MessageDto messageDto = createMessageDto(user, chatRoom, "message");
         Message message = createMessage(user, chatRoom, "message");
         massages.add(message);
 
         // 프로필 사진 변경
         user.setImageUrl(newImageUrl);
-        MessageDto newMessageDto = createMessageDto(user, chatRoom, "message");
+        MessageDto newMessageDto = createMessageDto(message);
         Message newMessage = createMessage(user, chatRoom, "message");
         massages.add(newMessage);
 
+        when(chatRoomService.isMember(chatRoom.getId(), user.getId())).thenReturn(true);
         when(messageRepository.findMessages(chatRoom.getId(), null)).thenReturn(new SliceImpl<>(massages));
-        MessageListResponseDto messageListResponseDto = messageService.findMessages(chatRoom.getId(), null);
+        ResponseEntity<MessageListResponseDto> messageListResponseDto = messageService.findMessages(chatRoom.getId(), null, user.getId());
 
         //then
-        Assertions.assertThat(messageListResponseDto.getMessages().get(0).getImageUrl())
-                .isEqualTo(messageListResponseDto.getMessages().get(1).getImageUrl());
+        Assertions.assertThat(messageListResponseDto.getBody().getMessages().get(0).getImageUrl())
+                .isEqualTo(messageListResponseDto.getBody().getMessages().get(1).getImageUrl());
     }
 
 
@@ -158,13 +171,13 @@ class MessageServiceTest {
         return Message.setMessage(content, MessageType.CHAT, userChatRoom, chatRoom.getId(), user.getImageUrl());
     }
 
-    public MessageDto createMessageDto(User user, ChatRoom chatRoom, String content) {
+    public MessageDto createMessageDto(Message message) {
         return MessageDto.builder()
-                .content(content)
-                .username(user.getUsername())
-                .userId(user.getId())
-                .chatRoomId(chatRoom.getId())
-                .imageUrl(user.getImageUrl())
+                .content(message.getContent())
+                .username(message.getUserChatRoom().getUser().getUsername())
+                .userId(message.getUserChatRoom().getUser().getId())
+                .chatRoomId(message.getUserChatRoom().getChatRoom().getId())
+                .imageUrl(message.getImageUrl())
                 .type(MessageType.CHAT)
                 .build();
     }

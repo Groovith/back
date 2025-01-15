@@ -10,6 +10,7 @@ import com.groovith.groovith.exception.PlayerSessionNotFoundException;
 import com.groovith.groovith.repository.CurrentPlaylistRepository;
 import com.groovith.groovith.repository.CurrentPlaylistTrackRepository;
 import com.groovith.groovith.repository.PlayerSessionRepository;
+import com.groovith.groovith.service.PlayerSessionService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -33,6 +34,7 @@ public class WebSocketEventListener {
     private final SimpMessageSendingOperations template;
     private final CurrentPlaylistTrackRepository currentPlaylistTrackRepository;
     private final PlayerSessionRepository playerSessionRepository;
+    private final PlayerSessionService playerSessionService;
 
     @EventListener
     public void handleWebSocketConnectListener(SessionSubscribeEvent event) {
@@ -70,13 +72,11 @@ public class WebSocketEventListener {
                     .orElseThrow(()->new PlayerSessionNotFoundException(chatRoomId));
             if (chatRoomId != null) {
                 // chatRoomId로 현재 인원 수를 줄인다.
-                int count = playerSession.getUserCount();
-                // playerSession의 sessionIds 에서 sessionId 제거
-                playerSession.removeSessionId(sessionId);
-                playerSession.updateUserCount();
+                // playerSession의 sessionIds 에서 sessionId 제거, ZSet 에서도 제거
+                deleteUserFromPlayerSession(playerSession, sessionId);
                     // 인원이 0명이 된 경우, 해당 채팅방 세션 정보를 삭제한다. -> 해당 채팅방에 알린다
-                    if (count <= 0) {
-                        playerSessionRepository.delete(playerSession);
+                    if (playerSession.getUserCount() <= 0) {
+                        deletePlayerSession(playerSession);
 
                         List<Track> trackList = currentPlaylistTrackRepository.findTrackListByChatRoomId(chatRoomId);
                         List<TrackDto> trackDtoList = trackList.stream()
@@ -98,5 +98,16 @@ public class WebSocketEventListener {
     // userId 로 sessionId 를 반환 받는다
     public Optional<String> getSessionIdByUserId(Long userId) {
         return Optional.ofNullable(userIdSessionId.get(userId));
+    }
+
+    private void deleteUserFromPlayerSession(PlayerSession playerSession, String sessionId) {
+        playerSession.removeSessionId(sessionId);
+        playerSession.updateUserCount();
+        playerSessionRepository.save(playerSession);
+    }
+
+    private void deletePlayerSession(PlayerSession playerSession){
+        playerSessionRepository.delete(playerSession);
+        playerSessionService.removePlayerSessionFromZSet(playerSession);
     }
 }
