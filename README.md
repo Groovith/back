@@ -1,3 +1,7 @@
+## 프로젝트 소개
+![A4 - 1](https://github.com/user-attachments/assets/aebc3f8f-9951-4a74-8756-1fafb77a12b6)
+
+
 ## Getting Started
 
 ### application.properties 설정
